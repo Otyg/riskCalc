@@ -1,12 +1,12 @@
-from internal.montecarlo import MonteCarloSimulation
+from internal.montecarlo import *
 from decimal import *
 
 
 class Risk:
-    def __init__(self, name="", actor="", description="", asset="", threat="", vulnerability="",
-                 tef={'max': Decimal(1.00), 'min': Decimal(0.00)},
-                 vuln_score={'max': Decimal(1.00), 'min': Decimal(0.00)},
-                 loss_magnitude={'max': Decimal(1.00), 'min': Decimal(0.00)}
+    def __init__(self, name:str="", actor:str="", description:str="", asset:str="", threat:str="", vulnerability:str="",
+                 tef:MonteCarloRange = MonteCarloRange(probable=Decimal(0.5)),
+                 vuln_score:MonteCarloRange  = MonteCarloRange(probable=Decimal(0.1)),
+                 loss_magnitude:MonteCarloRange = MonteCarloRange(probable=Decimal(10000))
                  ):
         self.name = name
         self.actor = actor
@@ -14,23 +14,21 @@ class Risk:
         self.asset = asset
         self.threat = threat
         self.vulnerability = vulnerability
-        self.threat_event_frequency = MonteCarloSimulation(
-            high=tef['max'], low=tef['min'])
-        self.vuln_score = MonteCarloSimulation(
-            high=vuln_score['max'], low=vuln_score['min'])
-        self.loss_magnitude = MonteCarloSimulation(
-            high=loss_magnitude['max'], low=loss_magnitude['min'])
-        self.update_lef()
-        self.update_ale() # Kanske bara ALE som ska vara simulering?
+        self.threat_event_frequency = tef
+        self.vuln_score = vuln_score
+        self.loss_magnitude = loss_magnitude
+        self.loss_event_frequency = MonteCarloRange(min=self.threat_event_frequency.min*self.vuln_score.min,
+                              max=self.threat_event_frequency.max*self.vuln_score.max,
+                              probable=self.threat_event_frequency.probable*self.vuln_score.probable)
+        self.update_ale()
+        if not description:
+            self.auto_desc()
 
     def auto_desc(self):
         self.description = f"Risk att {self.actor} utnyttjar {self.vulnerability} för att realisera {self.threat} mot {self.asset}."
 
-    def update_lef(self):
-        self.loss_event_frequency = MonteCarloSimulation(
-            high=self.threat_event_frequency.max*self.vuln_score.max, low=self.threat_event_frequency.min*self.vuln_score.min)
-        self.update_ale()
-
     def update_ale(self):
-        self.annual_loss_expectancy = MonteCarloSimulation(high=self.loss_event_frequency.max*self.loss_magnitude.max, low=self.loss_event_frequency.min *
-                                                           self.loss_magnitude.min, probable=self.loss_event_frequency.probable*self.loss_magnitude.probable)
+        ale = MonteCarloRange(min=self.loss_event_frequency.min*self.loss_magnitude.min,
+                              max=self.loss_event_frequency.max*self.loss_magnitude.max,
+                              probable=self.loss_event_frequency.probable*self.loss_magnitude.probable)
+        self.annual_loss_expectancy = MonteCarloSimulation(ale)
