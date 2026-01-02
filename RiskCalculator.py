@@ -20,7 +20,7 @@ riskscenario = RiskScenario(
     threat=threat,
     vulnerability=vulnerability,
     tef=MonteCarloRange(probable=tef),
-    vuln_score=MonteCarloRange(probable=Decimal(vuln_score)/Decimal(100.0000)),
+    vuln_score=MonteCarloRange(probable=Decimal(vuln_score)/100),
     loss_magnitude=MonteCarloRange(probable=loss_magnitude)
     )
 print([riskscenario])
