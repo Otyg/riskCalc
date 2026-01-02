@@ -1,4 +1,4 @@
-from internal.montecarlo import *
+from montecarlo import *
 from decimal import *
 
 
