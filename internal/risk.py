@@ -1,4 +1,4 @@
-from montecarlo import *
+from .montecarlo import *
 from decimal import *
 
 
@@ -21,6 +21,12 @@ class RiskScenario:
     def auto_desc(self):
         self.description = f"Risk att {self.actor} utnyttjar {self.vulnerability} för att realisera {self.threat} mot {self.asset}."
 
+    def __str__(self):
+        return self.name + "\n" + self.description + "\n" + "Förväntad årlig förlust: " + str(round(self.risk.annual_loss_expectancy.min, 2)) + " SEK <= " + str(round(self.risk.annual_loss_expectancy.probable, 2)) + " SEK <= " + str(round(self.risk.annual_loss_expectancy.max, 2)) + " SEK"
+
+    def __repr__(self):
+        return str({"name": self.name, "actor": self.actor, "desc": self.description, "asset": self.asset, "threat": self.threat, "vuln": self.vulnerability, "risk": self.risk})
+
 
 class Risk:
     def __init__(self, tef:MonteCarloRange = MonteCarloRange(probable=Decimal(0.5)),
@@ -36,7 +42,10 @@ class Risk:
         self.update_ale()
 
     def update_ale(self):
-        ale = MonteCarloRange(min=self.loss_event_frequency.min*self.loss_magnitude.min,
+        self.ale = MonteCarloRange(min=self.loss_event_frequency.min*self.loss_magnitude.min,
                               max=self.loss_event_frequency.max*self.loss_magnitude.max,
                               probable=self.loss_event_frequency.probable*self.loss_magnitude.probable)
-        self.annual_loss_expectancy = MonteCarloSimulation(ale)
+        self.annual_loss_expectancy = MonteCarloSimulation(self.ale)
+    
+    def __repr__(self):
+        return str({"tef" : self.threat_event_frequency, "vuln": self.vuln_score, "lef": self.loss_event_frequency, "lm": self.loss_magnitude, "ale_range": self.ale, "ale": self.annual_loss_expectancy})
