@@ -1,6 +1,8 @@
 from decimal import Decimal
 from internal.montecarlo import MonteCarloRange
 from internal.risk import RiskScenario
+import test.generate as g
+import pprint
 
 name = input("Namn på scenario: ")
 actor = input("Aktör: ")
@@ -8,8 +10,14 @@ description = input("Beskrivning [auto]: ")
 asset = input("Hotad tillgång: ")
 threat = input("Hot: ")
 vulnerability = input("Sårbarhet: ")
-tef = input("Sannolik förekomst av händelser som utgör ett hot (antal per år): ")
-vuln_score = input("Sårbarhet i procent (0-100): ")
+tef_modifier = g.tef_questions()
+for q in tef_modifier.questions:
+    alt = input(q.text + " ")
+    q.set_answer(alt)
+vuln_modifier = g.vuln_questions()
+for q in vuln_modifier.questions:
+    alt = input(q.text + " ")
+    q.set_answer(alt)
 loss_magnitude = input("Ekonomisk förlust av ett lyckat angrepp (kr): ")
 
 riskscenario = RiskScenario(
@@ -19,8 +27,8 @@ riskscenario = RiskScenario(
     asset=asset,
     threat=threat,
     vulnerability=vulnerability,
-    tef=MonteCarloRange(probable=tef),
-    vuln_score=MonteCarloRange(probable=Decimal(vuln_score)/100),
+    tef=tef_modifier.multiply_factor(),
+    vuln_score=vuln_modifier.sum_factor(),
     loss_magnitude=MonteCarloRange(probable=loss_magnitude)
-    )
-print([riskscenario])
+)
+pprint.pp(riskscenario)
