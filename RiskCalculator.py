@@ -1,9 +1,7 @@
-from decimal import Decimal
 from internal.montecarlo import MonteCarloRange
 from internal.risk import RiskScenario
 import test.generate as g
 import pprint
-
 name = input("Namn på scenario: ")
 actor = input("Aktör: ")
 description = input("Beskrivning [auto]: ")
@@ -31,4 +29,6 @@ riskscenario = RiskScenario(
     vuln_score=vuln_modifier.sum_factor(),
     loss_magnitude=MonteCarloRange(probable=loss_magnitude)
 )
-pprint.pp(riskscenario)
+pprint.pp(riskscenario.to_dict())
+pprint.pp(tef_modifier.to_dict())
+pprint.pp(vuln_modifier.to_dict())

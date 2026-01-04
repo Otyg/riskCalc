@@ -1,4 +1,3 @@
-import statistics
 from decimal import Decimal
 from .montecarlo import MonteCarloRange
 
@@ -7,13 +6,31 @@ class Alternative:
     def __init__(self, text: str = "", weight: MonteCarloRange = MonteCarloRange(probable=0.5)):
         self.text = text
         self.weight = weight
+    
+    def to_dict(self):
+        return {
+            "text": self.text,
+            "weight": self.weight.to_dict()
+        }
 
+    def __repr__(self):
+        return str(self.to_dict())
 
 class Question:
     def __init__(self, text: str = "", alternatives: list = []):
         self.text = text
         self.alternatives = alternatives
-        self.answer = ""
+        self.answer = Alternative()
+
+    def to_dict(self):
+        return {
+            "text": self.text,
+            "alternatives": self.alternatives,
+            "answer": self.answer.to_dict()
+        }
+
+    def __repr__(self):
+        return str(self.to_dict())
 
     def add(self, alternative: Alternative = Alternative()):
         self.alternatives.append(alternative)
@@ -32,7 +49,16 @@ class Questionaire:
     def __init__(self, factor: str = "", questions: list = []):
         self.factor = factor
         self.questions = questions
+        self.factor_mul = MonteCarloRange(probable=0.5)
         self.factor_sum = MonteCarloRange(probable=0.5)
+
+    def to_dict(self):
+        return {
+            "factor": self.factor,
+            "questions": self.questions,
+            "factor_mul": self.factor_mul.to_dict(),
+            "factor_sum": self.factor_sum.to_dict()
+        }
 
     def append_question(self, question: Question = Question()):
         self.questions.append(question)

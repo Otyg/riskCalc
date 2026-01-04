@@ -168,3 +168,6 @@ def vuln_questions():
     )
 
     return Questionaire(factor="vuln", questions=[q6, q7, q8, q9, q10])
+
+def to_dict():
+    return vuln_questions().to_dict()

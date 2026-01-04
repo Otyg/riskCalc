@@ -17,23 +17,36 @@ class MonteCarloRange:
             raise ValueError(
                 'Minimum is not less than or equal to probable or maximum is less than or equal to probable')
 
+    def to_dict(self):
+        return {
+            "min": self.min,
+            "probable": self.probable,
+            "max": self.max
+        }
+
     def __repr__(self):
-        return str({"min": self.min, "probable": self.probable, "max": self.max})
+        return str(self.to_dict())
 
 
 class MonteCarloSimulation:
     def __init__(self, range: MonteCarloRange):
-        if not (range.min == range.max == range.probable):
-            rng = np.random.default_rng()
-            self.__samples = rng.triangular(
-                left=range.min, mode=range.probable, right=range.max, size=1000000)
-            self.probable = Decimal(statistics.mode(self.__samples))
-            self.max = Decimal(np.max(self.__samples))
-            self.min = Decimal(np.min(self.__samples))
-        else:
+        if (range.min == range.max == range.probable):
             self.probable = Decimal(range.probable)
             self.max = Decimal(range.probable*1.5)
             self.min = Decimal(range.probable/1.5)
+        
+        rng = np.random.default_rng()
+        self.__samples = rng.triangular(left=range.min, mode=range.probable, right=range.max, size=100000)
+        self.probable = Decimal(statistics.mode(self.__samples))
+        self.max = Decimal(np.max(self.__samples))
+        self.min = Decimal(np.min(self.__samples))
 
+    def to_dict(self):
+        return {
+            "min": self.min,
+            "probable": self.probable,
+            "max": self.max,
+            "samples": self.__samples
+        }
     def __repr__(self):
-        return str({"min": self.min, "probable": self.probable, "max": self.max})
+        return str(self.to_dict())

@@ -24,11 +24,22 @@ class RiskScenario:
     def auto_desc(self):
         self.description = f"Risk att {self.actor} utnyttjar {self.vulnerability} för att realisera {self.threat} mot {self.asset}."
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "actor": self.actor,
+            "asset": self.asset,
+            "threat": self.threat,
+            "vulnerability": self.vulnerability,
+            "description": self.description,
+            "risk": self.risk.to_dict()
+        }
+    
     def __str__(self):
         return self.name + "\n" + self.description + "\n" + "Förväntad årlig förlust: " + str(round(self.risk.annual_loss_expectancy.min, 2)) + " SEK <= " + str(round(self.risk.annual_loss_expectancy.probable, 2)) + " SEK <= " + str(round(self.risk.annual_loss_expectancy.max, 2)) + " SEK"
 
     def __repr__(self):
-        return str({"name": self.name, "actor": self.actor, "desc": self.description, "asset": self.asset, "threat": self.threat, "vuln": self.vulnerability, "risk": self.risk})
+        return str(self.to_dict())
 
 
 class Risk:
@@ -52,5 +63,14 @@ class Risk:
                                    probable=self.loss_event_frequency.probable*self.loss_magnitude.probable)
         self.annual_loss_expectancy = MonteCarloSimulation(self.ale)
 
+    def to_dict(self):
+        return {
+            "threat_event_frequency": self.threat_event_frequency.to_dict(),
+            "vulnerability": self.vuln_score.to_dict(),
+            "loss_event_frequency": self.loss_event_frequency.to_dict(),
+            "loss_magnitude": self.loss_magnitude.to_dict(),
+            "annual_loss_expectancy": self.annual_loss_expectancy.to_dict()
+        }
+
     def __repr__(self):
-        return str({"tef": self.threat_event_frequency, "vuln": self.vuln_score, "lef": self.loss_event_frequency, "lm": self.loss_magnitude, "ale_range": self.ale, "ale": self.annual_loss_expectancy})
+        return str(self.to_dict())
