@@ -3,7 +3,7 @@ import statistics
 from decimal import *
 
 
-class MonteCarloRange:
+class MonteCarloRange():
     def __init__(self, min: Decimal = Decimal(0.00), probable: Decimal = Decimal(0.00), max: Decimal = Decimal(0.00)):
         self.max = Decimal(max)
         self.min = Decimal(min)
@@ -19,16 +19,16 @@ class MonteCarloRange:
 
     def to_dict(self):
         return {
-            "min": self.min,
-            "probable": self.probable,
-            "max": self.max
+            "min": float(self.min),
+            "probable": float(self.probable),
+            "max": float(self.max)
         }
 
     def __repr__(self):
         return str(self.to_dict())
 
 
-class MonteCarloSimulation:
+class MonteCarloSimulation():
     def __init__(self, range: MonteCarloRange):
         if (range.min == range.max == range.probable):
             self.probable = Decimal(range.probable)
@@ -44,11 +44,11 @@ class MonteCarloSimulation:
 
     def to_dict(self):
         return {
-            "min": self.min,
-            "probable": self.probable,
-            "max": self.max,
-            "p90": self.p90,
-            "samples": self.__samples
+            "min": float(self.min),
+            "probable": float(self.probable),
+            "max": float(self.max),
+            "p90": float(self.p90),
+            #"samples": self.__samples.tolist()
         }
     def __repr__(self):
         return str(self.to_dict())

@@ -1,14 +1,16 @@
+from internal.questionaire import Questionaires
 from .montecarlo import *
 from decimal import *
 
 
-class RiskScenario:
+class RiskScenario():
     def __init__(self, name: str = "", actor: str = "", description: str = "", asset: str = "", threat: str = "", vulnerability: str = "",
                  tef: MonteCarloRange = MonteCarloRange(probable=Decimal(0.5)),
                  vuln_score: MonteCarloRange = MonteCarloRange(
                      probable=Decimal(0.1)),
                  loss_magnitude: MonteCarloRange = MonteCarloRange(
-                     probable=Decimal(10000))
+                     probable=Decimal(10000)),
+                 questionaires: Questionaires = Questionaires()
                  ):
         self.name = name
         self.actor = actor
@@ -18,6 +20,7 @@ class RiskScenario:
         self.vulnerability = vulnerability
         self.risk = Risk(tef=tef, vuln_score=vuln_score,
                          loss_magnitude=loss_magnitude)
+        self.questionaires = questionaires
         if not description:
             self.description = self.auto_desc()
 
@@ -32,7 +35,8 @@ class RiskScenario:
             "threat": self.threat,
             "vulnerability": self.vulnerability,
             "description": self.description,
-            "risk": self.risk.to_dict()
+            "risk": self.risk.to_dict(),
+            "questionaires": self.questionaires.to_dict()
         }
     
     def __str__(self):
@@ -42,7 +46,7 @@ class RiskScenario:
         return str(self.to_dict())
 
 
-class Risk:
+class Risk():
     def __init__(self, tef: MonteCarloRange = MonteCarloRange(probable=Decimal(0.5)),
                  vuln_score: MonteCarloRange = MonteCarloRange(
                      probable=Decimal(0.1)),

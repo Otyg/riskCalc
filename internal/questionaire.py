@@ -3,7 +3,7 @@ import statistics
 from .montecarlo import MonteCarloRange
 
 
-class Alternative:
+class Alternative():
     def __init__(self, text: str = "", weight: MonteCarloRange = MonteCarloRange(probable=0.5)):
         self.text = text
         self.weight = weight
@@ -17,7 +17,7 @@ class Alternative:
     def __repr__(self):
         return str(self.to_dict())
 
-class Question:
+class Question():
     def __init__(self, text: str = "", alternatives: list = []):
         self.text = text
         self.alternatives = alternatives
@@ -46,7 +46,7 @@ class Question:
         self.answer = self.alternatives[int(answer)]
 
 
-class Questionaire:
+class Questionaire():
     def __init__(self, factor: str = "", questions: list = []):
         self.factor = factor
         self.questions = questions
@@ -109,3 +109,18 @@ class Questionaire:
 
     def mean(self):
         return MonteCarloRange(min=self.factor_sum.min/len(self.questions), max=self.factor_sum.max/len(self.questions), probable=self.factor_sum.probable/len(self.questions))
+    
+class Questionaires:
+    def __init__(self, tef: Questionaire=Questionaire(), vuln:Questionaire=Questionaire(), lm:Questionaire=Questionaire()):
+        self.questionaires={
+            'tef': tef,
+            'vuln': vuln,
+            'lm': lm
+        }
+
+    def to_dict(self):
+        return {
+            'tef': self.questionaires['tef'].to_dict(),
+            'vuln': self.questionaires['vuln'].to_dict(),
+            'lm': self.questionaires['lm'].to_dict(),
+        }

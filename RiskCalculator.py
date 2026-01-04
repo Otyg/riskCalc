@@ -1,8 +1,12 @@
 from decimal import Decimal
 from internal.montecarlo import MonteCarloRange
+from internal.questionaire import Questionaires
 from internal.risk import RiskScenario
+from internal.util import ComplexEncoder
 import test.generate as g
-import pprint
+import json
+import codecs
+
 name = input("Namn på scenario: ")
 actor = input("Aktör: ")
 asset = input("Hotad tillgång: ")
@@ -39,7 +43,7 @@ for q in loss_modifier.questions:
     q.set_answer(alt)
 lm = loss_modifier.range()
 loss_magnitude = MonteCarloRange(min=Decimal(lm.min*turn_around), probable=Decimal(lm.probable*turn_around), max=Decimal(lm.max*turn_around))
-
+questionaires = Questionaires(tef=tef_modifier, vuln=vuln_modifier, lm=loss_modifier)
 riskscenario = RiskScenario(
     name=name,
     actor=actor,
@@ -49,9 +53,7 @@ riskscenario = RiskScenario(
     vulnerability=vulnerability,
     tef=tef_modifier.multiply_factor(),
     vuln_score=vuln_modifier.sum_factor(),
-    loss_magnitude=loss_magnitude
+    loss_magnitude=loss_magnitude,
+    questionaires=questionaires
 )
-pprint.pp(riskscenario.to_dict())
-pprint.pp(tef_modifier.to_dict())
-pprint.pp(vuln_modifier.to_dict())
-pprint.pp(loss_modifier.to_dict())
+json.dump(riskscenario.to_dict(), codecs.open('test.json', 'w', encoding='utf-8'), cls=ComplexEncoder)
