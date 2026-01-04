@@ -1,4 +1,5 @@
 from decimal import Decimal
+import statistics
 from .montecarlo import MonteCarloRange
 
 
@@ -96,6 +97,15 @@ class Questionaire:
             if factor_min > q.answer.weight.min:
                 factor_min = q.answer.weight.min
         return Decimal(factor_min)
+
+    def mode(self):
+        mode=[]
+        for q in self.questions:
+            mode.append(q.answer.weight.probable)
+        return Decimal(statistics.mode(mode))
+
+    def range(self):
+        return MonteCarloRange(min=self.min(), probable=self.mode(), max=self.max())
 
     def mean(self):
         return MonteCarloRange(min=self.factor_sum.min/len(self.questions), max=self.factor_sum.max/len(self.questions), probable=self.factor_sum.probable/len(self.questions))

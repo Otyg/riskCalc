@@ -32,12 +32,13 @@ class MonteCarloSimulation:
     def __init__(self, range: MonteCarloRange):
         if (range.min == range.max == range.probable):
             self.probable = Decimal(range.probable)
-            self.max = Decimal(range.probable*1.5)
-            self.min = Decimal(range.probable/1.5)
+            range.max = Decimal(range.probable*1.5)
+            range.min = Decimal(range.probable/1.5)
         
         rng = np.random.default_rng()
         self.__samples = rng.triangular(left=range.min, mode=range.probable, right=range.max, size=100000)
         self.probable = Decimal(statistics.mode(self.__samples))
+        self.p90 = Decimal(np.percentile(self.__samples, 90))
         self.max = Decimal(np.max(self.__samples))
         self.min = Decimal(np.min(self.__samples))
 
@@ -46,6 +47,7 @@ class MonteCarloSimulation:
             "min": self.min,
             "probable": self.probable,
             "max": self.max,
+            "p90": self.p90,
             "samples": self.__samples
         }
     def __repr__(self):

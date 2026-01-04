@@ -1,5 +1,34 @@
 from internal.questionaire import *
 from decimal import Decimal
+LEVEL_1_RANGE = MonteCarloRange(
+    min=Decimal(0.001),
+    probable=Decimal(0.005),
+    max=Decimal(0.01)
+)
+
+LEVEL_2_RANGE = MonteCarloRange(
+    min=Decimal(0.005),
+    probable=Decimal(0.015),
+    max=Decimal(0.025)
+)
+
+LEVEL_3_RANGE = MonteCarloRange(
+    min=Decimal(0.015),
+    probable=Decimal(0.03),
+    max=Decimal(0.04)
+)
+
+LEVEL_4_RANGE = MonteCarloRange(
+    min=Decimal(0.03),
+    probable=Decimal(0.05),
+    max=Decimal(0.065)
+)
+
+LEVEL_5_RANGE = MonteCarloRange(
+    min=Decimal(0.05),
+    probable=Decimal(0.08),
+    max=Decimal(0.08)
+)
 
 
 def tef_questions():
@@ -168,6 +197,81 @@ def vuln_questions():
     )
 
     return Questionaire(factor="vuln", questions=[q6, q7, q8, q9, q10])
+
+def consequence_questions():
+    questions = [
+        Question(
+            text="Om händelsen inträffar, vilken är den allvarligaste rimliga konsekvensen för människors liv och hälsa?",
+            alternatives=[
+                Alternative(text="Inga eller obetydliga personskador utan medicinsk behandling", weight=LEVEL_1_RANGE),
+                Alternative(text="Lindriga personskador eller tillfällig arbetsfrånvaro", weight=LEVEL_2_RANGE),
+                Alternative(text="Allvarlig personskada med långvarig frånvaro eller bestående men", weight=LEVEL_3_RANGE),
+                Alternative(text="Mycket allvarlig skada, bestående men eller enstaka dödsfall", weight=LEVEL_4_RANGE),
+                Alternative(text="Flera dödsfall eller mycket omfattande påverkan på människoliv", weight=LEVEL_5_RANGE),
+            ]
+        ),
+        Question(
+            text="Om information röjs till obehöriga, vilken är den allvarligaste rimliga konsekvensen?",
+            alternatives=[
+                Alternative(text="Röjande av offentliga eller redan allmänt kända uppgifter", weight=LEVEL_1_RANGE),
+                Alternative(text="Begränsat röjande av vanliga personuppgifter", weight=LEVEL_2_RANGE),
+                Alternative(text="Röjande av känsliga personuppgifter, hälsodata eller OSL-uppgifter i enskilda fall", weight=LEVEL_3_RANGE),
+                Alternative(text="Omfattande röjande av känsliga personuppgifter eller sekretessbelagd information", weight=LEVEL_4_RANGE),
+                Alternative(text="Mycket omfattande eller systematiskt röjande med allvarliga och långvariga konsekvenser", weight=LEVEL_5_RANGE),
+            ]
+        ),
+        Question(
+            text="Om information blir felaktig, manipulerad eller ofullständig, vilken är den allvarligaste rimliga konsekvensen?",
+            alternatives=[
+                Alternative(text="Mindre fel utan faktisk påverkan", weight=LEVEL_1_RANGE),
+                Alternative(text="Fel som kräver korrigering eller leder till mindre felbeslut", weight=LEVEL_2_RANGE),
+                Alternative(text="Fel som påverkar individers rättigheter eller viktiga beslut", weight=LEVEL_3_RANGE),
+                Alternative(text="Systematiska eller allvarliga fel i information", weight=LEVEL_4_RANGE),
+                Alternative(text="Utbredd och långvarig integritetsförlust med mycket allvarliga konsekvenser", weight=LEVEL_5_RANGE),
+            ]
+        ),
+        Question(
+            text="Om information, system eller tjänster inte är tillgängliga vid behov, vilken är den allvarligaste rimliga konsekvensen?",
+            alternatives=[
+                Alternative(text="Kortvarig störning utan märkbar påverkan", weight=LEVEL_1_RANGE),
+                Alternative(text="Tillfällig otillgänglighet med begränsad verksamhetspåverkan", weight=LEVEL_2_RANGE),
+                Alternative(text="Avbrott som påverkar viktiga processer eller tjänster", weight=LEVEL_3_RANGE),
+                Alternative(text="Allvarlig otillgänglighet med betydande verksamhetspåverkan", weight=LEVEL_4_RANGE),
+                Alternative(text="Långvarig eller omfattande otillgänglighet i samhällsviktiga system", weight=LEVEL_5_RANGE),
+            ]
+        ),
+        Question(
+            text="Om händelsen blir känd externt, vilken är den allvarligaste rimliga påverkanen på förtroendet för sjukhuset?",
+            alternatives=[
+                Alternative(text="Begränsad intern negativ uppmärksamhet", weight=LEVEL_1_RANGE),
+                Alternative(text="Lokal eller begränsad negativ uppmärksamhet", weight=LEVEL_2_RANGE),
+                Alternative(text="Påtaglig förtroendeskada och mediabevakning", weight=LEVEL_3_RANGE),
+                Alternative(text="Omfattande nationell negativ mediebevakning", weight=LEVEL_4_RANGE),
+                Alternative(text="Mycket allvarlig och varaktig förtroendekris", weight=LEVEL_5_RANGE),
+            ]
+        ),
+        Question(
+            text="Vilken är den allvarligaste rimliga konsekvensen för vårdproduktion och patientsäkerhet?",
+            alternatives=[
+                Alternative(text="Marginell påverkan på enskilda vårdmoment", weight=LEVEL_1_RANGE),
+                Alternative(text="Tillfällig påverkan på vårdflöden eller väntetider", weight=LEVEL_2_RANGE),
+                Alternative(text="Påtaglig påverkan på klinisk verksamhet, omplanering krävs", weight=LEVEL_3_RANGE),
+                Alternative(text="Allvarliga störningar i vårdproduktionen eller patientsäkerheten", weight=LEVEL_4_RANGE),
+                Alternative(text="Omfattande och långvarig påverkan med risk för allvarliga vårdskador eller dödsfall", weight=LEVEL_5_RANGE),
+            ]
+        ),
+        Question(
+            text="Vilken är den allvarligaste rimliga konsekvensen för forskningsverksamheten?",
+            alternatives=[
+                Alternative(text="Försumbar påverkan på forskningsaktiviteter", weight=LEVEL_1_RANGE),
+                Alternative(text="Tillfällig försening i forskningsprojekt", weight=LEVEL_2_RANGE),
+                Alternative(text="Allvarlig försening eller omplanering av forskningsprojekt", weight=LEVEL_3_RANGE),
+                Alternative(text="Avbrott i forskning med risk för förlorad finansiering eller regelbrister", weight=LEVEL_4_RANGE),
+                Alternative(text="Omfattande och långvarig påverkan med förlorat förtroende hos finansiärer", weight=LEVEL_5_RANGE),
+            ]
+        )
+    ]
+    return Questionaire(factor="consequence", questions=questions)
 
 def to_dict():
     return vuln_questions().to_dict()
