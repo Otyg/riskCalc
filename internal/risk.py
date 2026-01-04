@@ -19,10 +19,10 @@ class RiskScenario:
         self.risk = Risk(tef=tef, vuln_score=vuln_score,
                          loss_magnitude=loss_magnitude)
         if not description:
-            self.auto_desc()
+            self.description = self.auto_desc()
 
     def auto_desc(self):
-        self.description = f"Risk att {self.actor} utnyttjar {self.vulnerability} för att realisera {self.threat} mot {self.asset}."
+        return f"Risk att {self.actor} utnyttjar {self.vulnerability} för att realisera {self.threat} mot {self.asset}."
 
     def to_dict(self):
         return {

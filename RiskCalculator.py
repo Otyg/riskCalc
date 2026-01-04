@@ -4,10 +4,10 @@ import test.generate as g
 import pprint
 name = input("Namn på scenario: ")
 actor = input("Aktör: ")
-description = input("Beskrivning [auto]: ")
 asset = input("Hotad tillgång: ")
 threat = input("Hot: ")
 vulnerability = input("Sårbarhet: ")
+description = input(f"Beskrivning [auto: Risk att {actor} utnyttjar {vulnerability} för att realisera {threat} mot {asset}.]: ")
 tef_modifier = g.tef_questions()
 for q in tef_modifier.questions:
     alt = input(q.text + " ")
