@@ -42,8 +42,13 @@ class Question():
     def get_alternatives(self):
         return self.alternatives.copy()
 
-    def set_answer(self, answer: int = -1):
-        self.answer = self.alternatives[int(answer)]
+    def set_answer(self, answer):
+        if isinstance(answer, str):
+            self.answer = self.alternatives[int(answer)]
+        elif isinstance(answer, int):
+            self.answer = self.alternatives[answer]
+        elif isinstance(answer, Alternative):
+            self.answer = answer
 
 
 class Questionaire():
@@ -60,6 +65,19 @@ class Questionaire():
             "factor_mul": self.factor_mul.to_dict(),
             "factor_sum": self.factor_sum.to_dict()
         }
+
+    def from_dict(self, dict:dict={}):
+        self.factor = dict['factor']
+        self.factor_mul = MonteCarloRange(min=Decimal(dict['factor_mul']['min']), probable=Decimal(dict['factor_mul']['probable']), max=Decimal(dict['factor_mul']['max']))
+        self.factor_sum = MonteCarloRange(min=Decimal(dict['factor_sum']['min']), probable=Decimal(dict['factor_sum']['probable']), max=Decimal(dict['factor_sum']['max']))
+        questions = []
+        for q in dict['questions']:
+            alternatives = []
+            for a in q['alternatives']:
+                alternatives.append(Alternative(text=a['text'], weight=MonteCarloRange(min=Decimal(a['weight']['min']), max=Decimal(a['weight']['max']), probable=Decimal(a['weight']['probable']))))
+            question = Question(q['text'], alternatives=alternatives)
+            question.set_answer(Alternative(text=q['answer']['text'], weight=MonteCarloRange(min=Decimal(q['answer']['weight']['min']), max=Decimal(q['answer']['weight']['max']), probable=Decimal(q['answer']['weight']['probable']))))
+            self.append_question(question=question)
 
     def append_question(self, question: Question = Question()):
         self.questions.append(question)
@@ -123,4 +141,16 @@ class Questionaires:
             'tef': self.questionaires['tef'].to_dict(),
             'vuln': self.questionaires['vuln'].to_dict(),
             'lm': self.questionaires['lm'].to_dict(),
+        }
+    def from_dict(self, dict:dict={}):
+        tef = Questionaire(factor=dict['tef']['factor'])
+        tef.from_dict(dict['tef'])
+        vuln = Questionaire(factor=dict['vuln']['factor'])
+        vuln.from_dict(dict['vuln'])
+        lm = Questionaire(factor=dict['lm']['factor'])
+        lm.from_dict(dict['lm'])
+        self.questionaires={
+            'tef': tef,
+            'vuln': vuln,
+            'lm': lm
         }
