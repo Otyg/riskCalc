@@ -57,8 +57,14 @@ class RiskScenario():
         lm.from_dict(dict['questionaires']['lm'])
         questionaires = Questionaires(tef=tef, vuln=vuln, lm=lm)
         self.questionaires = questionaires
+
     def __str__(self):
-        return self.name + "\n" + self.description + "\n" + "Förväntad årlig förlust: " + str(round(self.risk.annual_loss_expectancy.min, 2)) + " SEK <= " + str(round(self.risk.annual_loss_expectancy.probable, 2)) + " SEK <= " + str(round(self.risk.annual_loss_expectancy.max, 2)) + " SEK"
+        short = self.name + "\n" + self.description + "\n"
+        short += "Loss event frequency (x/år): " + str(round(self.risk.loss_event_frequency.probable)) + "\n"
+        short += "Loss magnitude (SEK): " + str(round(self.risk.loss_magnitude.probable)) + "\n"
+        short += "Förväntad årlig förlust: " + str(round(self.risk.annual_loss_expectancy.probable, 2)) + " - " 
+        short += str(round(self.risk.annual_loss_expectancy.p90, 2)) + " SEK"
+        return short
 
     def __repr__(self):
         return str(self.to_dict())

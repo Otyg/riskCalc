@@ -6,7 +6,7 @@ from internal.util import ComplexEncoder
 import test.generate as g
 import json
 import codecs
-import pprint
+
 name = input("Namn på scenario: ")
 actor = input("Aktör: ")
 asset = input("Hotad tillgång: ")
@@ -58,9 +58,3 @@ riskscenario = RiskScenario(
 )
 json.dump(riskscenario.to_dict(), codecs.open('test.json', 'w', encoding='utf-8'), cls=ComplexEncoder)
 
-with open("test.json", mode="r", encoding="utf-8") as jsonfile: 
-    data = json.load(jsonfile)
-
-new_scenario = RiskScenario()
-new_scenario.from_dict(data)
-print(str(riskscenario.risk.annual_loss_expectancy.probable) + " = " + str(new_scenario.risk.annual_loss_expectancy.probable))
