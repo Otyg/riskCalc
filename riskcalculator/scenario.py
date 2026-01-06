@@ -1,6 +1,6 @@
-from internal.discret_scale import DiscreteRisk
-from internal.questionaire import Questionaire, Questionaires
-from internal.risk import Risk
+from riskcalculator.discret_scale import DiscreteRisk
+from riskcalculator.questionaire import Questionaire, Questionaires
+from riskcalculator.risk import Risk
 
 
 class RiskScenario():

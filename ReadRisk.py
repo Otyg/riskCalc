@@ -1,4 +1,4 @@
-from internal.scenario import RiskScenario
+from riskcalculator.scenario import RiskScenario
 import json
 
 with open('test.json', mode='r', encoding='utf-8') as file:

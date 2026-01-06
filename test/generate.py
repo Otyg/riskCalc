@@ -1,4 +1,4 @@
-from internal.questionaire import *
+from riskcalculator.questionaire import *
 from decimal import Decimal
 LEVEL_1_RANGE = MonteCarloRange(
     min=Decimal(0.001),

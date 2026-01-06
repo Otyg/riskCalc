@@ -1,6 +1,6 @@
 from decimal import Decimal
-from internal.montecarlo import MonteCarloRange
-from internal.risk import Risk
+from riskcalculator.montecarlo import MonteCarloRange
+from riskcalculator.risk import Risk
 class DiscreetThreshold():
     def __init__(self, probability:list=[{'value':1, 'text':'Mycket låg', 'threshold': float(0.1)},
                                          {'value':2, 'text':'Låg', 'threshold': float(0.5)},
