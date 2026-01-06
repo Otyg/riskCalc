@@ -60,3 +60,6 @@ class MonteCarloSimulation():
 
     def __repr__(self):
         return str(self.to_dict())
+    
+    def __str__(self):
+        return f"min: {str(self.min)} mode: {str(self.probable)} p90: {str(self.p90)} max: {str(self.max)}"

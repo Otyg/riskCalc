@@ -1,12 +1,15 @@
 from decimal import Decimal
+from internal.discret_scale import DiscreteRisk
 from internal.montecarlo import MonteCarloRange
 from internal.questionaire import Questionaires
-from internal.risk import RiskScenario
+from internal.risk import Risk
+from internal.scenario import RiskScenario
 from internal.util import ComplexEncoder
 import test.generate as g
 import json
 import codecs
 
+turn_around = int(input("Vad är organisationens årliga omsättning (SEK)? "))
 name = input("Namn på scenario: ")
 actor = input("Aktör: ")
 asset = input("Hotad tillgång: ")
@@ -32,7 +35,7 @@ for q in vuln_modifier.questions:
     alt = input(q.text + "\n" + alternatives + "Svar [0-4]: ")
     q.set_answer(alt)
 loss_modifier = g.consequence_questions()
-turn_around = int(input("Vad är organisationens årliga omsättning (SEK)? "))
+
 for q in loss_modifier.questions:
     i = 0
     alternatives = ""
@@ -42,8 +45,12 @@ for q in loss_modifier.questions:
     alt = input(q.text + "\n" + alternatives + "Svar [0-4]: ")
     q.set_answer(alt)
 lm = loss_modifier.range()
-loss_magnitude = MonteCarloRange(min=Decimal(lm.min*turn_around), probable=Decimal(lm.probable*turn_around), max=Decimal(lm.max*turn_around))
+loss_magnitude = MonteCarloRange(min=Decimal(lm.min), probable=Decimal(lm.probable), max=Decimal(lm.max))
 questionaires = Questionaires(tef=tef_modifier, vuln=vuln_modifier, lm=loss_modifier)
+risk = DiscreteRisk(tef=tef_modifier.multiply_factor(),
+    vuln_score=vuln_modifier.sum_factor(),
+    loss_magnitude=loss_magnitude,
+    budget=turn_around)
 riskscenario = RiskScenario(
     name=name,
     actor=actor,
@@ -51,10 +58,9 @@ riskscenario = RiskScenario(
     asset=asset,
     threat=threat,
     vulnerability=vulnerability,
-    tef=tef_modifier.multiply_factor(),
-    vuln_score=vuln_modifier.sum_factor(),
-    loss_magnitude=loss_magnitude,
+    risk=risk,
     questionaires=questionaires
 )
 json.dump(riskscenario.to_dict(), codecs.open('test.json', 'w', encoding='utf-8'), cls=ComplexEncoder)
+print(riskscenario)
 
