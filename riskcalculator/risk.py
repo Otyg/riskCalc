@@ -1,4 +1,4 @@
-from montecarlo import *
+from riskcalculator.montecarlo import *
 from decimal import *
 
 

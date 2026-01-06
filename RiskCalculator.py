@@ -77,7 +77,8 @@ riskscenario = RiskScenario(
     questionaires=questionaires
 )
 
-json.dump(riskscenario_disc.to_dict(), codecs.open('test.json', 'w', encoding='utf-8'), cls=ComplexEncoder)
+json.dump(riskscenario_disc.to_dict(), codecs.open('test_disc.json', 'w', encoding='utf-8'), cls=ComplexEncoder)
+json.dump(riskscenario.to_dict(), codecs.open('test_ale.json', 'w', encoding='utf-8'), cls=ComplexEncoder)
 print(riskscenario_disc)
 print(riskscenario)
 
