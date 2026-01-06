@@ -1,5 +1,4 @@
-from internal.questionaire import Questionaire, Questionaires
-from .montecarlo import *
+from montecarlo import *
 from decimal import *
 
 
