@@ -24,9 +24,12 @@ class Question():
         self.answer = Alternative()
 
     def to_dict(self):
+        alternatives = []
+        for a in self.alternatives:
+            alternatives.append(a.to_dict())
         return {
             "text": self.text,
-            "alternatives": self.alternatives,
+            "alternatives": alternatives,
             "answer": self.answer.to_dict()
         }
 
@@ -52,24 +55,30 @@ class Question():
 
 
 class Questionaire():
-    def __init__(self, factor: str = "", questions: list = []):
+    def __init__(self, factor: str="", questions: list = None):
+        if questions is None:
+            self.questions = []
+        else:
+            self.questions = list(questions)
         self.factor = factor
-        self.questions = questions
         self.factor_mul = MonteCarloRange(probable=0.5)
         self.factor_sum = MonteCarloRange(probable=0.5)
 
     def to_dict(self):
+        questions = []
+        for q in self.questions:
+            questions.append(q.to_dict())
         return {
             "factor": self.factor,
-            "questions": self.questions,
+            "questions": questions,
             "factor_mul": self.factor_mul.to_dict(),
             "factor_sum": self.factor_sum.to_dict()
         }
 
     def from_dict(self, dict:dict={}):
         self.factor = dict['factor']
-        self.factor_mul = MonteCarloRange(min=Decimal(dict['factor_mul']['min']), probable=Decimal(dict['factor_mul']['probable']), max=Decimal(dict['factor_mul']['max']))
-        self.factor_sum = MonteCarloRange(min=Decimal(dict['factor_sum']['min']), probable=Decimal(dict['factor_sum']['probable']), max=Decimal(dict['factor_sum']['max']))
+        print(self.factor)
+
         questions = []
         for q in dict['questions']:
             alternatives = []
@@ -78,6 +87,9 @@ class Questionaire():
             question = Question(q['text'], alternatives=alternatives)
             question.set_answer(Alternative(text=q['answer']['text'], weight=MonteCarloRange(min=Decimal(q['answer']['weight']['min']), max=Decimal(q['answer']['weight']['max']), probable=Decimal(q['answer']['weight']['probable']))))
             self.append_question(question=question)
+            print(q)
+        self.sum_factor()
+        self.multiply_factor()
 
     def append_question(self, question: Question = Question()):
         self.questions.append(question)
@@ -90,7 +102,10 @@ class Questionaire():
             max += q.answer.weight.max
             min += q.answer.weight.min
             mode += q.answer.weight.probable
-        self.factor_sum = MonteCarloRange(min=min, max=max, probable=mode)
+        if (max == min == mode == 0):
+            self.factor_sum = 0
+        else:
+            self.factor_sum = MonteCarloRange(min=min, max=max, probable=mode)
         return self.factor_sum
 
     def multiply_factor(self):
@@ -99,7 +114,10 @@ class Questionaire():
             max *= q.answer.weight.max
             min *= q.answer.weight.min
             mode *= q.answer.weight.probable
-        self.factor_mul = MonteCarloRange(min=min, max=max, probable=mode)
+        if (max == min == mode == 1):
+            self.factor_mul = 0
+        else:
+            self.factor_mul = MonteCarloRange(min=min, max=max, probable=mode)
         return self.factor_mul
 
     def max(self):

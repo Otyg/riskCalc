@@ -35,8 +35,9 @@
 
       <h4>Risk</h4>
       <div class="kv">
-        <div>Loss event frequency</div><div>{{ risk.get("loss_event_frequency","").get("probable", "") }} händelser/år</div>
-        <div>Loss magnitude</div><div>{{ risk.get("loss_magnitude","").get("probable", "") }} % förlust av budget vid en incident</div>
+        <div>Budget: </div><div>{{ risk.get("budget","") }} {{ risk.get("currency","") }}/år</div>
+        <div>Loss event frequency</div><div>{{ risk.get("loss_event_frequency","").get("p90", "") }} händelser/år</div>
+        <div>Loss magnitude</div><div>{{ risk.get("loss_magnitude","").get("p90", "") }} % förlust av budget vid en incident</div>
         <div>Annual loss expectancy</div><div><strong>{{ risk.get("annual_loss_expectancy","").get("p90","") }}</strong> {{ risk.get("currency","") }}/år</div>
       </div>
 
@@ -50,8 +51,28 @@
           </div>
         </details>
       {% endif %}
-      <h4>Frågor</h4>
+      <h4>Frågor: Threat Event Frequency</h4>
       {% for q in s.get("questionaires", {}).get("tef", {}).get("questions", []) %}
+        <details style="margin-top: 10px;">
+          <summary>{{ q.get("text", "") }}</summary>
+          <div class="kv" style="margin-top: 8px;">
+            <div><strong>Answer</strong></div><div>{{ q.get("answer", "").get("text", "") }}</div>
+            <div><strong>Weight</strong></div><div>{{ q.get("answer", "").get("weight", "") }}</div>
+          </div>
+        </details>
+      {% endfor %}
+      <h4>Frågor: Vulnerability</h4>
+      {% for q in s.get("questionaires", {}).get("vuln", {}).get("questions", []) %}
+        <details style="margin-top: 10px;">
+          <summary>{{ q.get("text", "") }}</summary>
+          <div class="kv" style="margin-top: 8px;">
+            <div><strong>Answer</strong></div><div>{{ q.get("answer", "").get("text", "") }}</div>
+            <div><strong>Weight</strong></div><div>{{ q.get("answer", "").get("weight", "") }}</div>
+          </div>
+        </details>
+      {% endfor %}
+      <h4>Frågor: Loss Magnitude</h4>
+      {% for q in s.get("questionaires", {}).get("lm", {}).get("questions", []) %}
         <details style="margin-top: 10px;">
           <summary>{{ q.get("text", "") }}</summary>
           <div class="kv" style="margin-top: 8px;">

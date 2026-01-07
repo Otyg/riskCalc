@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from riskcalculator.util import ComplexEncoder
+
 
 @dataclass(frozen=True)
 class AnalysisListItem:
@@ -105,7 +107,7 @@ class DraftRepository:
     def save(self, draft_id: str, data: dict[str, Any]) -> None:
         p = self._path(draft_id)
         with p.open("w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+            json.dump(data, f, ensure_ascii=False, indent=2, cls=ComplexEncoder)
 
     def delete(self, draft_id: str) -> None:
         p = self._path(draft_id)

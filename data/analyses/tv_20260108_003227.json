@@ -1,0 +1,1088 @@
+{
+  "analysis_object": "TV",
+  "version": "1.0",
+  "date": "2026-01-01",
+  "scope": "Allt",
+  "owner": "jag",
+  "scenarios": [
+    {
+      "name": "Vatten",
+      "actor": "Eije",
+      "asset": "TV",
+      "threat": "vatten",
+      "vulnerability": "vattenhink",
+      "description": "Risk att Eije utnyttjar vattenhink för att realisera vatten mot TV.",
+      "risk": {
+        "threat_event_frequency": {
+          "min": 316.8,
+          "probable": 4428.900000000001,
+          "max": 8541.0
+        },
+        "vulnerability": {
+          "min": 0.26,
+          "probable": 0.41500000000000004,
+          "max": 0.5700000000000001
+        },
+        "loss_event_frequency": {
+          "min": 98.34532884666211,
+          "probable": 3246.0291702930035,
+          "max": 4859.596597972104,
+          "p90": 3800.949137129256
+        },
+        "loss_magnitude": {
+          "min": 0.001093686365738183,
+          "probable": 0.022984044092612316,
+          "max": 0.06495147109509171,
+          "p90": 0.050638026256677744
+        },
+        "annual_loss_expectancy": {
+          "min": 863165.3747868583,
+          "probable": 281891786.9435626,
+          "max": 314686749.33934516,
+          "p90": 245394029.21322516
+        },
+        "budget": 1000000.0,
+        "currency": "SEK",
+        "discrete_risk": {
+          "probability": 5,
+          "probability_text": "Mycket hög",
+          "consequence": 5,
+          "consequence_text": "Kritisk påverkan",
+          "risk": 25,
+          "risk_text": "Mycket hög"
+        },
+        "thresholds": {
+          "probability": [
+            {
+              "value": 1,
+              "text": "Mycket låg",
+              "threshold": 0.1
+            },
+            {
+              "value": 2,
+              "text": "Låg",
+              "threshold": 0.5
+            },
+            {
+              "value": 3,
+              "text": "Medel",
+              "threshold": 1.0
+            },
+            {
+              "value": 4,
+              "text": "Hög",
+              "threshold": 10.0
+            },
+            {
+              "value": 5,
+              "text": "Mycket hög",
+              "threshold": 10.01
+            }
+          ],
+          "consequence": [
+            {
+              "value": 1,
+              "text": "Försumbar påverkan",
+              "threshold": 0.001
+            },
+            {
+              "value": 2,
+              "text": "Begränsad påverkan",
+              "threshold": 0.005
+            },
+            {
+              "value": 3,
+              "text": "Märkbar påverkan",
+              "threshold": 0.02
+            },
+            {
+              "value": 4,
+              "text": "Allvarlig påverkan",
+              "threshold": 0.05
+            },
+            {
+              "value": 5,
+              "text": "Kritisk påverkan",
+              "threshold": 0.051
+            }
+          ],
+          "risk": [
+            {
+              "value": 0,
+              "text": "Mycket låg",
+              "threshold": 3
+            },
+            {
+              "value": 0,
+              "text": "Låg",
+              "threshold": 6
+            },
+            {
+              "value": 0,
+              "text": "Medel",
+              "threshold": 10
+            },
+            {
+              "value": 0,
+              "text": "Hög",
+              "threshold": 15
+            },
+            {
+              "value": 0,
+              "text": "Mycket hög",
+              "threshold": 25
+            }
+          ]
+        }
+      },
+      "questionaires": {
+        "tef": {
+          "factor": "tef",
+          "questions": [
+            {
+              "text": "Hur ofta observerar vi försök från denna typ av hotaktör att få åtkomst till tillgången?",
+              "alternatives": [
+                {
+                  "text": "Aldrig / mindre än en gång per 10 år",
+                  "weight": {
+                    "min": 0.05,
+                    "probable": 0.125,
+                    "max": 0.2
+                  }
+                },
+                {
+                  "text": "Mycket sällan (mindre än en gång per år)",
+                  "weight": {
+                    "min": 0.2,
+                    "probable": 0.55,
+                    "max": 0.9
+                  }
+                },
+                {
+                  "text": "Sällan (i snitt en gång per år)",
+                  "weight": {
+                    "min": 0.8,
+                    "probable": 1.65,
+                    "max": 2.5
+                  }
+                },
+                {
+                  "text": "Periodvis (ungefär en gång per kvartal)",
+                  "weight": {
+                    "min": 3.0,
+                    "probable": 4.5,
+                    "max": 6.0
+                  }
+                },
+                {
+                  "text": "Ofta (nästan dagligen)",
+                  "weight": {
+                    "min": 150.0,
+                    "probable": 257.5,
+                    "max": 365.0
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Ofta (nästan dagligen)",
+                "weight": {
+                  "min": 150.0,
+                  "probable": 257.5,
+                  "max": 365.0
+                }
+              }
+            },
+            {
+              "text": "Hur attraktiv är tillgången för hotaktören?",
+              "alternatives": [
+                {
+                  "text": "Mycket låg attraktivitet",
+                  "weight": {
+                    "min": 0.2,
+                    "probable": 0.35000000000000003,
+                    "max": 0.5
+                  }
+                },
+                {
+                  "text": "Låg attraktivitet",
+                  "weight": {
+                    "min": 0.5,
+                    "probable": 0.7000000000000001,
+                    "max": 0.9
+                  }
+                },
+                {
+                  "text": "Medelattraktiv",
+                  "weight": {
+                    "min": 0.9,
+                    "probable": 1.05,
+                    "max": 1.2
+                  }
+                },
+                {
+                  "text": "Hög attraktivitet",
+                  "weight": {
+                    "min": 1.2,
+                    "probable": 1.6,
+                    "max": 2.0
+                  }
+                },
+                {
+                  "text": "Mycket hög attraktivitet",
+                  "weight": {
+                    "min": 2.0,
+                    "probable": 3.0,
+                    "max": 4.0
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Hög attraktivitet",
+                "weight": {
+                  "min": 1.2,
+                  "probable": 1.6,
+                  "max": 2.0
+                }
+              }
+            },
+            {
+              "text": "Hur resursstark och motiverad är den aktuella hotaktören?",
+              "alternatives": [
+                {
+                  "text": "Låg förmåga & låg motivation",
+                  "weight": {
+                    "min": 0.3,
+                    "probable": 0.55,
+                    "max": 0.8
+                  }
+                },
+                {
+                  "text": "Låg–medel förmåga eller motivation",
+                  "weight": {
+                    "min": 0.8,
+                    "probable": 1.05,
+                    "max": 1.3
+                  }
+                },
+                {
+                  "text": "Medelnivå",
+                  "weight": {
+                    "min": 1.0,
+                    "probable": 1.4,
+                    "max": 1.8
+                  }
+                },
+                {
+                  "text": "Hög förmåga eller motivation",
+                  "weight": {
+                    "min": 1.8,
+                    "probable": 2.65,
+                    "max": 3.5
+                  }
+                },
+                {
+                  "text": "Mycket hög förmåga & hög motivation",
+                  "weight": {
+                    "min": 3.5,
+                    "probable": 5.75,
+                    "max": 8.0
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Medelnivå",
+                "weight": {
+                  "min": 1.0,
+                  "probable": 1.4,
+                  "max": 1.8
+                }
+              }
+            },
+            {
+              "text": "I vilken utsträckning är systemet eller processen exponerad mot hotaktören?",
+              "alternatives": [
+                {
+                  "text": "Mycket begränsad exponering (intern, strikt åtkomst)",
+                  "weight": {
+                    "min": 0.3,
+                    "probable": 0.55,
+                    "max": 0.8
+                  }
+                },
+                {
+                  "text": "Begränsad exponering (VPN/åtkomstkontroller)",
+                  "weight": {
+                    "min": 0.7,
+                    "probable": 0.95,
+                    "max": 1.2
+                  }
+                },
+                {
+                  "text": "Måttlig exponering (delvis internetnära/beroenden)",
+                  "weight": {
+                    "min": 1.0,
+                    "probable": 1.3,
+                    "max": 1.6
+                  }
+                },
+                {
+                  "text": "Hög exponering (flera åtkomstytor, öppna API:er)",
+                  "weight": {
+                    "min": 1.4,
+                    "probable": 2.0,
+                    "max": 2.6
+                  }
+                },
+                {
+                  "text": "Mycket hög exponering (internetexponerat, stor attackyta)",
+                  "weight": {
+                    "min": 2.2,
+                    "probable": 3.6,
+                    "max": 5.0
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Mycket hög exponering (internetexponerat, stor attackyta)",
+                "weight": {
+                  "min": 2.2,
+                  "probable": 3.6,
+                  "max": 5.0
+                }
+              }
+            },
+            {
+              "text": "Har vi historik över incidenter eller försök relaterade till detta hot?",
+              "alternatives": [
+                {
+                  "text": "Ingen historik",
+                  "weight": {
+                    "min": 0.3,
+                    "probable": 0.55,
+                    "max": 0.8
+                  }
+                },
+                {
+                  "text": "Enstaka mindre incidenter",
+                  "weight": {
+                    "min": 0.8,
+                    "probable": 1.05,
+                    "max": 1.3
+                  }
+                },
+                {
+                  "text": "Regelbundet förekommande",
+                  "weight": {
+                    "min": 1.2,
+                    "probable": 1.7000000000000002,
+                    "max": 2.2
+                  }
+                },
+                {
+                  "text": "Återkommande större incidenter",
+                  "weight": {
+                    "min": 1.8,
+                    "probable": 2.65,
+                    "max": 3.5
+                  }
+                },
+                {
+                  "text": "Frekvent och nyligen förekommande",
+                  "weight": {
+                    "min": 2.5,
+                    "probable": 3.75,
+                    "max": 5.0
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Enstaka mindre incidenter",
+                "weight": {
+                  "min": 0.8,
+                  "probable": 1.05,
+                  "max": 1.3
+                }
+              }
+            }
+          ],
+          "factor_mul": {
+            "min": 316.8,
+            "probable": 4428.900000000001,
+            "max": 8541.0
+          },
+          "factor_sum": {
+            "min": 1.25,
+            "probable": 3.125,
+            "max": 5.0
+          }
+        },
+        "vuln": {
+          "factor": "vuln",
+          "questions": [
+            {
+              "text": "Hur starka är våra kontroller i relation till hotaktörens förmåga?",
+              "alternatives": [
+                {
+                  "text": "Mycket starka kontroller",
+                  "weight": {
+                    "min": 0.0,
+                    "probable": 0.025,
+                    "max": 0.05
+                  }
+                },
+                {
+                  "text": "Starka kontroller",
+                  "weight": {
+                    "min": 0.04,
+                    "probable": 0.07,
+                    "max": 0.1
+                  }
+                },
+                {
+                  "text": "Medelstarka kontroller",
+                  "weight": {
+                    "min": 0.1,
+                    "probable": 0.15000000000000002,
+                    "max": 0.2
+                  }
+                },
+                {
+                  "text": "Svaga kontroller",
+                  "weight": {
+                    "min": 0.18,
+                    "probable": 0.23,
+                    "max": 0.28
+                  }
+                },
+                {
+                  "text": "Mycket svaga kontroller",
+                  "weight": {
+                    "min": 0.24,
+                    "probable": 0.27,
+                    "max": 0.3
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Medelstarka kontroller",
+                "weight": {
+                  "min": 0.1,
+                  "probable": 0.15000000000000002,
+                  "max": 0.2
+                }
+              }
+            },
+            {
+              "text": "Hur konsekvent tillämpas och efterlevs säkerhetskontroller i praktiken?",
+              "alternatives": [
+                {
+                  "text": "Nära 100 % efterlevnad",
+                  "weight": {
+                    "min": 0.0,
+                    "probable": 0.015,
+                    "max": 0.03
+                  }
+                },
+                {
+                  "text": "Hög efterlevnad (70–90 %)",
+                  "weight": {
+                    "min": 0.03,
+                    "probable": 0.065,
+                    "max": 0.1
+                  }
+                },
+                {
+                  "text": "Medelgod efterlevnad",
+                  "weight": {
+                    "min": 0.08,
+                    "probable": 0.11499999999999999,
+                    "max": 0.15
+                  }
+                },
+                {
+                  "text": "Låg efterlevnad",
+                  "weight": {
+                    "min": 0.12,
+                    "probable": 0.155,
+                    "max": 0.19
+                  }
+                },
+                {
+                  "text": "Mycket låg efterlevnad",
+                  "weight": {
+                    "min": 0.16,
+                    "probable": 0.18,
+                    "max": 0.2
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Medelgod efterlevnad",
+                "weight": {
+                  "min": 0.08,
+                  "probable": 0.11499999999999999,
+                  "max": 0.15
+                }
+              }
+            },
+            {
+              "text": "Finns det kända svagheter eller sårbarheter som hotaktören sannolikt kan utnyttja?",
+              "alternatives": [
+                {
+                  "text": "Inga kända svagheter",
+                  "weight": {
+                    "min": 0.0,
+                    "probable": 0.02,
+                    "max": 0.04
+                  }
+                },
+                {
+                  "text": "Mindre svagheter",
+                  "weight": {
+                    "min": 0.03,
+                    "probable": 0.06,
+                    "max": 0.09
+                  }
+                },
+                {
+                  "text": "Kända svagheter",
+                  "weight": {
+                    "min": 0.08,
+                    "probable": 0.125,
+                    "max": 0.17
+                  }
+                },
+                {
+                  "text": "Utnyttjningsbara svagheter",
+                  "weight": {
+                    "min": 0.15,
+                    "probable": 0.19,
+                    "max": 0.23
+                  }
+                },
+                {
+                  "text": "Kritiska svagheter",
+                  "weight": {
+                    "min": 0.2,
+                    "probable": 0.225,
+                    "max": 0.25
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Kända svagheter",
+                "weight": {
+                  "min": 0.08,
+                  "probable": 0.125,
+                  "max": 0.17
+                }
+              }
+            },
+            {
+              "text": "Hur snabbt kan vi upptäcka och stoppa ett angrepp om det sker?",
+              "alternatives": [
+                {
+                  "text": "Mycket snabbt",
+                  "weight": {
+                    "min": 0.0,
+                    "probable": 0.015,
+                    "max": 0.03
+                  }
+                },
+                {
+                  "text": "Snabbt",
+                  "weight": {
+                    "min": 0.02,
+                    "probable": 0.04,
+                    "max": 0.06
+                  }
+                },
+                {
+                  "text": "Måttligt",
+                  "weight": {
+                    "min": 0.06,
+                    "probable": 0.085,
+                    "max": 0.11
+                  }
+                },
+                {
+                  "text": "Långsamt",
+                  "weight": {
+                    "min": 0.1,
+                    "probable": 0.12000000000000001,
+                    "max": 0.14
+                  }
+                },
+                {
+                  "text": "Mycket långsamt",
+                  "weight": {
+                    "min": 0.12,
+                    "probable": 0.135,
+                    "max": 0.15
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Mycket snabbt",
+                "weight": {
+                  "min": 0.0,
+                  "probable": 0.015,
+                  "max": 0.03
+                }
+              }
+            },
+            {
+              "text": "Finns det beroenden till tredjepart som kan öka sårbarheten?",
+              "alternatives": [
+                {
+                  "text": "Inga beroenden",
+                  "weight": {
+                    "min": 0.0,
+                    "probable": 0.01,
+                    "max": 0.02
+                  }
+                },
+                {
+                  "text": "Minimala beroenden",
+                  "weight": {
+                    "min": 0.01,
+                    "probable": 0.030000000000000002,
+                    "max": 0.05
+                  }
+                },
+                {
+                  "text": "Måttliga beroenden",
+                  "weight": {
+                    "min": 0.04,
+                    "probable": 0.055,
+                    "max": 0.07
+                  }
+                },
+                {
+                  "text": "Betydande beroenden",
+                  "weight": {
+                    "min": 0.06,
+                    "probable": 0.075,
+                    "max": 0.09
+                  }
+                },
+                {
+                  "text": "Kritiska beroenden",
+                  "weight": {
+                    "min": 0.08,
+                    "probable": 0.09000000000000001,
+                    "max": 0.1
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Inga beroenden",
+                "weight": {
+                  "min": 0.0,
+                  "probable": 0.01,
+                  "max": 0.02
+                }
+              }
+            }
+          ],
+          "factor_mul": {
+            "min": 0.0009765625,
+            "probable": 0.50048828125,
+            "max": 1.0
+          },
+          "factor_sum": {
+            "min": 0.26,
+            "probable": 0.41500000000000004,
+            "max": 0.5700000000000001
+          }
+        },
+        "lm": {
+          "factor": "consequence",
+          "questions": [
+            {
+              "text": "Om händelsen inträffar, vilken är den allvarligaste rimliga konsekvensen för människors liv och hälsa?",
+              "alternatives": [
+                {
+                  "text": "Inga eller obetydliga personskador utan medicinsk behandling",
+                  "weight": {
+                    "min": 0.001,
+                    "probable": 0.0055000000000000005,
+                    "max": 0.01
+                  }
+                },
+                {
+                  "text": "Lindriga personskador eller tillfällig arbetsfrånvaro",
+                  "weight": {
+                    "min": 0.005,
+                    "probable": 0.015000000000000001,
+                    "max": 0.025
+                  }
+                },
+                {
+                  "text": "Allvarlig personskada med långvarig frånvaro eller bestående men",
+                  "weight": {
+                    "min": 0.015,
+                    "probable": 0.0275,
+                    "max": 0.04
+                  }
+                },
+                {
+                  "text": "Mycket allvarlig skada, bestående men eller enstaka dödsfall",
+                  "weight": {
+                    "min": 0.03,
+                    "probable": 0.0475,
+                    "max": 0.065
+                  }
+                },
+                {
+                  "text": "Flera dödsfall eller mycket omfattande påverkan på människoliv",
+                  "weight": {
+                    "min": 0.05,
+                    "probable": 0.065,
+                    "max": 0.08
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Lindriga personskador eller tillfällig arbetsfrånvaro",
+                "weight": {
+                  "min": 0.005,
+                  "probable": 0.015000000000000001,
+                  "max": 0.025
+                }
+              }
+            },
+            {
+              "text": "Om information röjs till obehöriga, vilken är den allvarligaste rimliga konsekvensen?",
+              "alternatives": [
+                {
+                  "text": "Röjande av offentliga eller redan allmänt kända uppgifter",
+                  "weight": {
+                    "min": 0.001,
+                    "probable": 0.0055000000000000005,
+                    "max": 0.01
+                  }
+                },
+                {
+                  "text": "Begränsat röjande av vanliga personuppgifter",
+                  "weight": {
+                    "min": 0.005,
+                    "probable": 0.015000000000000001,
+                    "max": 0.025
+                  }
+                },
+                {
+                  "text": "Röjande av känsliga personuppgifter, hälsodata eller OSL-uppgifter i enskilda fall",
+                  "weight": {
+                    "min": 0.015,
+                    "probable": 0.0275,
+                    "max": 0.04
+                  }
+                },
+                {
+                  "text": "Omfattande röjande av känsliga personuppgifter eller sekretessbelagd information",
+                  "weight": {
+                    "min": 0.03,
+                    "probable": 0.0475,
+                    "max": 0.065
+                  }
+                },
+                {
+                  "text": "Mycket omfattande eller systematiskt röjande med allvarliga och långvariga konsekvenser",
+                  "weight": {
+                    "min": 0.05,
+                    "probable": 0.065,
+                    "max": 0.08
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Röjande av offentliga eller redan allmänt kända uppgifter",
+                "weight": {
+                  "min": 0.001,
+                  "probable": 0.0055000000000000005,
+                  "max": 0.01
+                }
+              }
+            },
+            {
+              "text": "Om information blir felaktig, manipulerad eller ofullständig, vilken är den allvarligaste rimliga konsekvensen?",
+              "alternatives": [
+                {
+                  "text": "Mindre fel utan faktisk påverkan",
+                  "weight": {
+                    "min": 0.001,
+                    "probable": 0.0055000000000000005,
+                    "max": 0.01
+                  }
+                },
+                {
+                  "text": "Fel som kräver korrigering eller leder till mindre felbeslut",
+                  "weight": {
+                    "min": 0.005,
+                    "probable": 0.015000000000000001,
+                    "max": 0.025
+                  }
+                },
+                {
+                  "text": "Fel som påverkar individers rättigheter eller viktiga beslut",
+                  "weight": {
+                    "min": 0.015,
+                    "probable": 0.0275,
+                    "max": 0.04
+                  }
+                },
+                {
+                  "text": "Systematiska eller allvarliga fel i information",
+                  "weight": {
+                    "min": 0.03,
+                    "probable": 0.0475,
+                    "max": 0.065
+                  }
+                },
+                {
+                  "text": "Utbredd och långvarig integritetsförlust med mycket allvarliga konsekvenser",
+                  "weight": {
+                    "min": 0.05,
+                    "probable": 0.065,
+                    "max": 0.08
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Mindre fel utan faktisk påverkan",
+                "weight": {
+                  "min": 0.001,
+                  "probable": 0.0055000000000000005,
+                  "max": 0.01
+                }
+              }
+            },
+            {
+              "text": "Om information, system eller tjänster inte är tillgängliga vid behov, vilken är den allvarligaste rimliga konsekvensen?",
+              "alternatives": [
+                {
+                  "text": "Kortvarig störning utan märkbar påverkan",
+                  "weight": {
+                    "min": 0.001,
+                    "probable": 0.0055000000000000005,
+                    "max": 0.01
+                  }
+                },
+                {
+                  "text": "Tillfällig otillgänglighet med begränsad verksamhetspåverkan",
+                  "weight": {
+                    "min": 0.005,
+                    "probable": 0.015000000000000001,
+                    "max": 0.025
+                  }
+                },
+                {
+                  "text": "Avbrott som påverkar viktiga processer eller tjänster",
+                  "weight": {
+                    "min": 0.015,
+                    "probable": 0.0275,
+                    "max": 0.04
+                  }
+                },
+                {
+                  "text": "Allvarlig otillgänglighet med betydande verksamhetspåverkan",
+                  "weight": {
+                    "min": 0.03,
+                    "probable": 0.0475,
+                    "max": 0.065
+                  }
+                },
+                {
+                  "text": "Långvarig eller omfattande otillgänglighet i samhällsviktiga system",
+                  "weight": {
+                    "min": 0.05,
+                    "probable": 0.065,
+                    "max": 0.08
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Allvarlig otillgänglighet med betydande verksamhetspåverkan",
+                "weight": {
+                  "min": 0.03,
+                  "probable": 0.0475,
+                  "max": 0.065
+                }
+              }
+            },
+            {
+              "text": "Om händelsen blir känd externt, vilken är den allvarligaste rimliga påverkanen på förtroendet för sjukhuset?",
+              "alternatives": [
+                {
+                  "text": "Begränsad intern negativ uppmärksamhet",
+                  "weight": {
+                    "min": 0.001,
+                    "probable": 0.0055000000000000005,
+                    "max": 0.01
+                  }
+                },
+                {
+                  "text": "Lokal eller begränsad negativ uppmärksamhet",
+                  "weight": {
+                    "min": 0.005,
+                    "probable": 0.015000000000000001,
+                    "max": 0.025
+                  }
+                },
+                {
+                  "text": "Påtaglig förtroendeskada och mediabevakning",
+                  "weight": {
+                    "min": 0.015,
+                    "probable": 0.0275,
+                    "max": 0.04
+                  }
+                },
+                {
+                  "text": "Omfattande nationell negativ mediebevakning",
+                  "weight": {
+                    "min": 0.03,
+                    "probable": 0.0475,
+                    "max": 0.065
+                  }
+                },
+                {
+                  "text": "Mycket allvarlig och varaktig förtroendekris",
+                  "weight": {
+                    "min": 0.05,
+                    "probable": 0.065,
+                    "max": 0.08
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Lokal eller begränsad negativ uppmärksamhet",
+                "weight": {
+                  "min": 0.005,
+                  "probable": 0.015000000000000001,
+                  "max": 0.025
+                }
+              }
+            },
+            {
+              "text": "Vilken är den allvarligaste rimliga konsekvensen för vårdproduktion och patientsäkerhet?",
+              "alternatives": [
+                {
+                  "text": "Marginell påverkan på enskilda vårdmoment",
+                  "weight": {
+                    "min": 0.001,
+                    "probable": 0.0055000000000000005,
+                    "max": 0.01
+                  }
+                },
+                {
+                  "text": "Tillfällig påverkan på vårdflöden eller väntetider",
+                  "weight": {
+                    "min": 0.005,
+                    "probable": 0.015000000000000001,
+                    "max": 0.025
+                  }
+                },
+                {
+                  "text": "Påtaglig påverkan på klinisk verksamhet, omplanering krävs",
+                  "weight": {
+                    "min": 0.015,
+                    "probable": 0.0275,
+                    "max": 0.04
+                  }
+                },
+                {
+                  "text": "Allvarliga störningar i vårdproduktionen eller patientsäkerheten",
+                  "weight": {
+                    "min": 0.03,
+                    "probable": 0.0475,
+                    "max": 0.065
+                  }
+                },
+                {
+                  "text": "Omfattande och långvarig påverkan med risk för allvarliga vårdskador eller dödsfall",
+                  "weight": {
+                    "min": 0.05,
+                    "probable": 0.065,
+                    "max": 0.08
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Marginell påverkan på enskilda vårdmoment",
+                "weight": {
+                  "min": 0.001,
+                  "probable": 0.0055000000000000005,
+                  "max": 0.01
+                }
+              }
+            },
+            {
+              "text": "Vilken är den allvarligaste rimliga konsekvensen för forskningsverksamheten?",
+              "alternatives": [
+                {
+                  "text": "Försumbar påverkan på forskningsaktiviteter",
+                  "weight": {
+                    "min": 0.001,
+                    "probable": 0.0055000000000000005,
+                    "max": 0.01
+                  }
+                },
+                {
+                  "text": "Tillfällig försening i forskningsprojekt",
+                  "weight": {
+                    "min": 0.005,
+                    "probable": 0.015000000000000001,
+                    "max": 0.025
+                  }
+                },
+                {
+                  "text": "Allvarlig försening eller omplanering av forskningsprojekt",
+                  "weight": {
+                    "min": 0.015,
+                    "probable": 0.0275,
+                    "max": 0.04
+                  }
+                },
+                {
+                  "text": "Avbrott i forskning med risk för förlorad finansiering eller regelbrister",
+                  "weight": {
+                    "min": 0.03,
+                    "probable": 0.0475,
+                    "max": 0.065
+                  }
+                },
+                {
+                  "text": "Omfattande och långvarig påverkan med förlorat förtroende hos finansiärer",
+                  "weight": {
+                    "min": 0.05,
+                    "probable": 0.065,
+                    "max": 0.08
+                  }
+                }
+              ],
+              "answer": {
+                "text": "Försumbar påverkan på forskningsaktiviteter",
+                "weight": {
+                  "min": 0.001,
+                  "probable": 0.0055000000000000005,
+                  "max": 0.01
+                }
+              }
+            }
+          ],
+          "factor_mul": {
+            "min": 6.103515625e-05,
+            "probable": 0.500030517578125,
+            "max": 1.0
+          },
+          "factor_sum": {
+            "min": 1.75,
+            "probable": 4.375,
+            "max": 7.0
+          }
+        }
+      }
+    }
+  ]
+}

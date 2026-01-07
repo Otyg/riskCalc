@@ -10,7 +10,10 @@ from fastapi.templating import Jinja2Templates
 from starlette.status import HTTP_303_SEE_OTHER
 
 from repo import JsonAnalysisRepository, DraftRepository
+from questionaires_repo import JsonQuestionairesRepository
+from riskcalculator.questionaire import Questionaires
 
+DEFAULT_QUESTIONAIRES_SET = "default"
 app = FastAPI()
 
 BASE_DIR = Path(__file__).parent
@@ -18,7 +21,7 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 analyses_repo = JsonAnalysisRepository(BASE_DIR / "data" / "analyses")
 draft_repo = DraftRepository(BASE_DIR / "data" / "drafts")
-
+questionaires_repo = JsonQuestionairesRepository(BASE_DIR / "data" / "questionaires")
 
 # ----------------------
 # Helpers
@@ -129,59 +132,137 @@ def create_analysis_finalize(draft_id: str):
 # Skapa scenario (wizard steg 2)
 # ----------------------
 @app.get("/create/{draft_id}/scenario/new", response_class=HTMLResponse)
-def create_scenario_page(request: Request, draft_id: str):
-    # verifiera att draft finns
+def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QUESTIONAIRES_SET):
     draft_repo.load(draft_id)
 
+    try:
+        qs = questionaires_repo.load_objects(qset)  # {"tef": Questionaire, "vuln": ..., "lm": ...}
+    except FileNotFoundError:
+        # om set saknas: visa tomt + fel
+        qs = {"tef": None, "vuln": None, "lm": None}
+
     return templates.TemplateResponse(
-        "create_scenario_v2.html",
+        "create_scenario_v4.html",
         {
             "request": request,
             "draft_id": draft_id,
             "defaults": _default_scenario_form(),
-            "errors": [],
+            "errors": [] if qs["tef"] else [f"Kunde inte ladda questionaires-set: {qset}"],
+            "qs": qs,
+            "qset": qset,
+            "available_qsets": questionaires_repo.list_sets(),
         },
     )
 
 
 @app.post("/create/{draft_id}/scenario/save")
-def create_scenario_save(
-    request: Request,
-    draft_id: str,
-
-    name: str = Form(""),
-    actor: str = Form(""),
-    asset: str = Form(""),
-    threat: str = Form(""),
-    vulnerability: str = Form(""),
-    description: str = Form(""),
-
-    tef_min: str = Form(""),
-    tef_probable: str = Form(""),
-    tef_max: str = Form(""),
-
-    vuln_score_min: str = Form(""),
-    vuln_score_probable: str = Form(""),
-    vuln_score_max: str = Form(""),
-
-    loss_magnitude_min: str = Form(""),
-    loss_magnitude_probable: str = Form(""),
-    loss_magnitude_max: str = Form(""),
-
-    budget: str = Form("1000000"),
-    currency: str = Form("SEK"),
-):
+async def create_scenario_save(request: Request, draft_id: str):
     draft = draft_repo.load(draft_id)
+    form = await request.form()
+
+    name = str(form.get("name", "")).strip()
+    actor = str(form.get("actor", "")).strip()
+    asset = str(form.get("asset", "")).strip()
+    threat = str(form.get("threat", "")).strip()
+    vulnerability = str(form.get("vulnerability", "")).strip()
+    description = str(form.get("description", "")).strip()
+
+    risk_input_mode = str(form.get("risk_input_mode", "manual"))
+    qset = str(form.get("qset", DEFAULT_QUESTIONAIRES_SET))
 
     errors: list[str] = []
-    if not (name or "").strip():
+    if not name:
         errors.append("name: måste anges")
 
-    _validate_range("tef", tef_min, tef_probable, tef_max, errors)
-    _validate_range("vuln_score", vuln_score_min, vuln_score_probable, vuln_score_max, errors)
-    _validate_range("loss_magnitude", loss_magnitude_min, loss_magnitude_probable, loss_magnitude_max, errors)
+    risk_dict: dict[str, Any] = {
+        "budget": str(_d(str(form.get("budget", "1000000")), Decimal(1000000))),
+        "currency": str(form.get("currency", "SEK")) or "SEK",
+    }
 
-    # Dict som din RiskScenario.from_dict bör kunna ta (justera nycklar om din implementering skiljer sig)
+    questionaires_payload: dict[str, Any] = {}
+
+    if risk_input_mode == "questionnaire":
+        try:
+            qs = questionaires_repo.load_objects(qset)
+        except FileNotFoundError:
+            errors.append(f"Kunde inte ladda questionaires-set: {qset}")
+            qs = {"tef": None, "vuln": None, "lm": None}
+
+        # Sätt answers från dropdowns: q_<dim>_<qi> = alt_index
+        for dim_key in ("tef", "vuln", "lm"):
+            qobj = qs.get(dim_key)
+            if qobj is None:
+                continue
+
+            for qi, question in enumerate(qobj.questions):
+                raw = form.get(f"q_{dim_key}_{qi}")
+                if raw is None or str(raw).strip() == "":
+                    continue
+                try:
+                    ans_idx = int(raw)
+                except ValueError:
+                    continue
+
+                question.set_answer(ans_idx)  # byt till set(...) om det är din metod
+
+        # Spara svaren i scenariot (rekommenderat)
+        # Om Questionaire har to_dict():
+        if qs.get("tef") and hasattr(qs["tef"], "to_dict"):
+            questionaires_payload = {
+                "qset": qset,
+                "tef": qs["tef"].to_dict(),
+                "vuln": qs["vuln"].to_dict() if qs.get("vuln") else {},
+                "lm": qs["lm"].to_dict() if qs.get("lm") else {},
+            }
+        else:
+            # Minimal variant: spara bara svar-index
+            questionaires_payload = {
+                "qset": qset,
+                "answers": {
+                    dim_key: {
+                        str(qi): getattr(qobj.questions[qi], "answer", None)
+                        for qi in range(len(qobj.questions))
+                        if isinstance(getattr(qobj.questions[qi], "answer", None), int)
+                    }
+                    for dim_key, qobj in qs.items()
+                    if qobj is not None and hasattr(qobj, "questions")
+                },
+            }
+
+    else:
+        # manual mode
+        def get_range(prefix: str) -> dict[str, str]:
+            return {
+                "min": str(_d(str(form.get(f"{prefix}_min", "0")))),
+                "probable": str(_d(str(form.get(f"{prefix}_probable", "0")))),
+                "max": str(_d(str(form.get(f"{prefix}_max", "0")))),
+            }
+
+        risk_dict["tef"] = get_range("tef")
+        risk_dict["vuln_score"] = get_range("vuln_score")
+        risk_dict["loss_magnitude"] = get_range("loss_magnitude")
+
+    if errors:
+        # rendera om sidan med set-lista
+        try:
+            qs = questionaires_repo.load_objects(qset)
+        except FileNotFoundError:
+            qs = {"tef": None, "vuln": None, "lm": None}
+
+        return templates.TemplateResponse(
+            "create_scenario_v4.html",
+            {
+                "request": request,
+                "draft_id": draft_id,
+                "defaults": {**_default_scenario_form(), "risk_input_mode": risk_input_mode},
+                "errors": errors,
+                "qs": qs,
+                "qset": qset,
+                "available_qsets": questionaires_repo.list_sets(),
+            },
+            status_code=400,
+        )
+
     scenario_dict: dict[str, Any] = {
         "name": name,
         "actor": actor,
@@ -189,41 +270,22 @@ def create_scenario_save(
         "threat": threat,
         "vulnerability": vulnerability,
         "description": description,
-        "questionaires": {},  # v1: tomt
-        "risk": {
-            "tef": {"min": str(_d(tef_min)), "probable": str(_d(tef_probable)), "max": str(_d(tef_max))},
-            "vuln_score": {"min": str(_d(vuln_score_min)), "probable": str(_d(vuln_score_probable)), "max": str(_d(vuln_score_max))},
-            "loss_magnitude": {"min": str(_d(loss_magnitude_min)), "probable": str(_d(loss_magnitude_probable)), "max": str(_d(loss_magnitude_max))},
-            "budget": str(_d(budget, Decimal(1000000))),
-            "currency": (currency or "SEK"),
-        },
+        "risk": risk_dict,
+        "questionaires": questionaires_payload,
     }
-
-    if errors:
-        defaults = {
-            "tef_min": tef_min, "tef_probable": tef_probable, "tef_max": tef_max,
-            "vuln_score_min": vuln_score_min, "vuln_score_probable": vuln_score_probable, "vuln_score_max": vuln_score_max,
-            "loss_magnitude_min": loss_magnitude_min, "loss_magnitude_probable": loss_magnitude_probable, "loss_magnitude_max": loss_magnitude_max,
-            "budget": budget, "currency": currency,
-        }
-        return templates.TemplateResponse(
-            "create_scenario_v2.html",
-            {"request": request, "draft_id": draft_id, "defaults": defaults, "errors": errors},
-            status_code=400,
-        )
 
     try:
         from riskcalculator.scenario import RiskScenario
         from riskcalculator.discret_scale import DiscreteRisk
         from riskcalculator.montecarlo import MonteCarloRange
-        tef = MonteCarloRange(min=_d(tef_min),probable=_d(tef_probable), max=_d(tef_max))
-        vuln_score = MonteCarloRange(min=_d(vuln_score_min), probable=_d(vuln_score_probable), max=_d(vuln_score_max))
-        loss_magnitude = MonteCarloRange(min=_d(loss_magnitude_min),probable=_d(loss_magnitude_probable),max=_d(loss_magnitude_max))
-        risk = DiscreteRisk(tef=tef, vuln_score=vuln_score, loss_magnitude=loss_magnitude, budget=Decimal(budget), currency=currency)
-        scenario_obj = RiskScenario(name=name, actor=actor, asset=asset, threat=threat, vulnerability= vulnerability, risk=risk)
+        questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
+        tef = qs.get('tef').multiply_factor()
+        vuln_score = qs.get('vuln').sum_factor()
+        loss_magnitude = qs.get('lm').range()
+        risk = DiscreteRisk(tef=tef, vuln_score=vuln_score, loss_magnitude=loss_magnitude, budget=Decimal(risk_dict.get('budget')), currency=risk_dict.get('currency'))
+        scenario_obj = RiskScenario(name=name, actor=actor, asset=asset, threat=threat, vulnerability=vulnerability, risk=risk, questionaires=questionaires)
         scenario_json = scenario_obj.to_dict()
     except Exception as e:
-        # fallback: spara dict rakt av om import/klass ej är kopplad ännu
         raise e
 
     draft.setdefault("scenarios", [])
