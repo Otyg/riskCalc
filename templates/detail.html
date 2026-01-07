@@ -1,0 +1,67 @@
+<div>
+  <h1 style="margin: 0 0 8px 0;">{{ analysis.get("analysis_object", "") }}</h1>
+  <div class="muted">
+    <span><strong>Datum:</strong> {{ analysis.get("date", "") }}</span> ·
+    <span><strong>Owner:</strong> {{ analysis.get("owner", "") }}</span> ·
+    <span><strong>Version:</strong> {{ analysis.get("version", "") }}</span>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div>
+        <h3 style="margin-top: 0;">Scope</h3>
+        <p style="white-space: pre-wrap; margin: 0;">{{ analysis.get("scope", "") }}</p>
+      </div>
+      <div>
+        <h3 style="margin-top: 0;">Sammanfattning</h3>
+        {% set scenarios = analysis.get("scenarios", []) %}
+        <div class="kv">
+          <div>Antal scenarion</div>
+          <div><code class="badge">{{ scenarios | length }}</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Scenarion</h2>
+
+  {% for s in analysis.get("scenarios", []) %}
+    {% set risk = s.get("risk", {}) %}
+    {% set discrete = risk.get("discrete_risk") %}
+
+    <div class="card">
+      <h3 style="margin-top: 0;">{{ s.get("name","") }}</h3>
+      <p style="white-space: pre-wrap;">{{ s.get("description","") }}</p>
+
+      <h4>Risk</h4>
+      <div class="kv">
+        <div>Loss event frequency</div><div>{{ risk.get("loss_event_frequency","").get("probable", "") }} händelser/år</div>
+        <div>Loss magnitude</div><div>{{ risk.get("loss_magnitude","").get("probable", "") }} % förlust av budget vid en incident</div>
+        <div>Annual loss expectancy</div><div><strong>{{ risk.get("annual_loss_expectancy","").get("p90","") }}</strong> {{ risk.get("currency","") }}/år</div>
+      </div>
+
+      {% if discrete %}
+        <details style="margin-top: 10px;">
+          <summary>Discrete risk</summary>
+          <div class="kv" style="margin-top: 8px;">
+            <div>Probability</div><div>{{ discrete.get("probability","") }} ({{ discrete.get("probability_text","") }})</div>
+            <div>Consequence</div><div>{{ discrete.get("consequence","") }} ({{ discrete.get("consequence_text","") }})</div>
+            <div>Risk</div><div><strong>{{ discrete.get("risk","") }}</strong> ({{ discrete.get("risk_text","") }})</div>
+          </div>
+        </details>
+      {% endif %}
+      <h4>Frågor</h4>
+      {% for q in s.get("questionaires", {}).get("tef", {}).get("questions", []) %}
+        <details style="margin-top: 10px;">
+          <summary>{{ q.get("text", "") }}</summary>
+          <div class="kv" style="margin-top: 8px;">
+            <div><strong>Answer</strong></div><div>{{ q.get("answer", "").get("text", "") }}</div>
+            <div><strong>Weight</strong></div><div>{{ q.get("answer", "").get("weight", "") }}</div>
+          </div>
+        </details>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Denna analys saknar scenarion.</p>
+  {% endfor %}
+</div>

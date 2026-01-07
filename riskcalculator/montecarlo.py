@@ -55,7 +55,7 @@ class MonteCarloSimulation():
         self.probable = Decimal(dict['probable'])
         self.max = Decimal(dict['max'])
         self.p90 = Decimal(dict['p90'])
-        self.__samples = np.array()
+        self.__samples = np.array([])
 
     def __repr__(self):
         return str(self.to_dict())
