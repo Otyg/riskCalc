@@ -35,22 +35,19 @@
 
       <h4>Risk</h4>
       <div class="kv">
-        <div>Budget: </div><div>{{ risk.get("budget","") }} {{ risk.get("currency","") }}/år</div>
-        <div>Loss event frequency</div><div>{{ risk.get("loss_event_frequency","").get("p90", "") }} händelser/år</div>
-        <div>Loss magnitude</div><div>{{ risk.get("loss_magnitude","").get("p90", "") }} % förlust av budget vid en incident</div>
-        <div>Annual loss expectancy</div><div><strong>{{ risk.get("annual_loss_expectancy","").get("p90","") }}</strong> {{ risk.get("currency","") }}/år</div>
+        <div>Sannolikhet</div><div>{{ discrete.get("probability","") }} ({{ discrete.get("probability_text","") }})</div>
+        <div>Konsekvens</div><div>{{ discrete.get("consequence","") }} ({{ discrete.get("consequence_text","") }})</div>
+        <div>Risk</div><div><strong>{{ discrete.get("risk","") }} ({{ discrete.get("risk_text","") }})</strong></div>
       </div>
-
-      {% if discrete %}
-        <details style="margin-top: 10px;">
-          <summary>Discrete risk</summary>
-          <div class="kv" style="margin-top: 8px;">
-            <div>Probability</div><div>{{ discrete.get("probability","") }} ({{ discrete.get("probability_text","") }})</div>
-            <div>Consequence</div><div>{{ discrete.get("consequence","") }} ({{ discrete.get("consequence_text","") }})</div>
-            <div>Risk</div><div><strong>{{ discrete.get("risk","") }}</strong> ({{ discrete.get("risk_text","") }})</div>
-          </div>
-        </details>
-      {% endif %}
+      <details style="margin-top: 10px;">
+        <summary>ALE</summary>
+        <div class="kv" style="margin-top: 8px;">
+          <div>Budget: </div><div>{{ risk.get("budget","") }} {{ risk.get("currency","") }}/år</div>
+          <div>Loss event frequency</div><div>{{ risk.get("loss_event_frequency","").get("p90", "") }} händelser/år</div>
+          <div>Loss magnitude</div><div>{{ risk.get("loss_magnitude","").get("p90", "") }} % förlust av budget vid en incident</div>
+          <div>Annual loss expectancy</div><div><strong>{{ risk.get("annual_loss_expectancy","").get("p90","") }}</strong> {{ risk.get("currency","") }}/år</div>
+        </div>
+      </details>
       <h4>Frågor: Threat Event Frequency</h4>
       {% for q in s.get("questionaires", {}).get("tef", {}).get("questions", []) %}
         <details style="margin-top: 10px;">

@@ -99,13 +99,18 @@
 <div class="card" style="margin-top:12px;">
   <h3 style="margin-top:0;">Frågeformulär</h3>
   <label><strong>Questionaires-set</strong></label><br/>
-  <select name="qset" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+
+  <select id="qset_select"
+          name="qset"
+          data-draft-id="{{ draft_id }}"
+          style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
     {% for s in available_qsets %}
       <option value="{{ s }}" {% if s == qset %}selected{% endif %}>{{ s }}</option>
     {% endfor %}
   </select>
+
   <p class="muted" style="margin:6px 0 0 0;">
-    Laddas från <code class="badge">data/questionaires/{{ '{{' }}set{{ '}}' }}.json</code>
+    Byter set laddar om sidan och visar nya frågor.
   </p>
 </div>
       <div id="questionnaire_block" style="display:block;">
@@ -147,4 +152,16 @@
     </form>
   </main>
 </div>
+<script>
+  // Reload när man byter questionaire-set
+  const qsetSelect = document.getElementById('qset_select');
+  if (qsetSelect) {
+    qsetSelect.addEventListener('change', () => {
+      const draftId = qsetSelect.dataset.draftId;
+      const qset = encodeURIComponent(qsetSelect.value || '');
+      // Behåll användaren på samma sida men med nytt qset
+      window.location.href = `/create/${draftId}/scenario/new?qset=${qset}`;
+    });
+  }
+</script>
 {% endblock %}
