@@ -9,9 +9,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.status import HTTP_303_SEE_OTHER
 
+from riskcalculator.scenario import RiskScenario
+from riskcalculator.discret_scale import DiscreteRisk
+from actors_repo import JsonActorsRepository
 from repo import JsonAnalysisRepository, DraftRepository
 from questionaires_repo import JsonQuestionairesRepository
 from riskcalculator.questionaire import Questionaires
+from threats_repo import JsonThreatsRepository
+from vulnerabilities_repo import JsonVulnerabilitiesRepository
 
 DEFAULT_QUESTIONAIRES_SET = "default"
 app = FastAPI()
@@ -22,10 +27,11 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 analyses_repo = JsonAnalysisRepository(BASE_DIR / "data" / "analyses")
 draft_repo = DraftRepository(BASE_DIR / "data" / "drafts")
 questionaires_repo = JsonQuestionairesRepository(BASE_DIR / "data" / "questionaires")
+threats_repo = JsonThreatsRepository(BASE_DIR / "data" / "threats.json")
+actors_repo = JsonActorsRepository(BASE_DIR / "data" / "actors.json")
+vulns_repo = JsonVulnerabilitiesRepository(BASE_DIR / "data" / "vulnerabilities.json")
+threats_repo = JsonThreatsRepository(BASE_DIR / "data" / "threats.json")
 
-# ----------------------
-# Helpers
-# ----------------------
 def _d(s: str, default: Decimal = Decimal(0)) -> Decimal:
     try:
         s = (s or "").strip()
@@ -43,7 +49,6 @@ def _validate_range(prefix: str, mn: str, pr: str, mx: str, errors: list[str]) -
 
 
 def _default_scenario_form() -> dict[str, str]:
-    # default från din Risk-konstruktor: probable 0.5 / 0.1 / 0.001, budget 1_000_000, currency SEK
     return {
         "tef_min": "0",
         "tef_probable": "0.5",
@@ -59,9 +64,6 @@ def _default_scenario_form() -> dict[str, str]:
     }
 
 
-# ----------------------
-# Visa/lista analyser
-# ----------------------
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, selected: str | None = None):
     analyses = analyses_repo.list()
@@ -79,9 +81,6 @@ def index(request: Request, selected: str | None = None):
     )
 
 
-# ----------------------
-# Skapa analys (wizard steg 1)
-# ----------------------
 @app.get("/create", response_class=HTMLResponse)
 def create_analysis_start(request: Request):
     draft_id = draft_repo.create()
@@ -128,12 +127,12 @@ def create_analysis_finalize(draft_id: str):
     return RedirectResponse(url=f"/?selected={analysis_id}", status_code=HTTP_303_SEE_OTHER)
 
 
-# ----------------------
-# Skapa scenario (wizard steg 2)
-# ----------------------
 @app.get("/create/{draft_id}/scenario/new", response_class=HTMLResponse)
 def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QUESTIONAIRES_SET):
     draft_repo.load(draft_id)
+    threat_suggestions = threats_repo.load()
+    actor_suggestions = actors_repo.load()
+    vulnerability_suggestions = vulns_repo.load()
 
     try:
         qs = questionaires_repo.load_objects(qset)  # {"tef": Questionaire, "vuln": ..., "lm": ...}
@@ -151,6 +150,9 @@ def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QU
             "qs": qs,
             "qset": qset,
             "available_qsets": questionaires_repo.list_sets(),
+            "threat_suggestions": threat_suggestions,
+            "actor_suggestions": actor_suggestions,
+            "vulnerability_suggestions": vulnerability_suggestions,
         },
     )
 
@@ -169,7 +171,7 @@ async def create_scenario_save(request: Request, draft_id: str):
 
     risk_input_mode = str(form.get("risk_input_mode", "manual"))
     qset = str(form.get("qset", DEFAULT_QUESTIONAIRES_SET))
-
+    threat_suggestions = threats_repo.load()
     errors: list[str] = []
     if not name:
         errors.append("name: måste anges")
@@ -178,9 +180,6 @@ async def create_scenario_save(request: Request, draft_id: str):
         "budget": str(_d(str(form.get("budget", "1000000")), Decimal(1000000))),
         "currency": str(form.get("currency", "SEK")) or "SEK",
     }
-
-    questionaires_payload: dict[str, Any] = {}
-
     if risk_input_mode == "questionnaire":
         try:
             qs = questionaires_repo.load_objects(qset)
@@ -203,10 +202,8 @@ async def create_scenario_save(request: Request, draft_id: str):
                 except ValueError:
                     continue
 
-                question.set_answer(ans_idx)  # byt till set(...) om det är din metod
+                question.set_answer(ans_idx)
 
-        # Spara svaren i scenariot (rekommenderat)
-        # Om Questionaire har to_dict():
         if qs.get("tef") and hasattr(qs["tef"], "to_dict"):
             questionaires_payload = {
                 "qset": qset,
@@ -243,7 +240,6 @@ async def create_scenario_save(request: Request, draft_id: str):
         risk_dict["loss_magnitude"] = get_range("loss_magnitude")
 
     if errors:
-        # rendera om sidan med set-lista
         try:
             qs = questionaires_repo.load_objects(qset)
         except FileNotFoundError:
@@ -259,25 +255,12 @@ async def create_scenario_save(request: Request, draft_id: str):
                 "qs": qs,
                 "qset": qset,
                 "available_qsets": questionaires_repo.list_sets(),
+                "threat_suggestions": threat_suggestions,
             },
             status_code=400,
         )
 
-    scenario_dict: dict[str, Any] = {
-        "name": name,
-        "actor": actor,
-        "asset": asset,
-        "threat": threat,
-        "vulnerability": vulnerability,
-        "description": description,
-        "risk": risk_dict,
-        "questionaires": questionaires_payload,
-    }
-
     try:
-        from riskcalculator.scenario import RiskScenario
-        from riskcalculator.discret_scale import DiscreteRisk
-        from riskcalculator.montecarlo import MonteCarloRange
         questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
         tef = qs.get('tef').multiply_factor()
         vuln_score = qs.get('vuln').sum_factor()

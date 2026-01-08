@@ -1,0 +1,10 @@
+{
+  "actors": [
+    "External attacker",
+    "Insider",
+    "Contractor",
+    "Supplier",
+    "Competitor",
+    "Accidental user"
+  ]
+}

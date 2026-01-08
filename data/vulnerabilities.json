@@ -1,0 +1,10 @@
+{
+  "vulnerabilities": [
+    "Weak passwords",
+    "Missing MFA",
+    "Unpatched software",
+    "Excessive permissions",
+    "Misconfiguration",
+    "Lack of monitoring"
+  ]
+}

@@ -31,7 +31,15 @@
         </div>
         <div>
           <label><strong>actor</strong></label><br/>
-          <input name="actor" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <input name="actor"
+                list="actor_list"
+                placeholder="Skriv eget, välj från listan eller lämna tomt"
+                style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <datalist id="actor_list">
+            {% for a in actor_suggestions %}
+              <option value="{{ a }}"></option>
+            {% endfor %}
+          </datalist>
         </div>
 
         <div>
@@ -40,13 +48,33 @@
         </div>
         <div>
           <label><strong>threat</strong></label><br/>
-          <input name="threat" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <input name="threat"
+                list="threat_list"
+                placeholder="Skriv eget, välj från listan eller lämna tomt"
+                style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <datalist id="threat_list">
+            {% for t in threat_suggestions %}
+              <option value="{{ t }}"></option>
+            {% endfor %}
+          </datalist>
+          <p class="muted" style="margin:6px 0 0 0;">
+            Du kan skriva fritt, välja ett förslag, eller lämna blankt.
+          </p>
         </div>
 
         <div>
           <label><strong>vulnerability</strong></label><br/>
-          <input name="vulnerability" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <input name="vulnerability"
+                list="vuln_list"
+                placeholder="Skriv eget, välj från listan eller lämna tomt"
+                style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <datalist id="vuln_list">
+            {% for v in vulnerability_suggestions %}
+              <option value="{{ v }}"></option>
+            {% endfor %}
+          </datalist>
         </div>
+
       </div>
 
       <div style="margin-top:12px;">
@@ -80,52 +108,8 @@
     Laddas från <code class="badge">data/questionaires/{{ '{{' }}set{{ '}}' }}.json</code>
   </p>
 </div>
-
-      <div class="card" style="margin-top:12px;">
-        <h3 style="margin-top:0;">Hur ska riskparametrar sättas?</h3>
-        <label style="display:flex; gap:10px; align-items:center; margin:6px 0;">
-          <input type="radio" name="risk_input_mode" value="manual" checked />
-          <span>Manuellt</span>
-        </label>
-        <label style="display:flex; gap:10px; align-items:center; margin:6px 0;">
-          <input type="radio" name="risk_input_mode" value="questionnaire" />
-          <span>Frågeformulär</span>
-        </label>
-      </div>
-
-      <!-- MANUAL -->
-      <div id="manual_block">
-        <div class="card" style="margin-top:12px;">
-          <h3 style="margin-top:0;">tef (MonteCarloRange)</h3>
-          <div class="grid">
-            <div><label>min</label><br/><input name="tef_min" type="number" step="any" value="{{ defaults.get('tef_min','0') }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
-            <div><label>probable</label><br/><input name="tef_probable" type="number" step="any" value="{{ defaults.get('tef_probable','0.5') }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
-            <div><label>max</label><br/><input name="tef_max" type="number" step="any" value="{{ defaults.get('tef_max','0') }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px;">
-          <h3 style="margin-top:0;">vuln_score (MonteCarloRange)</h3>
-          <div class="grid">
-            <div><label>min</label><br/><input name="vuln_score_min" type="number" step="any" value="{{ defaults.get('vuln_score_min','0') }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
-            <div><label>probable</label><br/><input name="vuln_score_probable" type="number" step="any" value="{{ defaults.get('vuln_score_probable','0.1') }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
-            <div><label>max</label><br/><input name="vuln_score_max" type="number" step="any" value="{{ defaults.get('vuln_score_max','0') }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px;">
-          <h3 style="margin-top:0;">loss_magnitude (MonteCarloRange)</h3>
-          <div class="grid">
-            <div><label>min</label><br/><input name="loss_magnitude_min" type="number" step="any" value="{{ defaults.get('loss_magnitude_min','0') }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
-            <div><label>probable</label><br/><input name="loss_magnitude_probable" type="number" step="any" value="{{ defaults.get('loss_magnitude_probable','0.001') }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
-            <div><label>max</label><br/><input name="loss_magnitude_max" type="number" step="any" value="{{ defaults.get('loss_magnitude_max','0') }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- QUESTIONNAIRE -->
-      <div id="questionnaire_block" style="display:none;">
-        {% for dim_key, title in [("tef","TEF"), ("vuln","Vulnerability"), ("lm","Loss magnitude")] %}
+      <div id="questionnaire_block" style="display:block;">
+        {% for dim_key, title in [("tef","Potentiellt antal hothändelser per år"), ("vuln","Sårbarhet"), ("lm","Konsekvens av en händelse")] %}
           {% set qobj = qs.get(dim_key) %}
           <div class="card" style="margin-top:12px;">
             <h3 style="margin-top:0;">{{ title }}</h3>
@@ -146,7 +130,6 @@
                         <option value="{{ ai }}">{{ alt.text }}</option>
                       {% endfor %}
                     </select>
-                    <p class="muted" style="margin:6px 0 0 0;">Dropdown-index = alternatives-index</p>
                   </div>
                 </div>
               {% endfor %}
@@ -162,20 +145,6 @@
         </button>
       </div>
     </form>
-
-    <script>
-      const radios = document.querySelectorAll('input[name="risk_input_mode"]');
-      const manual = document.getElementById('manual_block');
-      const qblock = document.getElementById('questionnaire_block');
-
-      function syncMode() {
-        const mode = document.querySelector('input[name="risk_input_mode"]:checked')?.value || 'manual';
-        manual.style.display = (mode === 'manual') ? 'block' : 'none';
-        qblock.style.display = (mode === 'questionnaire') ? 'block' : 'none';
-      }
-      radios.forEach(r => r.addEventListener('change', syncMode));
-      syncMode();
-    </script>
   </main>
 </div>
 {% endblock %}
