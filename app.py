@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
+import os
 from pathlib import Path
 from typing import Any
 
@@ -24,15 +25,18 @@ DEFAULT_QUESTIONAIRES_SET = "default"
 app = FastAPI()
 
 BASE_DIR = Path(__file__).parent
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+TEMPLATES_DIR = Path(os.environ.get("TEMPLATES_DIR", str(BASE_DIR / "templates")))
+DATA_DIR = Path(os.environ.get("DATA_DIR", str(BASE_DIR / "data")))
 
-analyses_repo = JsonAnalysisRepository(BASE_DIR / "data" / "analyses")
-draft_repo = DraftRepository(BASE_DIR / "data" / "drafts")
-questionaires_repo = JsonQuestionairesRepository(BASE_DIR / "data" / "questionaires")
-threats_repo = JsonThreatsRepository(BASE_DIR / "data" / "threats.json")
-actors_repo = JsonActorsRepository(BASE_DIR / "data" / "actors.json")
-vulns_repo = JsonVulnerabilitiesRepository(BASE_DIR / "data" / "vulnerabilities.json")
-threats_repo = JsonThreatsRepository(BASE_DIR / "data" / "threats.json")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+analyses_repo = JsonAnalysisRepository(DATA_DIR / "analyses")
+draft_repo = DraftRepository(DATA_DIR / "drafts")
+questionaires_repo = JsonQuestionairesRepository(DATA_DIR / "questionaires")
+
+actors_repo = JsonActorsRepository(DATA_DIR / "actors.json")
+threats_repo = JsonThreatsRepository(DATA_DIR / "threats.json")
+vulns_repo = JsonVulnerabilitiesRepository(DATA_DIR / "vulnerabilities.json")
 
 def _d(s: str, default: Decimal = Decimal(0)) -> Decimal:
     try:
