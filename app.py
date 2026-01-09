@@ -19,7 +19,7 @@ from riskcalculator.questionaire import Questionaires
 from threats_repo import JsonThreatsRepository
 from vulnerabilities_repo import JsonVulnerabilitiesRepository
 from riskregister.assessment import RiskAssessment
-
+from paths import ensure_user_data_initialized, packaged_root
 
 DEFAULT_QUESTIONAIRES_SET = "default"
 app = FastAPI()
@@ -282,4 +282,7 @@ async def create_scenario_save(request: Request, draft_id: str):
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
 
 if __name__ == "__main__":
+    p = ensure_user_data_initialized()
+    os.environ["TEMPLATES_DIR"] = str(packaged_root() / "templates")
+    os.environ["DATA_DIR"] = str(p["data"])
     uvicorn.run(app, host="127.0.0.1", port=8000)
