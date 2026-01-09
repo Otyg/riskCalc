@@ -23,7 +23,9 @@ from paths import ensure_user_data_initialized, packaged_root
 
 DEFAULT_QUESTIONAIRES_SET = "default"
 app = FastAPI()
-
+p = ensure_user_data_initialized()
+os.environ["TEMPLATES_DIR"] = str(packaged_root() / "templates")
+os.environ["DATA_DIR"] = str(p["data"])
 BASE_DIR = Path(__file__).parent
 TEMPLATES_DIR = Path(os.environ.get("TEMPLATES_DIR", str(BASE_DIR / "templates")))
 DATA_DIR = Path(os.environ.get("DATA_DIR", str(BASE_DIR / "data")))
