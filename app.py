@@ -17,6 +17,8 @@ from questionaires_repo import JsonQuestionairesRepository
 from riskcalculator.questionaire import Questionaires
 from threats_repo import JsonThreatsRepository
 from vulnerabilities_repo import JsonVulnerabilitiesRepository
+from riskregister.assessment import RiskAssessment
+
 
 DEFAULT_QUESTIONAIRES_SET = "default"
 app = FastAPI()
@@ -159,7 +161,8 @@ def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QU
 
 @app.post("/create/{draft_id}/scenario/save")
 async def create_scenario_save(request: Request, draft_id: str):
-    draft = draft_repo.load(draft_id)
+    draft_dict = draft_repo.load(draft_id)
+    draft=RiskAssessment(draft_dict)
     form = await request.form()
 
     name = str(form.get("name", "")).strip()
@@ -169,13 +172,11 @@ async def create_scenario_save(request: Request, draft_id: str):
     vulnerability = str(form.get("vulnerability", "")).strip()
     description = str(form.get("description", "")).strip()
 
-    risk_input_mode = str(form.get("risk_input_mode", "manual"))
+    risk_input_mode = str(form.get("risk_input_mode", "questionnaire"))
     qset = str(form.get("qset", DEFAULT_QUESTIONAIRES_SET))
     threat_suggestions = threats_repo.load()
     errors: list[str] = []
-    if not name:
-        errors.append("name: måste anges")
-
+    
     risk_dict: dict[str, Any] = {
         "budget": str(_d(str(form.get("budget", "1000000")), Decimal(1000000))),
         "currency": str(form.get("currency", "SEK")) or "SEK",
@@ -266,13 +267,12 @@ async def create_scenario_save(request: Request, draft_id: str):
         vuln_score = qs.get('vuln').sum_factor()
         loss_magnitude = qs.get('lm').range()
         risk = DiscreteRisk(tef=tef, vuln_score=vuln_score, loss_magnitude=loss_magnitude, budget=Decimal(risk_dict.get('budget')), currency=risk_dict.get('currency'))
-        scenario_obj = RiskScenario(name=name, actor=actor, asset=asset, threat=threat, vulnerability=vulnerability, risk=risk, questionaires=questionaires)
+        scenario_obj = RiskScenario(name=name, actor=actor, asset=asset, threat=threat, vulnerability=vulnerability, description=description, risk=risk, questionaires=questionaires)
         scenario_json = scenario_obj.to_dict()
     except Exception as e:
         raise e
 
-    draft.setdefault("scenarios", [])
-    draft["scenarios"].append(scenario_json)
-    draft_repo.save(draft_id, draft)
+    draft.add_scenario(scenario=scenario_obj)
+    draft_repo.save(draft_id, draft.to_dict())
 
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)

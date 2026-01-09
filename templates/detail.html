@@ -18,6 +18,16 @@
         <div class="kv">
           <div>Antal scenarion</div>
           <div><code class="badge">{{ scenarios | length }}</code></div>
+          <div>Mycket hög:</div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("critical", "") }}</code></div>
+          <div>Hög:</div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("high", "") }}</code></div>
+          <div>Medel:</div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("middle", "") }}</code></div>
+          <div>Låg:</div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("low", "") }}</code></div>
+          <div>Mycket Låg:</div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("very_low", "") }}</code></div>
         </div>
       </div>
     </div>
@@ -31,53 +41,50 @@
 
     <div class="card">
       <h3 style="margin-top: 0;">{{ s.get("name","") }}</h3>
+      <p style="white-space: pre-wrap;"><strong>Risk: {{ discrete.get("risk_text","").split(":")[0] }}</strong></p>
       <p style="white-space: pre-wrap;">{{ s.get("description","") }}</p>
-
-      <h4>Risk</h4>
-      <div class="kv">
-        <div>Sannolikhet</div><div>{{ discrete.get("probability","") }} ({{ discrete.get("probability_text","") }})</div>
-        <div>Konsekvens</div><div>{{ discrete.get("consequence","") }} ({{ discrete.get("consequence_text","") }})</div>
-        <div>Risk</div><div><strong>{{ discrete.get("risk","") }} ({{ discrete.get("risk_text","") }})</strong></div>
-      </div>
       <details style="margin-top: 10px;">
-        <summary>ALE</summary>
-        <div class="kv" style="margin-top: 8px;">
+        <h4>Risk</h4>
+        <div class="kv">
+          <div>Sannolikhet</div><div>{{ discrete.get("probability","") }} ({{ discrete.get("probability_text","") }})</div>
+          <div>Konsekvens</div><div>{{ discrete.get("consequence","") }} ({{ discrete.get("consequence_text","") }})</div>
+          <div>Risk</div><div><strong>{{ discrete.get("risk","") }} ({{ discrete.get("risk_text","") }})</strong></div>
           <div>Budget: </div><div>{{ risk.get("budget","") }} {{ risk.get("currency","") }}/år</div>
-          <div>Loss event frequency</div><div>{{ risk.get("loss_event_frequency","").get("p90", "") }} händelser/år</div>
-          <div>Loss magnitude</div><div>{{ risk.get("loss_magnitude","").get("p90", "") }} % förlust av budget vid en incident</div>
-          <div>Annual loss expectancy</div><div><strong>{{ risk.get("annual_loss_expectancy","").get("p90","") }}</strong> {{ risk.get("currency","") }}/år</div>
         </div>
+        <details>
+          <summary>Frågor</summary>
+          <h5>Threat Event Frequency</h5>
+          {% for q in s.get("questionaires", {}).get("tef", {}).get("questions", []) %}
+            <details style="margin-top: 10px;">
+              <summary>{{ q.get("text", "") }}</summary>
+              <div class="kv" style="margin-top: 8px;">
+                <div><strong>Answer</strong></div><div>{{ q.get("answer", "").get("text", "") }}</div>
+                <div><strong>Weight</strong></div><div>{{ q.get("answer", "").get("weight", "") }}</div>
+              </div>
+            </details>
+          {% endfor %}
+          <h5>Vulnerability</h5>
+          {% for q in s.get("questionaires", {}).get("vuln", {}).get("questions", []) %}
+            <details style="margin-top: 10px;">
+              <summary>{{ q.get("text", "") }}</summary>
+              <div class="kv" style="margin-top: 8px;">
+                <div><strong>Answer</strong></div><div>{{ q.get("answer", "").get("text", "") }}</div>
+                <div><strong>Weight</strong></div><div>{{ q.get("answer", "").get("weight", "") }}</div>
+              </div>
+            </details>
+          {% endfor %}
+          <h5>Loss Magnitude</h5>
+          {% for q in s.get("questionaires", {}).get("lm", {}).get("questions", []) %}
+            <details style="margin-top: 10px;">
+              <summary>{{ q.get("text", "") }}</summary>
+              <div class="kv" style="margin-top: 8px;">
+                <div><strong>Answer</strong></div><div>{{ q.get("answer", "").get("text", "") }}</div>
+                <div><strong>Weight</strong></div><div>{{ q.get("answer", "").get("weight", "") }}</div>
+              </div>
+            </details>
+          {% endfor %}
+        </details>
       </details>
-      <h4>Frågor: Threat Event Frequency</h4>
-      {% for q in s.get("questionaires", {}).get("tef", {}).get("questions", []) %}
-        <details style="margin-top: 10px;">
-          <summary>{{ q.get("text", "") }}</summary>
-          <div class="kv" style="margin-top: 8px;">
-            <div><strong>Answer</strong></div><div>{{ q.get("answer", "").get("text", "") }}</div>
-            <div><strong>Weight</strong></div><div>{{ q.get("answer", "").get("weight", "") }}</div>
-          </div>
-        </details>
-      {% endfor %}
-      <h4>Frågor: Vulnerability</h4>
-      {% for q in s.get("questionaires", {}).get("vuln", {}).get("questions", []) %}
-        <details style="margin-top: 10px;">
-          <summary>{{ q.get("text", "") }}</summary>
-          <div class="kv" style="margin-top: 8px;">
-            <div><strong>Answer</strong></div><div>{{ q.get("answer", "").get("text", "") }}</div>
-            <div><strong>Weight</strong></div><div>{{ q.get("answer", "").get("weight", "") }}</div>
-          </div>
-        </details>
-      {% endfor %}
-      <h4>Frågor: Loss Magnitude</h4>
-      {% for q in s.get("questionaires", {}).get("lm", {}).get("questions", []) %}
-        <details style="margin-top: 10px;">
-          <summary>{{ q.get("text", "") }}</summary>
-          <div class="kv" style="margin-top: 8px;">
-            <div><strong>Answer</strong></div><div>{{ q.get("answer", "").get("text", "") }}</div>
-            <div><strong>Weight</strong></div><div>{{ q.get("answer", "").get("weight", "") }}</div>
-          </div>
-        </details>
-      {% endfor %}
     </div>
   {% else %}
     <p class="muted">Denna analys saknar scenarion.</p>

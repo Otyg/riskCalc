@@ -12,11 +12,11 @@ class DiscreetThreshold():
                                    {'value':3, 'text':'Märkbar påverkan', 'threshold': float(0.02)},
                                    {'value':4, 'text':'Allvarlig påverkan', 'threshold': float(0.05)},
                                    {'value':5, 'text':'Kritisk påverkan', 'threshold': float(0.051)}],
-                 risk:list=[{'value': 0, 'text':'Mycket låg', 'threshold':3},
-                            {'value': 0, 'text':'Låg', 'threshold':6},
-                            {'value': 0, 'text':'Medel', 'threshold':10},
-                            {'value': 0, 'text':'Hög', 'threshold':15},
-                            {'value': 0, 'text':'Mycket hög', 'threshold':25}]):
+                 risk:list=[{'value': 'very_low', 'text':'Mycket låg', 'threshold':3},
+                            {'value': 'low', 'text':'Låg', 'threshold':6},
+                            {'value': 'middle', 'text':'Medel', 'threshold':10},
+                            {'value': 'high', 'text':'Hög', 'threshold':15},
+                            {'value': 'critical', 'text':'Mycket hög', 'threshold':25}]):
         self.probability_values = probability
         self.consequence_values = consequence
         self.risk_values = risk
@@ -64,8 +64,17 @@ class DiscreteRisk(Risk):
                 if non_discreet_value <= x['threshold']:
                     value = x['value']
                     text = x['text']
+        if key=="risk":
+            self.risk.update({'level': value})
+            non_discreet_value_string = f", ALE: {round(self.annual_loss_expectancy.p90, 2)} {self.currency}/år"
+        elif key=="probability":
+            non_discreet_value_string = f": {round(non_discreet_value, 2)} händelser/år"
+        else:
+            non_discreet_value_string = f": {round(non_discreet_value*100, 2)} %förlust per händelse ({round(self.budget*non_discreet_value,2)} {self.currency}/händelse)"
+        
         self.risk.update({key: value})
-        self.risk.update({key + '_text': text})
+        self.risk.update({key + '_text': text + non_discreet_value_string})
+        
     
     def calculate_consequence(self):
         self.__set_values('consequence', self.loss_magnitude.p90, self.thresholds.consequence_values)

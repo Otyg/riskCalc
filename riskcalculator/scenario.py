@@ -10,8 +10,8 @@ class RiskScenario():
                  asset: str = "",
                  threat: str = "",
                  vulnerability: str = "",
-                 risk: Risk = Risk(),
-                 questionaires: Questionaires = Questionaires()
+                 risk: Risk = None,
+                 questionaires: Questionaires = None
                  ):
         self.name = name
         self.actor = actor
@@ -21,8 +21,8 @@ class RiskScenario():
         self.vulnerability = vulnerability
         self.risk = risk
         self.questionaires = questionaires
-        if not description:
-            self.description = self.auto_desc()
+        if not name:
+            self.name = self.auto_desc()
 
     def auto_desc(self):
         return f"Risk att {self.actor} utnyttjar {self.vulnerability} för att realisera {self.threat} mot {self.asset}."
