@@ -167,6 +167,44 @@ def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QU
         },
     )
 
+@app.get("/create/{draft_id}/scenario/{scenario_index}/edit", response_class=HTMLResponse)
+def edit_scenario_page(request: Request, draft_id: str, scenario_index: int, qset: str = DEFAULT_QUESTIONAIRES_SET):
+    draft = draft_repo.load(draft_id)
+    scenarios = draft.get("scenarios", [])
+
+    if scenario_index < 0 or scenario_index >= len(scenarios):
+        return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
+    scenario = scenarios[scenario_index]
+
+    threat_suggestions = threats_repo.load()
+    actor_suggestions = actors_repo.load()
+    vulnerability_suggestions = vulns_repo.load()
+    category_suggestions = categories_repo.load()
+
+    # questionaires-set (för att rendera frågor). qset kommer via querystring.
+    try:
+        qs = questionaires_repo.load_objects(qset)
+    except FileNotFoundError:
+        qs = {"tef": None, "vuln": None, "lm": None}
+
+    return templates.TemplateResponse(
+        "edit_scenario_v1.html",
+        {
+            "request": request,
+            "draft_id": draft_id,
+            "scenario_index": scenario_index,
+            "scenario": scenario,
+            "qs": qs,
+            "qset": qset,
+            "available_qsets": questionaires_repo.list_sets(),
+            "threat_suggestions": threat_suggestions,
+            "actor_suggestions": actor_suggestions,
+            "vulnerability_suggestions": vulnerability_suggestions,
+            "category_suggestions": category_suggestions,
+            "errors": [],
+        },
+    )
 
 @app.post("/create/{draft_id}/scenario/save")
 async def create_scenario_save(request: Request, draft_id: str):
@@ -285,6 +323,139 @@ async def create_scenario_save(request: Request, draft_id: str):
     draft.add_scenario(scenario=scenario_obj)
     draft_repo.save(draft_id, draft.to_dict())
 
+    return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
+@app.post("/analysis/{analysis_id}/new-version")
+def new_version_from_analysis(analysis_id: str):
+    original = analyses_repo.get_dict(analysis_id)
+
+    draft = dict(original)
+    draft["version"] = ""
+    draft["date"] = ""
+    draft.setdefault("scenarios", [])
+    draft["previous_analysis_id"] = analysis_id
+    # Skapa draft från kopian
+    draft_id = draft_repo.create_from(draft)
+
+    return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
+
+@app.post("/create/{draft_id}/scenario/{scenario_index}/update")
+async def edit_scenario_save(request: Request, draft_id: str, scenario_index: int):
+    draft = draft_repo.load(draft_id)
+    scenarios = draft.get("scenarios", [])
+
+    if scenario_index < 0 or scenario_index >= len(scenarios):
+        return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
+    form = await request.form()
+
+    # samma fält som i create
+    name = str(form.get("name", "")).strip()
+    category = str(form.get("category", "")).strip()
+    actor = str(form.get("actor", "")).strip()
+    asset = str(form.get("asset", "")).strip()
+    threat = str(form.get("threat", "")).strip()
+    vulnerability = str(form.get("vulnerability", "")).strip()
+    description = str(form.get("description", "")).strip()
+    qset = str(form.get("qset", DEFAULT_QUESTIONAIRES_SET))
+
+    errors: list[str] = []
+
+    risk_dict: dict[str, Any] = {
+        "budget": str(_d(str(form.get("budget", "1000000")), Decimal(1000000))),
+        "currency": str(form.get("currency", "SEK")) or "SEK",
+    }
+
+    questionaires_payload: dict[str, Any] = {}
+
+    # Ladda questionaires-set och sätt svar-index
+    try:
+        qmap = questionaires_repo.load_objects(qset)
+    except FileNotFoundError:
+        qmap = {"tef": None, "vuln": None, "lm": None}
+        errors.append(f"Kunde inte ladda questionaires-set: {qset}")
+
+    for dim_key in ("tef", "vuln", "lm"):
+        qobj = qmap.get(dim_key)
+        if qobj is None:
+            continue
+        for qi, question in enumerate(qobj.questions):
+            raw = form.get(f"q_{dim_key}_{qi}")
+            if raw is None or str(raw).strip() == "":
+                continue
+            try:
+                ans_idx = int(raw)
+            except ValueError:
+                continue
+            question.set_answer(ans_idx)
+
+    # spara svaren minimalt (index)
+    questionaires_payload = {
+        "qset": qset,
+        "answers": {
+            dim_key: {
+                str(qi): getattr(qobj.questions[qi], "answer", None)
+                for qi in range(len(qobj.questions))
+                if isinstance(getattr(qobj.questions[qi], "answer", None), int)
+            }
+            for dim_key, qobj in qmap.items()
+            if qobj is not None and hasattr(qobj, "questions")
+        },
+    }
+    if errors:
+        # rendera om edit-sidan
+        threat_suggestions = threats_repo.load()
+        actor_suggestions = actors_repo.load()
+        vulnerability_suggestions = vulns_repo.load()
+        category_suggestions = categories_repo.load()
+        try:
+            qs = questionaires_repo.load_objects(qset)
+        except FileNotFoundError:
+            qs = {"tef": None, "vuln": None, "lm": None}
+
+        return templates.TemplateResponse(
+            "edit_scenario_v1.html",
+            {
+                "request": request,
+                "draft_id": draft_id,
+                "scenario_index": scenario_index,
+                "scenario": scenarios[scenario_index],
+                "qs": qs,
+                "qset": qset,
+                "available_qsets": questionaires_repo.list_sets(),
+                "threat_suggestions": threat_suggestions,
+                "actor_suggestions": actor_suggestions,
+                "vulnerability_suggestions": vulnerability_suggestions,
+                "category_suggestions": category_suggestions,
+                "errors": errors,
+            },
+            status_code=400,
+        )
+
+    # om du vill canonicalisera via RiskScenario:
+    try:
+        questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
+        tef = qs.get('tef').multiply_factor()
+        vuln_score = qs.get('vuln').sum_factor()
+        loss_magnitude = qs.get('lm').range()
+        risk = DiscreteRisk(tef=tef, vuln_score=vuln_score, loss_magnitude=loss_magnitude, budget=Decimal(risk_dict.get('budget')), currency=risk_dict.get('currency'))
+        scenario_obj = RiskScenario(name=name, category=category ,actor=actor, asset=asset, threat=threat, vulnerability=vulnerability, description=description, risk=risk, questionaires=questionaires)
+    except Exception as e:
+        raise e
+
+    draft.add_scenario(scenario=scenario_obj)
+    draft_repo.save(draft_id, draft.to_dict())
+    return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
+@app.post("/create/{draft_id}/scenario/{scenario_index}/delete")
+def delete_scenario(draft_id: str, scenario_index: int):
+    draft = draft_repo.load(draft_id)
+    scenarios = draft.get("scenarios", [])
+    if 0 <= scenario_index < len(scenarios):
+        scenarios.pop(scenario_index)
+        draft["scenarios"] = scenarios
+        draft_repo.save(draft_id, draft)
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
 
 if __name__ == "__main__":

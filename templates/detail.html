@@ -4,6 +4,12 @@
     <span><strong>Datum:</strong> {{ analysis.get("date", "") }}</span> ·
     <span><strong>Owner:</strong> {{ analysis.get("owner", "") }}</span> ·
     <span><strong>Version:</strong> {{ analysis.get("version", "") }}</span>
+    <form method="post" action="/analysis/{{ selected }}/new-version" style="margin: 10px 0;">
+      <button type="submit"
+            style="padding:12px 16px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+          ➕ Skapa ny version
+      </button>
+    </form>
   </div>
 
   <div class="card">

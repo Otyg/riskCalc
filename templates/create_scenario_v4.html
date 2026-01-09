@@ -26,8 +26,8 @@
 
       <div class="grid">
         <div>
-          <label><strong>name</strong></label><br/>
-          <input name="name" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <label><strong>Namn</strong></label><br/>
+          <input name="name" placeholder="Lämna tomt för automatgenererat utifrån aktör, hot, sårbarhet och tillgång" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
         </div>
         <div>
           <label><strong>Riskområde</strong></label><br/>
@@ -42,7 +42,7 @@
           </datalist>
         </div>
         <div>
-          <label><strong>actor</strong></label><br/>
+          <label><strong>Aktör</strong></label><br/>
           <input name="actor"
                 list="actor_list"
                 placeholder="Skriv eget, välj från listan eller lämna tomt"
@@ -55,11 +55,11 @@
         </div>
 
         <div>
-          <label><strong>asset</strong></label><br/>
+          <label><strong>Tillgång</strong></label><br/>
           <input name="asset" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
         </div>
         <div>
-          <label><strong>threat</strong></label><br/>
+          <label><strong>Hot</strong></label><br/>
           <input name="threat"
                 list="threat_list"
                 placeholder="Skriv eget, välj från listan eller lämna tomt"
@@ -69,13 +69,10 @@
               <option value="{{ t }}"></option>
             {% endfor %}
           </datalist>
-          <p class="muted" style="margin:6px 0 0 0;">
-            Du kan skriva fritt, välja ett förslag, eller lämna blankt.
-          </p>
         </div>
 
         <div>
-          <label><strong>vulnerability</strong></label><br/>
+          <label><strong>Sårbarhet</strong></label><br/>
           <input name="vulnerability"
                 list="vuln_list"
                 placeholder="Skriv eget, välj från listan eller lämna tomt"
@@ -89,7 +86,7 @@
       </div>
 
       <div style="margin-top:12px;">
-        <label><strong>description</strong></label><br/>
+        <label><strong>Beskrivning</strong></label><br/>
         <textarea name="description" rows="4" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;"></textarea>
       </div>
 
@@ -97,12 +94,12 @@
 
       <div class="grid">
         <div>
-          <label><strong>budget</strong></label><br/>
+          <label><strong>Budget</strong></label><br/>
           <input name="budget" type="number" step="any" value="{{ defaults.get('budget','1000000') }}"
                  style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
         </div>
         <div>
-          <label><strong>currency</strong></label><br/>
+          <label><strong>Valuta</strong></label><br/>
           <input name="currency" value="{{ defaults.get('currency','SEK') }}"
                  style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
         </div>

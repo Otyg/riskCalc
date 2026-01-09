@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+import uuid
 
 from riskcalculator.util import ComplexEncoder
 
@@ -17,6 +18,7 @@ class AnalysisListItem:
     date: str
     owner: str
     version: str
+    summary: str
 
 
 def _safe_slug(text: str) -> str:
@@ -47,6 +49,7 @@ class JsonAnalysisRepository:
                     date=str(d.get("date", "")),
                     owner=str(d.get("owner", "")),
                     version=str(d.get("version", "")),
+                    summary=str(d.get("summary", "")),
                 )
             )
 
@@ -95,6 +98,14 @@ class DraftRepository:
                 "scenarios": [],
             },
         )
+        return draft_id
+
+    def create_from(self, draft_dict: dict[str, Any]) -> str:
+        """
+        Skapa ett draft som är initierat från en existerande analys.
+        """
+        draft_id = uuid.uuid4().hex[:12]
+        self.save(draft_id, draft_dict)
         return draft_id
 
     def load(self, draft_id: str) -> dict[str, Any]:

@@ -46,26 +46,34 @@
                 style="padding:10px 14px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
           Spara fält
         </button>
-
-        <a href="/create/{{ draft_id }}/scenario/new"
-           style="display:inline-block; padding:10px 14px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; text-decoration:none; color:inherit;">
-          + Lägg till riskscenario
-        </a>
       </div>
     </form>
 
-    <h2>Scenarion</h2>
+    <h2>Scenarios</h2>
 
-    {% set scenarios = draft.get("scenarios", []) %}
-    {% if scenarios|length == 0 %}
-      <p class="muted">Inga scenarion tillagda ännu.</p>
-    {% else %}
-      {% for s in scenarios %}
-        <div class="card">
-          <h3 style="margin:0;">{{ s.get("name","") }}</h3>
-          <p class="muted" style="margin:6px 0 0 0; white-space:pre-wrap;">{{ s.get("description","") }}</p>
-        </div>
-      {% endfor %}
+    <a href="/create/{{ draft_id }}/scenario/new" class="item">+ Lägg till scenario</a>
+
+    {% if draft.scenarios and draft.scenarios|length > 0 %}
+      <div class="card" style="margin-top:12px;">
+        <ul style="margin:0; padding-left:18px;">
+          {% for s in draft.scenarios %}
+            {% set i = loop.index0 %}
+            <li style="margin:8px 0;">
+              <strong>{{ s.name }}</strong>
+              {% if s.category %}<span class="badge">{{ s.category }}</span>{% endif %}
+              <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+                <a class="item" href="/create/{{ draft_id }}/scenario/{{ i }}/edit">✏️ Redigera</a>
+                <form method="post" action="/create/{{ draft_id }}/scenario/{{ i }}/delete" style="display:inline;">
+                  <button type="submit"
+                          style="padding:8px 10px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+                    🗑️ Ta bort
+                  </button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
     {% endif %}
 
     <form method="post" action="/create/{{ draft_id }}/finalize" style="margin-top:14px;">
