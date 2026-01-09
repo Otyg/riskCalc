@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import uvicorn
 from decimal import Decimal, InvalidOperation
 import os
 from pathlib import Path
@@ -280,3 +280,6 @@ async def create_scenario_save(request: Request, draft_id: str):
     draft_repo.save(draft_id, draft.to_dict())
 
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)
