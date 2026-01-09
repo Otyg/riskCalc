@@ -77,7 +77,6 @@ class Questionaire():
 
     def from_dict(self, dict:dict={}):
         self.factor = dict['factor']
-        print(self.factor)
 
         questions = []
         for q in dict['questions']:
@@ -87,7 +86,6 @@ class Questionaire():
             question = Question(q['text'], alternatives=alternatives)
             question.set_answer(Alternative(text=q['answer']['text'], weight=MonteCarloRange(min=Decimal(q['answer']['weight']['min']), max=Decimal(q['answer']['weight']['max']), probable=Decimal(q['answer']['weight']['probable']))))
             self.append_question(question=question)
-            print(q)
         self.sum_factor()
         self.multiply_factor()
 

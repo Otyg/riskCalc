@@ -42,6 +42,7 @@
     <div class="card">
       <h3 style="margin-top: 0;">{{ s.get("name","") }}</h3>
       <p style="white-space: pre-wrap;"><strong>Risk: {{ discrete.get("risk_text","").split(",")[0] }}</strong></p>
+      <p style="white-space: pre-wrap;">Riskområde: {{ s.get("category","") }}</p>
       <p style="white-space: pre-wrap;">{{ s.get("description","") }}</p>
       <details style="margin-top: 10px;">
         <h4>Risk</h4>

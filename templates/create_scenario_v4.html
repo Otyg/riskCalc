@@ -30,6 +30,18 @@
           <input name="name" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
         </div>
         <div>
+          <label><strong>Riskområde</strong></label><br/>
+          <input name="category"
+                list="category_list"
+                placeholder="Skriv eget, välj från listan eller lämna tomt"
+                style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <datalist id="category_list">
+            {% for c in category_suggestions %}
+              <option value="{{ c }}"></option>
+            {% endfor %}
+          </datalist>
+        </div>
+        <div>
           <label><strong>actor</strong></label><br/>
           <input name="actor"
                 list="actor_list"
@@ -74,7 +86,6 @@
             {% endfor %}
           </datalist>
         </div>
-
       </div>
 
       <div style="margin-top:12px;">

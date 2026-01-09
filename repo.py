@@ -113,3 +113,16 @@ class DraftRepository:
         p = self._path(draft_id)
         if p.exists():
             p.unlink()
+
+class JsonCategoryRepository:
+    def __init__(self, path: Path):
+        self.path = path
+
+    def load(self) -> list[str]:
+        if not self.path.exists():
+            return []
+        with self.path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        categories = data.get("categories", [])
+        cleaned = sorted({str(c).strip() for c in categories if str(c).strip()})
+        return cleaned

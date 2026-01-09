@@ -13,7 +13,7 @@ from starlette.status import HTTP_303_SEE_OTHER
 from riskcalculator.scenario import RiskScenario
 from riskcalculator.discret_scale import DiscreteRisk
 from actors_repo import JsonActorsRepository
-from repo import JsonAnalysisRepository, DraftRepository
+from repo import JsonAnalysisRepository, DraftRepository, JsonCategoryRepository
 from questionaires_repo import JsonQuestionairesRepository
 from riskcalculator.questionaire import Questionaires
 from threats_repo import JsonThreatsRepository
@@ -39,6 +39,7 @@ questionaires_repo = JsonQuestionairesRepository(DATA_DIR / "questionaires")
 actors_repo = JsonActorsRepository(DATA_DIR / "actors.json")
 threats_repo = JsonThreatsRepository(DATA_DIR / "threats.json")
 vulns_repo = JsonVulnerabilitiesRepository(DATA_DIR / "vulnerabilities.json")
+categories_repo = JsonCategoryRepository(DATA_DIR / "categories.json")
 
 def _d(s: str, default: Decimal = Decimal(0)) -> Decimal:
     try:
@@ -141,6 +142,7 @@ def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QU
     threat_suggestions = threats_repo.load()
     actor_suggestions = actors_repo.load()
     vulnerability_suggestions = vulns_repo.load()
+    category_suggestions = categories_repo.load()
 
     try:
         qs = questionaires_repo.load_objects(qset)  # {"tef": Questionaire, "vuln": ..., "lm": ...}
@@ -161,6 +163,7 @@ def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QU
             "threat_suggestions": threat_suggestions,
             "actor_suggestions": actor_suggestions,
             "vulnerability_suggestions": vulnerability_suggestions,
+            "category_suggestions": category_suggestions,
         },
     )
 
@@ -177,7 +180,7 @@ async def create_scenario_save(request: Request, draft_id: str):
     threat = str(form.get("threat", "")).strip()
     vulnerability = str(form.get("vulnerability", "")).strip()
     description = str(form.get("description", "")).strip()
-
+    category = str(form.get("category", "")).strip()
     risk_input_mode = str(form.get("risk_input_mode", "questionnaire"))
     qset = str(form.get("qset", DEFAULT_QUESTIONAIRES_SET))
     threat_suggestions = threats_repo.load()
@@ -263,6 +266,7 @@ async def create_scenario_save(request: Request, draft_id: str):
                 "qset": qset,
                 "available_qsets": questionaires_repo.list_sets(),
                 "threat_suggestions": threat_suggestions,
+                "category_suggestions": categories_repo.load(),
             },
             status_code=400,
         )
@@ -273,7 +277,7 @@ async def create_scenario_save(request: Request, draft_id: str):
         vuln_score = qs.get('vuln').sum_factor()
         loss_magnitude = qs.get('lm').range()
         risk = DiscreteRisk(tef=tef, vuln_score=vuln_score, loss_magnitude=loss_magnitude, budget=Decimal(risk_dict.get('budget')), currency=risk_dict.get('currency'))
-        scenario_obj = RiskScenario(name=name, actor=actor, asset=asset, threat=threat, vulnerability=vulnerability, description=description, risk=risk, questionaires=questionaires)
+        scenario_obj = RiskScenario(name=name, category=category ,actor=actor, asset=asset, threat=threat, vulnerability=vulnerability, description=description, risk=risk, questionaires=questionaires)
         scenario_json = scenario_obj.to_dict()
     except Exception as e:
         raise e

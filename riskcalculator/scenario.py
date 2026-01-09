@@ -11,7 +11,8 @@ class RiskScenario():
                  threat: str = "",
                  vulnerability: str = "",
                  risk: Risk = None,
-                 questionaires: Questionaires = None
+                 questionaires: Questionaires = None,
+                 category: str = ""
                  ):
         self.name = name
         self.actor = actor
@@ -21,6 +22,7 @@ class RiskScenario():
         self.vulnerability = vulnerability
         self.risk = risk
         self.questionaires = questionaires
+        self.category = category
         if not name:
             self.name = self.auto_desc()
 
@@ -30,6 +32,7 @@ class RiskScenario():
     def to_dict(self):
         return {
             "name": self.name,
+            "category": self.category,
             "actor": self.actor,
             "asset": self.asset,
             "threat": self.threat,
@@ -41,6 +44,7 @@ class RiskScenario():
     
     def from_dict(self, dict:dict={}):
         self.name = dict['name']
+        self.category = dict['category']
         self.actor = dict['actor']
         self.description = dict['description']
         self.asset = dict['asset']

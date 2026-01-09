@@ -41,17 +41,12 @@ class JsonQuestionairesRepository:
         och värden som är dina Questionaire-objekt.
         """
         raw = self.load_dict(set_id)
-
-        # TODO: ändra importen till din riktiga modul
         from riskcalculator.questionaire import Questionaire
 
         tef = Questionaire()
         tef.from_dict(raw.get("tef", {}))
-        print(tef.to_dict())
         vuln = Questionaire()
         vuln.from_dict(raw.get("vuln", {}))
-        print("===")
         lm = Questionaire()
         lm.from_dict(raw.get("lm", {}))
-        print(tef.to_dict())
         return {"tef": tef, "vuln": vuln, "lm": lm}
