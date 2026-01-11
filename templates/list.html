@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <h2>Riskanalyser</h2>
+    <p class="muted">Välj en analys för att visa detaljer, eller skapa en ny.</p>
+
+    <a class="item" href="/create">+ Skapa ny analys</a>
+
+    <hr style="border:none; border-top:1px solid #e5e7eb; margin:12px 0;" />
+
+    {% for a in analyses %}
+      <a class="item {% if selected == a.analysis_id %}active{% endif %}"
+         href="/?selected={{ a.analysis_id | urlencode }}">
+        <div><strong>{{ a.title }}</strong></div>
+        <div class="muted">{{ a.date }} · {{ a.owner }} · v{{ a.version }}</div>
+        <div class="muted">{{ a.summary }}</div>
+      </a>
+    {% else %}
+      <p class="muted">Inga analyser hittades.</p>
+    {% endfor %}
+  </aside>
+
+  <main class="main">
+    {% if analysis %}
+      {% include "detail.html" %}
+    {% else %}
+      <h2>Ingen analys vald</h2>
+      <p class="muted">Välj en analys i listan till vänster.</p>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}

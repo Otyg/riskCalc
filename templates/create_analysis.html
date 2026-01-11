@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <h2>Skapa analys</h2>
+    <p class="muted">Utkast: <code class="badge">{{ draft_id }}</code></p>
+
+    <a class="item" href="/">← Till listan</a>
+  </aside>
+
+  <main class="main">
+    <h1 style="margin-top:0;">Analysinformation</h1>
+
+    <form method="post" action="/create/{{ draft_id }}/update" class="card">
+      <div class="grid">
+        <div>
+          <label><strong>analysis_object</strong></label><br/>
+          <input name="analysis_object" value="{{ draft.get('analysis_object','') }}"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+        </div>
+        <div>
+          <label><strong>version</strong></label><br/>
+          <input name="version" value="{{ draft.get('version','') }}"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+        </div>
+        <div>
+          <label><strong>date</strong></label><br/>
+          <input name="date" value="{{ draft.get('date','') }}" placeholder="YYYY-MM-DD"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+        </div>
+        <div>
+          <label><strong>owner</strong></label><br/>
+          <input name="owner" value="{{ draft.get('owner','') }}"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label><strong>scope</strong></label><br/>
+        <textarea name="scope" rows="4"
+                  style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">{{ draft.get('scope','') }}</textarea>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="submit"
+                style="padding:10px 14px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+          Spara fält
+        </button>
+      </div>
+    </form>
+
+    <h2>Scenarios</h2>
+
+    <a href="/create/{{ draft_id }}/scenario/new" class="item">+ Lägg till scenario</a>
+
+    {% if draft.scenarios and draft.scenarios|length > 0 %}
+      <div class="card" style="margin-top:12px;">
+        <ul style="margin:0; padding-left:18px;">
+          {% for s in draft.scenarios %}
+            {% set i = loop.index0 %}
+            <li style="margin:8px 0;">
+              <strong>{{ s.name }}</strong>
+              {% if s.category %}<span class="badge">{{ s.category }}</span>{% endif %}
+              <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+                {% set sqset = (s.questionaires.qset if s.questionaires and s.questionaires.qset else 'default') %}
+                <a class="item" href="/create/{{ draft_id }}/scenario/{{ i }}/edit?qset={{ sqset }}">✏️ Redigera</a>
+                <form method="post" action="/create/{{ draft_id }}/scenario/{{ i }}/delete" style="display:inline;">
+                  <button type="submit"
+                          style="padding:8px 10px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+                    🗑️ Ta bort
+                  </button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="post" action="/create/{{ draft_id }}/finalize" style="margin-top:14px;">
+      <button type="submit"
+              style="padding:12px 16px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+        Spara hela analysen
+      </button>
+      <p class="muted" style="margin-top:8px;">
+        Detta skapar en ny JSON-fil under <code class="badge">data/analyses</code>.
+      </p>
+    </form>
+  </main>
+</div>
+{% endblock %}

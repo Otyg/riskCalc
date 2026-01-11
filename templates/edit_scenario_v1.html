@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <h2>Redigera riskscenario</h2>
+    <p class="muted">Utkast: <code class="badge">{{ draft_id }}</code></p>
+    <a class="item" href="/create/{{ draft_id }}">← Tillbaka till analysen</a>
+  </aside>
+
+  <main class="main">
+    <h1 style="margin-top:0;">Redigera scenario</h1>
+
+    {% if errors and errors|length > 0 %}
+      <div class="card" style="border-color:#fecaca;">
+        <h3 style="margin-top:0;">Fel</h3>
+        <ul style="margin:0; padding-left:18px;">
+          {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% set s = scenario %}
+    {% set qanswers = (s.questionaires.answers if s.questionaires and s.questionaires.answers else {}) %}
+
+    <form method="post" action="/create/{{ draft_id }}/scenario/{{ scenario_index }}/update" class="card">
+      <h2 style="margin-top:0;">Scenario</h2>
+
+      <div class="grid">
+        <div>
+          <label><strong>name</strong></label><br/>
+          <input name="name" value="{{ s.name or '' }}"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+        </div>
+
+        <div>
+          <label><strong>category</strong></label><br/>
+          <input name="category" list="category_list" value="{{ s.category or '' }}"
+                 placeholder="Skriv eget, välj från listan eller lämna tomt"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <datalist id="category_list">
+            {% for c in category_suggestions %}<option value="{{ c }}"></option>{% endfor %}
+          </datalist>
+        </div>
+
+        <div>
+          <label><strong>actor</strong></label><br/>
+          <input name="actor" list="actor_list" value="{{ s.actor or '' }}"
+                 placeholder="Skriv eget, välj från listan eller lämna tomt"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <datalist id="actor_list">
+            {% for a in actor_suggestions %}<option value="{{ a }}"></option>{% endfor %}
+          </datalist>
+        </div>
+
+        <div>
+          <label><strong>asset</strong></label><br/>
+          <input name="asset" value="{{ s.asset or '' }}"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+        </div>
+
+        <div>
+          <label><strong>threat</strong></label><br/>
+          <input name="threat" list="threat_list" value="{{ s.threat or '' }}"
+                 placeholder="Skriv eget, välj från listan eller lämna tomt"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <datalist id="threat_list">
+            {% for t in threat_suggestions %}<option value="{{ t }}"></option>{% endfor %}
+          </datalist>
+        </div>
+
+        <div>
+          <label><strong>vulnerability</strong></label><br/>
+          <input name="vulnerability" list="vuln_list" value="{{ s.vulnerability or '' }}"
+                 placeholder="Skriv eget, välj från listan eller lämna tomt"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+          <datalist id="vuln_list">
+            {% for v in vulnerability_suggestions %}<option value="{{ v }}"></option>{% endfor %}
+          </datalist>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label><strong>description</strong></label><br/>
+        <textarea name="description" rows="4"
+                  style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">{{ s.description or '' }}</textarea>
+      </div>
+
+      <h2 style="margin:16px 0 8px;">Risk</h2>
+
+      {% set r = s.risk if s.risk else {} %}
+
+      <div class="grid">
+        <div>
+          <label><strong>budget</strong></label><br/>
+          <input name="budget" type="number" step="any" value="{{ r.budget or '1000000' }}"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+        </div>
+        <div>
+          <label><strong>currency</strong></label><br/>
+          <input name="currency" value="{{ r.currency or 'SEK' }}"
+                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+        </div>
+      </div>
+
+      <!-- QUESTIONNAIRE -->
+      <div id="questionnaire_block" style="display:block;">
+        {% for dim_key, title in [("tef","TEF"), ("vuln","Vulnerability"), ("lm","Loss magnitude")] %}
+          {% set qobj = qs.get(dim_key) %}
+          {% set dim_ans = (qanswers.get(dim_key) if qanswers else {}) %}
+          <div class="card" style="margin-top:12px;">
+            <h3 style="margin-top:0;">{{ title }}</h3>
+            {% if not qobj %}
+              <p class="muted">Saknar questionaire för {{ dim_key }}.</p>
+            {% else %}
+              {% for question in qobj.questions %}
+                {% set qi = loop.index0 %}
+                {% set selected_index = question.answer.text %}
+                <div style="margin:10px 0; padding-top:10px; border-top:1px solid #e5e7eb;">
+                  <div><strong>{{ question.text }}</strong></div>
+                  <div style="margin-top:6px;">
+                    <select name="q_{{ dim_key }}_{{ qi }}"
+                            style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                      <option value="">— Välj alternativ —</option>
+                      {% for alt in question.alternatives %}
+                        {% set ai = loop.index0 %}
+                        <option value="{{ ai }}" {% if question.answer.text is not none and question.answer.text == alt.text %}selected{% endif %}>
+                          {{ alt.text }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:14px;">
+        <button type="submit"
+                style="padding:12px 16px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+          💾 Spara ändringar
+        </button>
+      </div>
+    </form>
+
+    <script>
+      // Reload vid byte av qset (behåll scenario_index)
+      const qsetSelect = document.getElementById('qset_select');
+      if (qsetSelect) {
+        qsetSelect.addEventListener('change', () => {
+          const draftId = qsetSelect.dataset.draftId;
+          const qset = encodeURIComponent(qsetSelect.value || '');
+          window.location.href = `/create/${draftId}/scenario/{{ scenario_index }}/edit?qset=${qset}`;
+        });
+      }
+    </script>
+  </main>
+</div>
+{% endblock %}
