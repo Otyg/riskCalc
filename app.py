@@ -137,7 +137,7 @@ def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QU
     category_suggestions = categories_repo.load()
 
     try:
-        qs = questionaires_repo.load_objects(qset)  # {"tef": Questionaire, "vuln": ..., "lm": ...}
+        qs = questionaires_repo.load_objects(qset)
     except FileNotFoundError:
         # om set saknas: visa tomt + fel
         qs = {"tef": None, "vuln": None, "lm": None}
@@ -269,6 +269,7 @@ async def create_scenario_save(request: Request, draft_id: str):
         )
 
     try:
+        print(qs.get('tef').mean())
         questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
         questionaires_values = questionaires.calculate_questionairy_values()
         risk = DiscreteRisk(tef=questionaires_values.get('tef'),
