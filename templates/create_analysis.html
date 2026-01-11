@@ -62,7 +62,8 @@
               <strong>{{ s.name }}</strong>
               {% if s.category %}<span class="badge">{{ s.category }}</span>{% endif %}
               <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-                <a class="item" href="/create/{{ draft_id }}/scenario/{{ i }}/edit">✏️ Redigera</a>
+                {% set sqset = (s.questionaires.qset if s.questionaires and s.questionaires.qset else 'default') %}
+                <a class="item" href="/create/{{ draft_id }}/scenario/{{ i }}/edit?qset={{ sqset }}">✏️ Redigera</a>
                 <form method="post" action="/create/{{ draft_id }}/scenario/{{ i }}/delete" style="display:inline;">
                   <button type="submit"
                           style="padding:8px 10px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">

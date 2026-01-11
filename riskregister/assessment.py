@@ -28,7 +28,16 @@ class RiskAssessment():
         if isinstance(risk, DiscreteRisk):
             self.summary[risk.risk['level']] += 1
 
-    
+    def update_scenario(self, index:int, scenario:RiskScenario):
+        old_scenario = self.scenarios[index]
+        risk = old_scenario.risk
+        if isinstance(risk, DiscreteRisk):
+            self.summary[risk.risk['level']] -= 1
+        self.scenarios[index] = scenario
+        risk = scenario.risk
+        if isinstance(risk, DiscreteRisk):
+            self.summary[risk.risk['level']] += 1
+
     def to_dict(self):
         scenarios_as_dicts = []
         for scenario in self.scenarios:

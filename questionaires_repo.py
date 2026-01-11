@@ -49,4 +49,4 @@ class JsonQuestionairesRepository:
         vuln.from_dict(raw.get("vuln", {}))
         lm = Questionaire()
         lm.from_dict(raw.get("lm", {}))
-        return {"tef": tef, "vuln": vuln, "lm": lm}
+        return {"qset": set_id, "tef": tef, "vuln": vuln, "lm": lm}
