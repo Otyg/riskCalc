@@ -270,12 +270,21 @@ async def create_scenario_save(request: Request, draft_id: str):
 
     try:
         questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
-        tef = qs.get('tef').multiply_factor()
-        vuln_score = qs.get('vuln').sum_factor()
-        loss_magnitude = qs.get('lm').range()
-        risk = DiscreteRisk(tef=tef, vuln_score=vuln_score, loss_magnitude=loss_magnitude, budget=Decimal(risk_dict.get('budget')), currency=risk_dict.get('currency'))
-        scenario_obj = RiskScenario(name=name, category=category ,actor=actor, asset=asset, threat=threat, vulnerability=vulnerability, description=description, risk=risk, questionaires=questionaires)
-        scenario_json = scenario_obj.to_dict()
+        questionaires_values = questionaires.calculate_questionairy_values()
+        risk = DiscreteRisk(tef=questionaires_values.get('tef'),
+                            vuln_score=questionaires_values.get('vuln'),
+                            loss_magnitude=questionaires_values.get('lm'),
+                            budget=Decimal(risk_dict.get('budget')),
+                            currency=risk_dict.get('currency'))
+        scenario_obj = RiskScenario(name=name,
+                                    category=category,
+                                    actor=actor,
+                                    asset=asset,
+                                    threat=threat,
+                                    vulnerability=vulnerability,
+                                    description=description,
+                                    risk=risk,
+                                    questionaires=questionaires)
     except Exception as e:
         raise e
 
@@ -373,12 +382,21 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
 
     try:
         questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
-        tef = qs.get('tef').multiply_factor()
-        vuln_score = qs.get('vuln').sum_factor()
-        loss_magnitude = qs.get('lm').range()
-        risk = DiscreteRisk(tef=tef, vuln_score=vuln_score, loss_magnitude=loss_magnitude, budget=Decimal(risk_dict.get('budget')), currency=risk_dict.get('currency'))
-        scenario_obj = RiskScenario(name=name, category=category ,actor=actor, asset=asset, threat=threat, vulnerability=vulnerability, description=description, risk=risk, questionaires=questionaires)
-        scenario_json = scenario_obj.to_dict()
+        questionaires_values = questionaires.calculate_questionairy_values()
+        risk = DiscreteRisk(tef=questionaires_values.get('tef'),
+                            vuln_score=questionaires_values.get('vuln'),
+                            loss_magnitude=questionaires_values.get('lm'),
+                            budget=Decimal(risk_dict.get('budget')),
+                            currency=risk_dict.get('currency'))
+        scenario_obj = RiskScenario(name=name,
+                                    category=category,
+                                    actor=actor,
+                                    asset=asset,
+                                    threat=threat,
+                                    vulnerability=vulnerability,
+                                    description=description,
+                                    risk=risk,
+                                    questionaires=questionaires)
     except Exception as e:
         raise e
 

@@ -63,6 +63,8 @@ class Questionaire():
         self.factor = factor
         self.factor_mul = MonteCarloRange(probable=0.5)
         self.factor_sum = MonteCarloRange(probable=0.5)
+        self.factor_mean = MonteCarloRange(probable=0.5)
+        self.factor_range = MonteCarloRange(probable=0.5)
 
     def to_dict(self):
         questions = []
@@ -77,8 +79,6 @@ class Questionaire():
 
     def from_dict(self, dict:dict={}):
         self.factor = dict['factor']
-
-        questions = []
         for q in dict['questions']:
             alternatives = []
             for a in q['alternatives']:
@@ -88,6 +88,8 @@ class Questionaire():
             self.append_question(question=question)
         self.sum_factor()
         self.multiply_factor()
+        self.range()
+        self.mean()
 
     def append_question(self, question: Question = Question()):
         self.questions.append(question)
@@ -139,10 +141,12 @@ class Questionaire():
         return Decimal(statistics.mode(mode))
 
     def range(self):
-        return MonteCarloRange(min=self.min(), probable=self.mode(), max=self.max())
+        self.factor_range = MonteCarloRange(min=self.min(), probable=self.mode(), max=self.max())
+        return self.factor_range
 
     def mean(self):
-        return MonteCarloRange(min=self.factor_sum.min/len(self.questions), max=self.factor_sum.max/len(self.questions), probable=self.factor_sum.probable/len(self.questions))
+        self.factor_mean = MonteCarloRange(min=self.factor_sum.min/len(self.questions), max=self.factor_sum.max/len(self.questions), probable=self.factor_sum.probable/len(self.questions))
+        return self.factor_mean
     
 class Questionaires:
     def __init__(self, tef: Questionaire=Questionaire(), vuln:Questionaire=Questionaire(), lm:Questionaire=Questionaire()):
@@ -152,12 +156,20 @@ class Questionaires:
             'lm': lm
         }
 
+    def calculate_questionairy_values(self):
+        values = dict()
+        values.update({'tef': self.questionaires['tef'].factor_mean()})
+        values.update({'vuln': self.questionaires['vuln'].factor_sum()})
+        values.update({'lm': self.questionaires['lm'].factor_range()})
+        return values
+
     def to_dict(self):
         return {
             'tef': self.questionaires['tef'].to_dict(),
             'vuln': self.questionaires['vuln'].to_dict(),
             'lm': self.questionaires['lm'].to_dict(),
         }
+
     def from_dict(self, dict:dict={}):
         tef = Questionaire(factor=dict['tef']['factor'])
         tef.from_dict(dict['tef'])
