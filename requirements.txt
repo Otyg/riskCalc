@@ -1,4 +1,6 @@
 fastapi>=0.110
 uvicorn[standard]>=0.27
 jinja2>=3.1
+python-multipart>=0.0.21
+numpy>=2.2.6
 pyinstaller>=6.3

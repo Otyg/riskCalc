@@ -1,0 +1,147 @@
+name: Build & Publish (Windows + Linux)
+
+on:
+  push:
+    branches:
+      - develop
+    tags:
+      - "v*.*.*"   # semantic version tags, ex: v1.2.3
+
+permissions:
+  contents: write  # create releases + upload assets
+
+env:
+  APP_NAME: RiskAnalysisUI
+  ENTRY_SCRIPT: run_ui.py
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python: ["3.11"]
+
+    outputs:
+      channel: ${{ steps.meta.outputs.channel }}
+      suffix: ${{ steps.meta.outputs.suffix }}
+      tag: ${{ steps.meta.outputs.tag }}
+      release_name: ${{ steps.meta.outputs.release_name }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+      version: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Compute metadata
+        id: meta
+        shell: bash
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            # Release build (tag push, ex: v1.2.3)
+            VERSION="${GITHUB_REF_NAME}"
+            echo "channel=release" >> "$GITHUB_OUTPUT"
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+            echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "release_name=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          else
+            # Snapshot build (develop)
+            echo "channel=develop" >> "$GITHUB_OUTPUT"
+            echo "suffix=-SNAPSHOT" >> "$GITHUB_OUTPUT"
+            echo "tag=snapshot-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "version=snapshot-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "release_name=Snapshot ${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build with PyInstaller (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $suffix = "${{ steps.meta.outputs.suffix }}"
+          $name = "${env:APP_NAME}$suffix"
+          pyinstaller --noconfirm --clean --onefile `
+            --name $name `
+            --add-data "templates;templates" `
+            --add-data "data;data" `
+            --collect-all uvicorn `
+            --collect-all numpy `
+            --collect-all python-multipart `
+            $env:ENTRY_SCRIPT
+
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+
+          # asset name includes platform
+          Copy-Item "dist\$name.exe" "out\$name-windows.exe"
+
+      - name: Build with PyInstaller (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          suffix="${{ steps.meta.outputs.suffix }}"
+          name="${APP_NAME}${suffix}"
+
+          pyinstaller --noconfirm --clean --onefile \
+            --name "${name}" \
+            --add-data "templates:templates" \
+            --add-data "data:data" \
+            --collect-all uvicorn \
+            --collect-all numpy \
+            --collect-all python-multipart \
+            "${ENTRY_SCRIPT}"
+
+          mkdir -p out
+          cp "dist/${name}" "out/${name}-linux"
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ runner.os }}${{ steps.meta.outputs.suffix }}
+          path: out/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release (assets)
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts (debug)
+        shell: bash
+        run: |
+          find artifacts -type f -maxdepth 4 -print
+
+      - name: Create/Update Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build.outputs.tag }}
+          name: ${{ needs.build.outputs.release_name }}
+          prerelease: ${{ needs.build.outputs.prerelease }}
+          generate_release_notes: true
+          files: |
+            artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
