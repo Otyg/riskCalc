@@ -4,10 +4,16 @@ import os
 import sys
 import shutil
 from pathlib import Path
-
+import logging
 
 APP_NAME = "RiskAnalysisUI"
-
+logger = logging.getLogger(APP_NAME)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(levelname)s:    %(message)s')
+log_stream = logging.StreamHandler()
+log_stream.setLevel(logging.INFO)
+log_stream.setFormatter(formatter)
+logger.addHandler(log_stream)
 
 def packaged_root() -> Path:
     """
@@ -23,12 +29,12 @@ def packaged_root() -> Path:
 def user_app_root() -> Path:
     """
     Windows: %APPDATA%\\RiskAnalysisUI
-    Fallback: ~\\AppData\\Roaming\\RiskAnalysisUI
+    Fallback: ~\.local\share\RiskAnalysisUI
     """
     appdata = os.environ.get("APPDATA")
     if appdata:
         return Path(appdata) / APP_NAME
-    return Path.home() / "AppData" / "Roaming" / APP_NAME
+    return Path.home() / ".local" / "share" / APP_NAME
 
 
 def ensure_user_data_initialized() -> dict[str, Path]:
@@ -38,7 +44,9 @@ def ensure_user_data_initialized() -> dict[str, Path]:
     Returnerar paths:
       root, data, analyses, drafts, questionaires, actors_json, threats_json, vulnerabilities_json
     """
+    
     root = user_app_root()
+    logger.info("Setting up datadirectories, base: " + str(root.absolute()))
     data_dir = root / "data"
     analyses_dir = data_dir / "analyses"
     drafts_dir = data_dir / "drafts"
@@ -57,6 +65,7 @@ def ensure_user_data_initialized() -> dict[str, Path]:
         src = seed_data_dir / filename
         dst = data_dir / filename
         if src.exists() and not dst.exists():
+            logger.info("Copy " + str(src.absolute()) + " to " + str(dst.absolute()))
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
 
@@ -65,6 +74,7 @@ def ensure_user_data_initialized() -> dict[str, Path]:
         for src in seed_questionaires_dir.glob("*.json"):
             dst = questionaires_dir / src.name
             if not dst.exists():
+                logger.info("Copy " + str(src.absolute()) + " to " + str(dst.absolute()))
                 shutil.copy2(src, dst)
 
     return {
