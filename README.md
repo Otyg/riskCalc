@@ -28,8 +28,13 @@ UI:t är byggt i Python och körs i webbläsaren.
 
 ```
 pip3 install fastapi uvicorn jinja2 python-multipart numpy
-uvicorn app:app --reload
+python3 app.py
 ```
+
+#### Förbyggda binärer
+Det finns körbara binärer byggda med pyinstall för windows (testat på windows 11, bör fungera på windows 10) och Ubuntu (22.04).
+Binärerna kan laddas ned från repots release-sida.
+Dessa binärer kräver ingen installation av Python eller liknande.
 ---
 
 ## Status
