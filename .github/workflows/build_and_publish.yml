@@ -12,7 +12,7 @@ permissions:
 
 env:
   APP_NAME: RiskAnalysisUI
-  ENTRY_SCRIPT: run_ui.py
+  ENTRY_SCRIPT: app.py
 
 jobs:
   build:
