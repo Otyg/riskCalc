@@ -398,7 +398,4 @@ def delete_scenario(draft_id: str, scenario_index: int):
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
 
 if __name__ == "__main__":
-    p = ensure_user_data_initialized()
-    os.environ["TEMPLATES_DIR"] = str(packaged_root() / "templates")
-    os.environ["DATA_DIR"] = str(p["data"])
     uvicorn.run(app, host="127.0.0.1", port=8000)
