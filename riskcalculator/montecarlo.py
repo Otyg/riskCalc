@@ -27,6 +27,17 @@ class MonteCarloRange():
     def __repr__(self):
         return str(self.to_dict())
 
+class PertDistribution():
+    def __init__(self,range: MonteCarloRange):
+        rng = np.random.default_rng()
+        delta_min_max = range.max - range.min
+        alpha = 1 + ((range.probable - range.min) * 4) / delta_min_max
+        beta = 1 + ((range.max - range.probable) * 4) / delta_min_max
+        self.__samples = float(range.min) + rng.beta(alpha, beta, 100000) * float(delta_min_max)
+
+    def get(self):
+        return self.__samples.copy()
+
 
 class MonteCarloSimulation():
     def __init__(self, range: MonteCarloRange):
@@ -35,8 +46,8 @@ class MonteCarloSimulation():
             range.max = Decimal(range.probable*1.5)
             range.min = Decimal(range.probable/1.5)
         
-        rng = np.random.default_rng()
-        self.__samples = rng.triangular(left=range.min, mode=range.probable, right=range.max, size=100000)
+        pd = PertDistribution(range=range)
+        self.__samples = pd.get()
         self.probable = Decimal(statistics.mode(self.__samples))
         self.p90 = Decimal(np.percentile(self.__samples, 90))
         self.max = Decimal(np.max(self.__samples))

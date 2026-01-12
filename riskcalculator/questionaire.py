@@ -61,8 +61,10 @@ class Questionaire():
         else:
             self.questions = list(questions)
         self.factor = factor
-        self.factor_mul = MonteCarloRange(probable=0.5)
-        self.factor_sum = MonteCarloRange(probable=0.5)
+        self.sum_factor()
+        self.multiply_factor()
+        self.mean()
+        self.range()
 
     def to_dict(self):
         questions = []
@@ -77,8 +79,6 @@ class Questionaire():
 
     def from_dict(self, dict:dict={}):
         self.factor = dict['factor']
-
-        questions = []
         for q in dict['questions']:
             alternatives = []
             for a in q['alternatives']:
@@ -88,6 +88,8 @@ class Questionaire():
             self.append_question(question=question)
         self.sum_factor()
         self.multiply_factor()
+        self.range()
+        self.mean()
 
     def append_question(self, question: Question = Question()):
         self.questions.append(question)
@@ -101,7 +103,7 @@ class Questionaire():
             min += q.answer.weight.min
             mode += q.answer.weight.probable
         if (max == min == mode == 0):
-            self.factor_sum = 0
+            self.factor_sum = MonteCarloRange(min=0, max=1, probable=0.5)
         else:
             self.factor_sum = MonteCarloRange(min=min, max=max, probable=mode)
         return self.factor_sum
@@ -113,12 +115,14 @@ class Questionaire():
             min *= q.answer.weight.min
             mode *= q.answer.weight.probable
         if (max == min == mode == 1):
-            self.factor_mul = 0
+            self.factor_mul = MonteCarloRange(min=0, max=1, probable=0.5)
         else:
             self.factor_mul = MonteCarloRange(min=min, max=max, probable=mode)
         return self.factor_mul
 
     def max(self):
+        if len(self.questions) == 0:
+            return Decimal(1)
         factor_max = self.questions[0].answer.weight.max
         for q in self.questions:
             if factor_max < q.answer.weight.max:
@@ -126,6 +130,8 @@ class Questionaire():
         return Decimal(factor_max)
 
     def min(self):
+        if len(self.questions) == 0:
+            return Decimal(0)
         factor_min = self.questions[0].answer.weight.min
         for q in self.questions:
             if factor_min > q.answer.weight.min:
@@ -133,16 +139,22 @@ class Questionaire():
         return Decimal(factor_min)
 
     def mode(self):
+        if len(self.questions) == 0:
+            return Decimal(0.5)
         mode=[]
         for q in self.questions:
             mode.append(q.answer.weight.probable)
         return Decimal(statistics.mode(mode))
 
     def range(self):
-        return MonteCarloRange(min=self.min(), probable=self.mode(), max=self.max())
+        self.factor_range = MonteCarloRange(min=self.min(), probable=self.mode(), max=self.max())
+        return self.factor_range
 
     def mean(self):
-        return MonteCarloRange(min=self.factor_sum.min/len(self.questions), max=self.factor_sum.max/len(self.questions), probable=self.factor_sum.probable/len(self.questions))
+        if len(self.questions) == 0:
+            return MonteCarloRange(min=0, max=1, probable=0.5)
+        self.factor_mean = MonteCarloRange(min=self.sum_factor().min/len(self.questions), max=self.sum_factor().max/len(self.questions), probable=self.sum_factor().probable/len(self.questions))
+        return self.factor_mean
     
 class Questionaires:
     def __init__(self, tef: Questionaire=Questionaire(), vuln:Questionaire=Questionaire(), lm:Questionaire=Questionaire()):
@@ -152,12 +164,20 @@ class Questionaires:
             'lm': lm
         }
 
+    def calculate_questionairy_values(self):
+        values = dict()
+        values.update({'tef': self.questionaires['tef'].mean()})
+        values.update({'vuln': self.questionaires['vuln'].sum_factor()})
+        values.update({'lm': self.questionaires['lm'].range()})
+        return values
+
     def to_dict(self):
         return {
             'tef': self.questionaires['tef'].to_dict(),
             'vuln': self.questionaires['vuln'].to_dict(),
             'lm': self.questionaires['lm'].to_dict(),
         }
+
     def from_dict(self, dict:dict={}):
         tef = Questionaire(factor=dict['tef']['factor'])
         tef.from_dict(dict['tef'])
