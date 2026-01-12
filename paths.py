@@ -61,7 +61,7 @@ def ensure_user_data_initialized() -> dict[str, Path]:
     seed_questionaires_dir = seed_data_dir / "questionaires"
 
     # Kopiera listfiler om de saknas
-    for filename in ["actors.json", "threats.json", "vulnerabilities.json", "categories.json"]:
+    for filename in ["actors.json", "threats.json", "vulnerabilities.json"]:
         src = seed_data_dir / filename
         dst = data_dir / filename
         if src.exists() and not dst.exists():
