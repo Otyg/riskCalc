@@ -141,6 +141,7 @@ jobs:
           name: ${{ needs.build.outputs.release_name }}
           prerelease: ${{ needs.build.outputs.prerelease }}
           generate_release_notes: true
+          target_commitish: ${{ github.ref_type == 'tag' && github.sha || github.ref_name }}
           files: |
             artifacts/**/*
         env:
