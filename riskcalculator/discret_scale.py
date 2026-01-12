@@ -66,14 +66,8 @@ class DiscreteRisk(Risk):
                     text = x['text']
         if key=="risk":
             self.risk.update({'level': value})
-            non_discreet_value_string = f", ALE: {round(self.annual_loss_expectancy.p90, 2)} {self.currency}/år"
-        elif key=="probability":
-            non_discreet_value_string = f": {round(non_discreet_value, 2)} händelser/år"
-        else:
-            non_discreet_value_string = f": {round(non_discreet_value*100, 2)} %förlust per händelse ({round(self.budget*non_discreet_value,2)} {self.currency}/händelse)"
-        
         self.risk.update({key: value})
-        self.risk.update({key + '_text': text + non_discreet_value_string})
+        self.risk.update({key + '_text': text})
         
     
     def calculate_consequence(self):

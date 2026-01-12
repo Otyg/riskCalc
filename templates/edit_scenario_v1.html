@@ -88,17 +88,28 @@
       <h2 style="margin:16px 0 8px;">Risk</h2>
 
       {% set r = s.risk if s.risk else {} %}
+      {% set b = (r.budget if r and r.budget is not none else '') %}
+      {% set c = (r.currency if r and r.currency is not none else 'SEK') %}
 
-      <div class="grid">
-        <div>
-          <label><strong>budget</strong></label><br/>
-          <input name="budget" type="number" step="any" value="{{ r.budget or '1000000' }}"
-                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
-        </div>
-        <div>
-          <label><strong>currency</strong></label><br/>
-          <input name="currency" value="{{ r.currency or 'SEK' }}"
-                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      <div class="card" style="margin-top:12px;">
+        <label style="display:flex; gap:10px; align-items:center; margin:0;">
+          <input type="checkbox" id="toggle_budget" />
+          <span><strong>Visa budget för Annual Loss Expectancy</strong> (valfritt)</span>
+        </label>
+
+        <div id="budget_block" style="display:none; margin-top:12px;">
+          <div class="grid">
+            <div>
+              <label><strong>Budget</strong></label><br/>
+              <input id="budget_input" name="budget" type="number" step="any" value="{{ b or '1000000' }}"
+                    style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+            </div>
+            <div>
+              <label><strong>Enhet (valuta)</strong></label><br/>
+              <input name="currency" value="{{ c or 'SEK' }}"
+                    style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -153,6 +164,37 @@
           window.location.href = `/create/${draftId}/scenario/{{ scenario_index }}/edit?qset=${qset}`;
         });
       }
+
+      const toggleBudget = document.getElementById('toggle_budget');
+      const budgetBlock = document.getElementById('budget_block');
+      const budgetInput = document.getElementById('budget_input');
+
+      function isMeaningfulBudget(val) {
+        if (val === null || val === undefined) return false;
+        const s = String(val).trim();
+        if (!s) return false;
+        const n = Number(s);
+        if (Number.isNaN(n)) return false;
+
+        // Tolka "default" som inte meningsfullt (justera om du vill)
+        if (n === 1000000) return false;
+        if (n <= 0) return false;
+        return true;
+      }
+
+      // Auto-check om budget verkar använd
+      if (budgetInput && isMeaningfulBudget(budgetInput.value)) {
+        toggleBudget.checked = true;
+      }
+
+      function syncBudgetVisibility() {
+        budgetBlock.style.display = toggleBudget.checked ? 'block' : 'none';
+      }
+
+      toggleBudget.addEventListener('change', syncBudgetVisibility);
+      syncBudgetVisibility();
+
+
     </script>
   </main>
 </div>
