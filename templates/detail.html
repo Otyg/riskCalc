@@ -56,7 +56,15 @@
           <div>Sannolikhet</div><div>{{ discrete.get("probability","") }} ({{ discrete.get("probability_text","") }})</div>
           <div>Konsekvens</div><div>{{ discrete.get("consequence","") }} ({{ discrete.get("consequence_text","") }})</div>
           <div>Risk</div><div><strong>{{ discrete.get("risk","") }} ({{ discrete.get("risk_text","") }})</strong></div>
-          <div>Budget: </div><div>{{ risk.get("budget","") }} {{ risk.get("currency","") }}/år</div>
+          <details>
+            <summary>Annual Loss Expectancy</summary>
+            <div>Budget: </div><div>{{ risk.get("budget","") }} {{ risk.get("currency","") }}/år</div>
+            <div>Loss Event Frequency: </div><div>{{ risk.get("loss_event_frequency","").get("p90", "") }} händelser/år</div>
+            <div>Loss Magnitude: </div><div>{{ risk.get("loss_magnitude","").get("p90", "")*risk.get("budget","") }} {{ risk.get("currency","") }}/händelse</div>
+            <div>ALE: </div><div>{{ risk.get("annual_loss_expectancy","").get("p90", "") }} {{ risk.get("currency","") }}/år</div>
+
+          </details>
+          
         </div>
         <details>
           <summary>Frågor</summary>
