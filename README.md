@@ -50,6 +50,10 @@ Tankesättet är till stora delar inspirerat och baserat på FAIR (Factor Analys
 att försöka göra kvalificerade gissningar som är tillräckligt nära verkligheten utan att behöva göra djuplodande
 undersökningar för att ta fram nivåerna för respektive faktor.
 
+För att ytterligare underlätta så finns det mesta tillgängligt i JSON-filer för att enkelt kunna modifiera vid behov.
+I första hand är tanken här att det ska vara enkelt att lägga till egna frågeformulär genom att lägga till egna filer
+som följer samma mönster som de medföljande.
+
 ---
 
 ## Teknik (kort)
@@ -76,3 +80,14 @@ Dessa binärer kräver ingen installation av Python eller liknande.
 ## Status
 
 Detta är ett pågående projekt som kontinuerligt utvecklas.
+
+## TODO
+
+- Snygga till UI't (jag är ingen frontend-utvecklare)
+- Möjlighet till export (CSV, men det vore trevligt med en adapter-historia för att kunna exportera till andra plattformar)
+- Databas för större uppsättningar
+- Uppladdning av nya frågeformulär
+- Versionering av frågeformulär
+- Editor för frågeformulär
+- Städning och tillsnyggning av koden
+- En massa annat
