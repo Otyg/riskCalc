@@ -92,16 +92,25 @@
 
       <h2 style="margin:16px 0 8px;">Risk</h2>
 
-      <div class="grid">
-        <div>
-          <label><strong>Budget</strong></label><br/>
-          <input name="budget" type="number" step="any" value="{{ defaults.get('budget','1000000') }}"
-                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
-        </div>
-        <div>
-          <label><strong>Valuta</strong></label><br/>
-          <input name="currency" value="{{ defaults.get('currency','SEK') }}"
-                 style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      <div class="card" style="margin-top:12px;">
+        <label style="display:flex; gap:10px; align-items:center; margin:0;">
+          <input type="checkbox" id="toggle_budget" />
+          <span><strong>Sätt budget för Annual Loss Expectancy</strong> (valfritt)</span>
+        </label>
+
+        <div id="budget_block" style="display:none; margin-top:12px;">
+          <div class="grid">
+            <div>
+              <label><strong>Budget</strong></label><br/>
+              <input name="budget" type="number" step="any" value="1000000"
+                    style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+            </div>
+            <div>
+              <label><strong>Enhet (valuta)</strong></label><br/>
+              <input name="currency" value="SEK"
+                    style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+            </div>
+          </div>
         </div>
       </div>
 <div class="card" style="margin-top:12px;">
@@ -171,5 +180,14 @@
       window.location.href = `/create/${draftId}/scenario/new?qset=${qset}`;
     });
   }
+  const toggleBudget = document.getElementById('toggle_budget');
+  const budgetBlock = document.getElementById('budget_block');
+
+  function syncBudgetVisibility() {
+    budgetBlock.style.display = toggleBudget.checked ? 'block' : 'none';
+  }
+
+  toggleBudget.addEventListener('change', syncBudgetVisibility);
+  syncBudgetVisibility();
 </script>
 {% endblock %}
