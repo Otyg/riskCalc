@@ -12,14 +12,14 @@ from starlette.status import HTTP_303_SEE_OTHER
 
 from riskcalculator.scenario import RiskScenario
 from riskcalculator.discret_scale import DiscreteRisk
-from actors_repo import JsonActorsRepository
-from repo import JsonAnalysisRepository, DraftRepository, JsonCategoryRepository
-from questionaires_repo import JsonQuestionairesRepository
+from filesystem.actors_repo import JsonActorsRepository
+from filesystem.repo import JsonAnalysisRepository, DraftRepository, JsonCategoryRepository
+from filesystem.questionaires_repo import JsonQuestionairesRepository
 from riskcalculator.questionaire import Questionaire, Questionaires
-from threats_repo import JsonThreatsRepository
-from vulnerabilities_repo import JsonVulnerabilitiesRepository
+from filesystem.threats_repo import JsonThreatsRepository
+from filesystem.vulnerabilities_repo import JsonVulnerabilitiesRepository
 from riskregister.assessment import RiskAssessment
-from paths import ensure_user_data_initialized, packaged_root
+from filesystem.paths import ensure_user_data_initialized, packaged_root
 
 DEFAULT_QUESTIONAIRES_SET = "default"
 app = FastAPI()
