@@ -28,9 +28,9 @@ from riskcalculator.risk import Risk
 class DiscreetThreshold():
     def __init__(self, probability:list=[{'value':1, 'text':'Mycket låg', 'threshold': float(0.1)},
                                          {'value':2, 'text':'Låg', 'threshold': float(0.5)},
-                                         {'value':3, 'text':'Medel', 'threshold': float(1.0)},
-                                         {'value':4, 'text':'Hög', 'threshold': float(10.0)},
-                                         {'value':5, 'text':'Mycket hög', 'threshold': float(10.01)}],
+                                         {'value':3, 'text':'Medel', 'threshold': float(8.0)},
+                                         {'value':4, 'text':'Hög', 'threshold': float(13.0)},
+                                         {'value':5, 'text':'Mycket hög', 'threshold': float(13.01)}],
                  consequence:list=[{'value':1, 'text':'Försumbar påverkan', 'threshold': float(0.001)},
                                    {'value':2, 'text':'Begränsad påverkan', 'threshold': float(0.005)},
                                    {'value':3, 'text':'Märkbar påverkan', 'threshold': float(0.02)},
