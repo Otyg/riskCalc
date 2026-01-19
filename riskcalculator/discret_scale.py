@@ -111,13 +111,6 @@ class DiscreteRisk(Risk):
         me.update({"thresholds": self.thresholds.to_dict()})
         return me
 
-
-    def from_dict(self, dict:dict={}):
-        super().from_dict(dict=dict)
-        thresholds = DiscreetThreshold(thresholds=dict["thresholds"])
-        self.thresholds = thresholds
-        self.risk = dict["discrete_risk"]
-    
     def __repr__(self):
         return str(self.to_dict())
     

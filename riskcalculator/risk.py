@@ -42,11 +42,11 @@ class Risk():
             self.loss_magnitude = MonteCarloSimulation(montecarlorange_from_dict(values['loss_magnitude']))
             self.budget = Decimal(values['budget'])
             self.currency = values['currency']
-        self.loss_event_frequency = MonteCarloSimulation(MonteCarloRange(min=self.threat_event_frequency.min*self.vuln_score.min,
-                                                    max=self.threat_event_frequency.max*self.vuln_score.max,
-                                                    probable=self.threat_event_frequency.probable*self.vuln_score.probable))
-        self.update_ale()
-
+            self.loss_event_frequency = MonteCarloSimulation(MonteCarloRange(min=self.threat_event_frequency.min*self.vuln_score.min,
+                                                        max=self.threat_event_frequency.max*self.vuln_score.max,
+                                                        probable=self.threat_event_frequency.probable*self.vuln_score.probable))
+            self.update_ale()
+    
     def update_ale(self):
         self.ale = MonteCarloRange(min=self.budget*self.loss_event_frequency.min*self.loss_magnitude.min,
                                    max=self.budget*self.loss_event_frequency.max*self.loss_magnitude.max,
@@ -64,20 +64,6 @@ class Risk():
             "currency": self.currency
         }
 
-    def from_dict(self, dict:dict={}):
-        self.budget = Decimal(dict['budget'])
-        self.currency = dict['currency']
-        self.threat_event_frequency = MonteCarloRange(min=dict['threat_event_frequency']['min'], probable=dict['threat_event_frequency']['probable'], max=dict['threat_event_frequency']['max'])
-        self.vuln_score = MonteCarloRange(min=dict['vulnerability']['min'], probable=dict['vulnerability']['probable'], max=dict['vulnerability']['max'])
-        self.loss_event_frequency = MonteCarloRange(min=dict['loss_event_frequency']['min'], probable=dict['loss_event_frequency']['probable'], max=dict['loss_event_frequency']['max'])
-        self.loss_magnitude = MonteCarloRange(min=dict['loss_magnitude']['min'], probable=dict['loss_magnitude']['probable'], max=dict['loss_magnitude']['max'])
-        self.ale = MonteCarloRange(min=self.loss_event_frequency.min*self.loss_magnitude.min,
-                                   max=self.loss_event_frequency.max*self.loss_magnitude.max,
-                                   probable=self.loss_event_frequency.probable*self.loss_magnitude.probable)
-        tmp_ale = MonteCarloSimulation(MonteCarloRange(probable=1))
-        tmp_ale.from_dict(dict['annual_loss_expectancy'])
-        self.annual_loss_expectancy = tmp_ale
-    
     def __repr__(self):
         return str(self.to_dict())
     
