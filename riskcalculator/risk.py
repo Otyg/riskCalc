@@ -25,21 +25,23 @@
 from riskcalculator.montecarlo import *
 from decimal import *
 
+from riskcalculator.util import montecarlorange_from_dict
+
 
 class Risk():
-    def __init__(self, tef: MonteCarloRange = MonteCarloRange(probable=Decimal(0.5)),
-                 vuln_score: MonteCarloRange = MonteCarloRange(
-                     probable=Decimal(0.1)),
-                 loss_magnitude: MonteCarloRange = MonteCarloRange(
-                     probable=Decimal(0.001)),
-                 budget: Decimal=Decimal(1000000),
-                 currency: str="SEK"
-                 ):
-        self.threat_event_frequency = tef
-        self.vuln_score = vuln_score
-        self.loss_magnitude = MonteCarloSimulation(loss_magnitude)
-        self.budget = budget
-        self.currency = currency
+    def __init__(self, values: dict = None):
+        if not values:
+            self.threat_event_frequency = MonteCarloRange(probable=Decimal(0.5))
+            self.vuln_score = MonteCarloRange(probable=Decimal(0.1))
+            self.loss_magnitude = MonteCarloSimulation(MonteCarloRange(probable=Decimal(0.001)))
+            self.budget: Decimal=Decimal(1000000),
+            self.currency: str="SEK"
+        else:
+            self.threat_event_frequency = montecarlorange_from_dict(values['threat_event_frequency'])
+            self.vuln_score = montecarlorange_from_dict(values['vulnerability'])
+            self.loss_magnitude = MonteCarloSimulation(montecarlorange_from_dict(values['loss_magnitude']))
+            self.budget = Decimal(values['budget'])
+            self.currency = values['currency']
         self.loss_event_frequency = MonteCarloSimulation(MonteCarloRange(min=self.threat_event_frequency.min*self.vuln_score.min,
                                                     max=self.threat_event_frequency.max*self.vuln_score.max,
                                                     probable=self.threat_event_frequency.probable*self.vuln_score.probable))
