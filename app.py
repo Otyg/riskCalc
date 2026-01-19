@@ -296,11 +296,9 @@ async def create_scenario_save(request: Request, draft_id: str):
         print(qs.get('tef').mean())
         questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
         questionaires_values = questionaires.calculate_questionairy_values()
-        risk = DiscreteRisk(tef=questionaires_values.get('tef'),
-                            vuln_score=questionaires_values.get('vuln'),
-                            loss_magnitude=questionaires_values.get('lm'),
-                            budget=Decimal(risk_dict.get('budget')),
-                            currency=risk_dict.get('currency'))
+        questionaires_values.update({'budget': Decimal(risk_dict.get('budget'))})
+        questionaires_values.update({'currency': risk_dict.get('currency')})
+        risk = DiscreteRisk(values=questionaires_values)
         scenario_obj = RiskScenario(name=name,
                                     category=category,
                                     actor=actor,
@@ -408,11 +406,10 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
     try:
         questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
         questionaires_values = questionaires.calculate_questionairy_values()
-        risk = DiscreteRisk(tef=questionaires_values.get('tef'),
-                            vuln_score=questionaires_values.get('vuln'),
-                            loss_magnitude=questionaires_values.get('lm'),
-                            budget=Decimal(risk_dict.get('budget')),
-                            currency=risk_dict.get('currency'))
+        questionaires_values.update({'budget': Decimal(risk_dict.get('budget'))})
+        questionaires_values.update({'currency': risk_dict.get('currency')})
+        print(questionaires_values)
+        risk = DiscreteRisk(values=questionaires_values)
         scenario_obj = RiskScenario(name=name,
                                     category=category,
                                     actor=actor,

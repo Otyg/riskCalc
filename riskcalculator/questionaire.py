@@ -190,9 +190,9 @@ class Questionaires:
 
     def calculate_questionairy_values(self):
         values = dict()
-        values.update({'tef': self.questionaires['tef'].mean()})
-        values.update({'vuln': self.questionaires['vuln'].sum_factor()})
-        values.update({'lm': self.questionaires['lm'].range()})
+        values.update({'threat_event_frequency': self.questionaires['tef'].mean()})
+        values.update({'vulnerability': self.questionaires['vuln'].sum_factor()})
+        values.update({'loss_magnitude': self.questionaires['lm'].range()})
         return values
 
     def to_dict(self):

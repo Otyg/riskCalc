@@ -25,25 +25,31 @@
 from decimal import Decimal
 from riskcalculator.montecarlo import MonteCarloRange
 from riskcalculator.risk import Risk
+from riskcalculator.util import montecarlorange_from_dict
 class DiscreetThreshold():
-    def __init__(self, probability:list=[{'value':1, 'text':'Mycket låg', 'threshold': float(0.1)},
-                                         {'value':2, 'text':'Låg', 'threshold': float(0.5)},
-                                         {'value':3, 'text':'Medel', 'threshold': float(8.0)},
-                                         {'value':4, 'text':'Hög', 'threshold': float(13.0)},
-                                         {'value':5, 'text':'Mycket hög', 'threshold': float(13.01)}],
-                 consequence:list=[{'value':1, 'text':'Försumbar påverkan', 'threshold': float(0.001)},
-                                   {'value':2, 'text':'Begränsad påverkan', 'threshold': float(0.005)},
-                                   {'value':3, 'text':'Märkbar påverkan', 'threshold': float(0.02)},
-                                   {'value':4, 'text':'Allvarlig påverkan', 'threshold': float(0.05)},
-                                   {'value':5, 'text':'Kritisk påverkan', 'threshold': float(0.051)}],
-                 risk:list=[{'value': 'very_low', 'text':'Mycket låg', 'threshold':3},
-                            {'value': 'low', 'text':'Låg', 'threshold':6},
-                            {'value': 'middle', 'text':'Medel', 'threshold':10},
-                            {'value': 'high', 'text':'Hög', 'threshold':15},
-                            {'value': 'critical', 'text':'Mycket hög', 'threshold':25}]):
-        self.probability_values = probability
-        self.consequence_values = consequence
-        self.risk_values = risk
+    def __init__(self,
+                 thresholds = {
+                     "probability": [
+                         {'value':1, 'text':'Mycket låg', 'threshold': float(0.1)},
+                         {'value':2, 'text':'Låg', 'threshold': float(0.5)},
+                         {'value':3, 'text':'Medel', 'threshold': float(8.0)},
+                         {'value':4, 'text':'Hög', 'threshold': float(13.0)},
+                         {'value':5, 'text':'Mycket hög', 'threshold': float(13.01)}],
+                     "consequence":[
+                         {'value':1, 'text':'Försumbar påverkan', 'threshold': 0.001},
+                         {'value':2, 'text':'Begränsad påverkan', 'threshold': 0.005},
+                         {'value':3, 'text':'Märkbar påverkan', 'threshold': 0.02},
+                         {'value':4, 'text':'Allvarlig påverkan', 'threshold': 0.05},
+                         {'value':5, 'text':'Kritisk påverkan', 'threshold': 0.051}],
+                     "risk": [
+                         {'value': 'very_low', 'text':'Mycket låg', 'threshold':3},
+                         {'value': 'low', 'text':'Låg', 'threshold':6},
+                         {'value': 'middle', 'text':'Medel', 'threshold':10},
+                         {'value': 'high', 'text':'Hög', 'threshold':15},
+                         {'value': 'critical', 'text':'Mycket hög', 'threshold':25}]}):
+        self.probability_values = thresholds['probability']
+        self.consequence_values = thresholds['consequence']
+        self.risk_values = thresholds['risk']
 
     def to_dict(self):
         return {
@@ -53,13 +59,30 @@ class DiscreetThreshold():
         }
 
 class DiscreteRisk(Risk):
-    def __init__(self,tef: MonteCarloRange = MonteCarloRange(probable=float(0.5)), 
-                 vuln_score: MonteCarloRange = MonteCarloRange(probable=float(0.1)),
-                 loss_magnitude: MonteCarloRange = MonteCarloRange(probable=float(0.005)),
-                 budget: Decimal=Decimal(1), currency:str="SEK"
-                 ):
-        super().__init__(tef=tef, vuln_score=vuln_score, loss_magnitude=loss_magnitude, budget=budget, currency=currency)
-        self.thresholds = DiscreetThreshold()
+    def __init__(self, values:dict=None):
+        if values:
+            if isinstance(values['threat_event_frequency'], dict):
+                super().__init__(
+                    tef=montecarlorange_from_dict(values['threat_event_frequency']),
+                    vuln_score=montecarlorange_from_dict(values['vulnerability']),
+                    loss_magnitude=montecarlorange_from_dict(values['loss_magnitude']),
+                    budget=Decimal(values['budget']),
+                    currency=values['currency']
+                )
+            else:
+                super().__init__(
+                    tef=values['threat_event_frequency'],
+                    vuln_score=values['vulnerability'],
+                    loss_magnitude=values['loss_magnitude'],
+                    budget=values['budget'],
+                    currency=values['currency']
+                )
+        else:
+            super()
+        if not values or 'thresholds' not in values:
+            self.thresholds = DiscreetThreshold()
+        else:
+            self.thresholds = DiscreetThreshold(thresholds=values['thresholds'])
         self.risk = {}
         self.calculate_probability()
         self.calculate_consequence()
@@ -106,7 +129,7 @@ class DiscreteRisk(Risk):
 
     def from_dict(self, dict:dict={}):
         super().from_dict(dict=dict)
-        thresholds = DiscreetThreshold(probability=dict["thresholds"]["probability"], consequence=dict["thresholds"]["consequence"], risk=dict["thresholds"]["risk"])
+        thresholds = DiscreetThreshold(thresholds=dict["thresholds"])
         self.thresholds = thresholds
         self.risk = dict["discrete_risk"]
     

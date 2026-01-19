@@ -75,10 +75,10 @@ class RiskScenario():
         self.threat = dict['threat']
         self.vulnerability = dict['vulnerability']
         if 'discrete_risk' in dict['risk']:
-            risk = DiscreteRisk()
+            risk = DiscreteRisk(dict['risk'])
         else:
             risk = Risk()
-        risk.from_dict(dict['risk'])
+            risk.from_dict(dict['risk'])
         self.risk = risk
         tef = Questionaire(factor=dict['questionaires']['tef']['factor'])
         tef.from_dict(dict['questionaires']['tef'])
