@@ -61,22 +61,7 @@ class DiscreetThreshold():
 class DiscreteRisk(Risk):
     def __init__(self, values:dict=None):
         if values:
-            if isinstance(values['threat_event_frequency'], dict):
-                super().__init__(
-                    tef=montecarlorange_from_dict(values['threat_event_frequency']),
-                    vuln_score=montecarlorange_from_dict(values['vulnerability']),
-                    loss_magnitude=montecarlorange_from_dict(values['loss_magnitude']),
-                    budget=Decimal(values['budget']),
-                    currency=values['currency']
-                )
-            else:
-                super().__init__(
-                    tef=values['threat_event_frequency'],
-                    vuln_score=values['vulnerability'],
-                    loss_magnitude=values['loss_magnitude'],
-                    budget=values['budget'],
-                    currency=values['currency']
-                )
+            super().__init__(values=values)
         else:
             super()
         if not values or 'thresholds' not in values:
