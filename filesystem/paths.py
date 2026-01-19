@@ -23,7 +23,7 @@ def packaged_root() -> Path:
     base = getattr(sys, "_MEIPASS", None)
     if base:
         return Path(base)
-    return Path(__file__).parent
+    return Path(__file__).parent.parent
 
 
 def user_app_root() -> Path:

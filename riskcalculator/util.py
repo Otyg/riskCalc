@@ -25,6 +25,10 @@
 import decimal
 import json
 
+from riskcalculator.montecarlo import MonteCarloRange
+
+def montecarlorange_from_dict(values:dict=None):
+    return MonteCarloRange(min=values['min'], probable=values['probable'], max=values['max'])
 
 class ComplexEncoder(json.JSONEncoder):
     def default(self, obj):
