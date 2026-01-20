@@ -178,11 +178,20 @@ class Questionaire():
         self.factor_range = MonteCarloRange(min=self.min(), probable=self.mode(), max=self.max())
         return self.factor_range
 
+    def count_answered_questions(self):
+        num = 0
+        for a in self.questions:
+            if not (round(a.answer.weight.max, 10) == round(a.answer.weight.min, 10) == round(a.answer.weight.probable, 10)):
+                num +=1
+        return num
     def mean(self):
         if len(self.questions) == 0:
             return MonteCarloRange()
         sum = self.sum_factor()
-        self.factor_mean = MonteCarloRange(min=sum.min/len(self.questions), max=sum.max/len(self.questions), probable=sum.probable/len(self.questions))
+        non_zero_answers = self.count_answered_questions()
+        if non_zero_answers == 0:
+            non_zero_answers = 1
+        self.factor_mean = MonteCarloRange(min=sum.min/non_zero_answers, max=sum.max/non_zero_answers, probable=sum.probable/non_zero_answers)
         return self.factor_mean
     
 class Questionaires:
