@@ -295,7 +295,6 @@ async def create_scenario_save(request: Request, draft_id: str):
         )
 
     try:
-        print(qs.get('tef').mean())
         questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
         questionaires_values = questionaires.calculate_questionairy_values()
         questionaires_values.update({'budget': Decimal(risk_dict.get('budget'))})
@@ -553,7 +552,6 @@ async def risk_calc_submit(request: Request):
 
         if not tef_q or not vuln_q or not lm_q:
             errors.append("Valt formulär saknar en eller flera dimensioner (tef/vuln/lm).")
-        print(form)
         # Sätt answers i de faktiska Question-objekten
         tef_n = _apply_answers_from_form(form, tef_q, "tef")
         vuln_n = _apply_answers_from_form(form, vuln_q, "vuln")

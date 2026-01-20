@@ -46,7 +46,6 @@ class MonteCarloRange():
         }
     
     def add(self, other = None):
-        print(other)
         max = self.max + other.max
         min = self.min + other.min
         probable = self.probable + other.probable
