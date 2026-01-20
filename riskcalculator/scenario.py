@@ -28,27 +28,47 @@ from riskcalculator.risk import Risk
 
 
 class RiskScenario():
-    def __init__(self, name: str = "",
-                 actor: str = "",
-                 description: str = "",
-                 asset: str = "",
-                 threat: str = "",
-                 vulnerability: str = "",
-                 risk: Risk = None,
-                 questionaires: Questionaires = None,
-                 category: str = ""
-                 ):
-        self.name = name
-        self.actor = actor
-        self.description = description
-        self.asset = asset
-        self.threat = threat
-        self.vulnerability = vulnerability
-        self.risk = risk
-        self.questionaires = questionaires
-        self.category = category
-        if not name:
-            self.name = self.auto_desc()
+    def __init__(self, parameters:dict = None):
+        if not parameters:
+            self.actor = ""
+            self.description = ""
+            self.asset = ""
+            self.threat = ""
+            self.vulnerability = ""
+            self.risk = Risk()
+            self.category = ""
+            self.name = ""
+            self.questionaires = Questionaires(tef=Questionaire(factor="tef"), vuln=Questionaire(factor="vuln"), lm=Questionaire(factor="lm"))
+        else:
+            self.actor = parameters.get('actor', "")
+            self.description = parameters.get('description', "")
+            self.asset = parameters.get('asset', "")
+            self.threat = parameters.get('threat', "")
+            self.vulnerability = parameters.get('vulnerability', "")
+            self.risk = parameters.get('risk')
+            self.category = parameters.get('category', "")
+            self.name = parameters.get('name', self.auto_desc())
+            tmp_risk = parameters.get('risk', Risk())
+            if isinstance(tmp_risk, dict):
+                if 'discrete_risk' in tmp_risk:
+                    self.risk = DiscreteRisk(tmp_risk)
+                else:
+                    self.risk = Risk(tmp_risk)
+            else:
+                self.risk = tmp_risk
+            if parameters.get('questionaires') and isinstance(parameters.get('questionaires'), Questionaires):
+                self.questionaires = parameters.get('questionaires')
+            elif parameters.get('questionaires'):
+                tef = Questionaire(factor=parameters.get('questionaires').get('tef').get('factor', "tef"))
+                tef.from_dict(parameters.get('questionaires').get('tef', Questionaire()))
+                vuln = Questionaire(factor=parameters.get('questionaires').get('vuln').get('factor', "vuln"))
+                vuln.from_dict(parameters.get('questionaires').get('vuln', Questionaire()))
+                lm = Questionaire(factor=parameters.get('questionaires').get('lm').get('factor', "lm"))
+                tef.from_dict(parameters.get('questionaires').get('lm', Questionaire()))
+                questionaires = Questionaires(tef=tef, vuln=vuln, lm=lm)
+                self.questionaires = questionaires
+            else:
+                self.questionaires = Questionaires(tef=Questionaire(factor="tef"), vuln=Questionaire(factor="vuln"), lm=Questionaire(factor="lm"))
 
     def auto_desc(self):
         return f"Risk att {self.actor} utnyttjar {self.vulnerability} för att realisera {self.threat} mot {self.asset}."
@@ -66,7 +86,7 @@ class RiskScenario():
             "questionaires": self.questionaires.to_dict()
         }
     
-    def from_dict(self, dict:dict={}):
+    def from_dict(self, dict:dict=None):
         self.name = dict['name']
         self.category = dict['category']
         self.actor = dict['actor']
