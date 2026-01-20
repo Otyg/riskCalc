@@ -146,7 +146,7 @@
                   <div style="margin-top:6px;">
                     <select name="q_{{ dim_key }}_{{ qi }}"
                             style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
-                      <option value="">— Välj alternativ —</option>
+                      <option value="">N/A</option>
                       {% for alt in question.alternatives %}
                         {% set ai = loop.index0 %}
                         <option value="{{ ai }}">{{ alt.text }}</option>

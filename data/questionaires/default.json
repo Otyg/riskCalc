@@ -28,7 +28,7 @@
         ],
         "answer": {
           "text": "",
-          "weight": { "min": 1.0, "probable": 3.0, "max": 10.0 }
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
         }
       },
 
@@ -58,7 +58,7 @@
         ],
         "answer": {
           "text": "",
-          "weight": { "min": 1.0, "probable": 3.0, "max": 10.0 }
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
         }
       },
 
@@ -88,7 +88,7 @@
         ],
         "answer": {
           "text": "",
-          "weight": { "min": 1.0, "probable": 3.0, "max": 10.0 }
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
         }
       },
 
@@ -118,7 +118,7 @@
         ],
         "answer": {
           "text": "",
-          "weight": { "min": 1.0, "probable": 3.0, "max": 10.0 }
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
         }
       },
 
@@ -148,7 +148,7 @@
         ],
         "answer": {
           "text": "",
-          "weight": { "min": 1.0, "probable": 3.0, "max": 10.0 }
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
         }
       }
     ],
@@ -206,9 +206,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -259,9 +259,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -312,9 +312,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -365,9 +365,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -418,9 +418,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             }
@@ -486,9 +486,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -539,9 +539,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -592,9 +592,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -645,9 +645,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -698,9 +698,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -751,9 +751,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             },
@@ -804,9 +804,9 @@
                 "answer": {
                     "text": "",
                     "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
                     }
                 }
             }

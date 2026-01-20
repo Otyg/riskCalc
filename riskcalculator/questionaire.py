@@ -1,10 +1,34 @@
+#
+# MIT License
+#
+# Copyright (c) 2025 Martin Vesterlund
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
 from decimal import Decimal
 import statistics
 from .montecarlo import MonteCarloRange
 
 
 class Alternative():
-    def __init__(self, text: str = "", weight: MonteCarloRange = MonteCarloRange(probable=0.5)):
+    def __init__(self, text: str = "", weight: MonteCarloRange = MonteCarloRange()):
         self.text = text
         self.weight = weight
     
@@ -102,24 +126,28 @@ class Questionaire():
             max += q.answer.weight.max
             min += q.answer.weight.min
             mode += q.answer.weight.probable
-        if (max == min == mode == 0):
-            self.factor_sum = MonteCarloRange(min=0, max=1, probable=0.5)
-        else:
-            self.factor_sum = MonteCarloRange(min=min, max=max, probable=mode)
+        self.factor_sum = MonteCarloRange(min=min, max=max, probable=mode)
         return self.factor_sum
 
     def multiply_factor(self):
         max = min = mode = 1
         for q in self.questions:
-            max *= q.answer.weight.max
-            min *= q.answer.weight.min
-            mode *= q.answer.weight.probable
-        if (max == min == mode == 1):
-            self.factor_mul = MonteCarloRange(min=0, max=1, probable=0.5)
-        else:
-            self.factor_mul = MonteCarloRange(min=min, max=max, probable=mode)
+            if(q.answer.weight.max != q.answer.weight.min != q.answer.weight.probable != 0):
+                max *= q.answer.weight.max
+                min *= q.answer.weight.min
+                mode *= q.answer.weight.probable
+        self.factor_mul = MonteCarloRange(min=min, max=max, probable=mode)
         return self.factor_mul
 
+    def max_range(self):
+        if len(self.questions) == 0:
+            return MonteCarloRange()
+        factor_max = self.questions[0].answer.weight
+        max = factor_max.max
+        for q in self.questions:
+            if max < q.answer.weight.max:
+                max = q.answer.weight.max
+        return factor_max
     def max(self):
         if len(self.questions) == 0:
             return Decimal(1)
@@ -152,8 +180,9 @@ class Questionaire():
 
     def mean(self):
         if len(self.questions) == 0:
-            return MonteCarloRange(min=0, max=1, probable=0.5)
-        self.factor_mean = MonteCarloRange(min=self.sum_factor().min/len(self.questions), max=self.sum_factor().max/len(self.questions), probable=self.sum_factor().probable/len(self.questions))
+            return MonteCarloRange()
+        sum = self.sum_factor()
+        self.factor_mean = MonteCarloRange(min=sum.min/len(self.questions), max=sum.max/len(self.questions), probable=sum.probable/len(self.questions))
         return self.factor_mean
     
 class Questionaires:
@@ -166,9 +195,9 @@ class Questionaires:
 
     def calculate_questionairy_values(self):
         values = dict()
-        values.update({'tef': self.questionaires['tef'].mean()})
-        values.update({'vuln': self.questionaires['vuln'].sum_factor()})
-        values.update({'lm': self.questionaires['lm'].range()})
+        values.update({'threat_event_frequency': self.questionaires['tef'].mean()})
+        values.update({'vulnerability': self.questionaires['vuln'].sum_factor()})
+        values.update({'loss_magnitude': self.questionaires['lm'].mean().add(self.questionaires['lm'].max_range())})
         return values
 
     def to_dict(self):
