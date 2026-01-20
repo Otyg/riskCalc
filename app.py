@@ -32,8 +32,10 @@ from typing import Any
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from starlette.status import HTTP_303_SEE_OTHER
+from starlette.status import HTTP_303_SEE_OTHER, HTTP_200_OK
 
+from riskcalculator.montecarlo import MonteCarloRange
+from riskcalculator.risk import Risk
 from riskcalculator.scenario import RiskScenario
 from riskcalculator.discret_scale import DiscreteRisk
 from filesystem.actors_repo import JsonActorsRepository
@@ -435,6 +437,169 @@ def delete_scenario(draft_id: str, scenario_index: int):
         draft["scenarios"] = scenarios
         draft_repo.save(draft_id, draft)
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
+def _apply_answers_from_form(form, qobj, dim_key: str) -> int:
+    """
+    Läser q_<dim>_<qi> från form och sätter question.set_answer(ans_idx).
+    Returnerar antal satta svar.
+    """
+    if not qobj:
+        return 0
+
+    count = 0
+    for qi, question in enumerate(qobj.questions):
+        raw = form.get(f"q_{dim_key}_{qi}")
+        if raw is None or str(raw).strip() == "":
+            question.set_answer(MonteCarloRange())
+        try:
+            ans_idx = int(raw)
+        except ValueError:
+            continue
+
+        # säkra index
+        if ans_idx < 0 or ans_idx >= len(question.alternatives):
+            continue
+
+        question.set_answer(ans_idx)
+        count += 1
+
+    return count
+
+
+def _d(s: str, default: Decimal = Decimal("0")) -> Decimal:
+    try:
+        ss = (s or "").strip()
+        if ss == "":
+            return default
+        return Decimal(ss)
+    except Exception:
+        return default
+
+@app.get("/risk-calc", response_class=HTMLResponse)
+def risk_calc_page(request: Request, qset: str | None = None):
+    available_qsets = questionaires_repo.list_sets()
+    effective_qset = qset or (available_qsets[0] if available_qsets else "default")
+
+    try:
+        qs = questionaires_repo.load_objects(effective_qset)
+    except FileNotFoundError:
+        qs = {"tef": None, "vuln": None, "lm": None}
+
+    return templates.TemplateResponse(
+        "risk_calc.html",
+        {
+            "request": request,
+            "available_qsets": available_qsets,
+            "qset": effective_qset,
+            "qs": qs,
+            "result": None,
+            "errors": [],
+            "mode": "questionnaire",  # default
+            "manual": {
+                "tef": {"min": "", "probable": "", "max": ""},
+                "vuln": {"min": "", "probable": "", "max": ""},
+                "lm": {"min": "", "probable": "", "max": ""},
+                "budget": "1000000",
+                "currency": "SEK",
+            },
+        },
+        status_code=HTTP_200_OK,
+    )
+
+
+@app.post("/risk-calc", response_class=HTMLResponse)
+async def risk_calc_submit(request: Request):
+    form = await request.form()
+
+    mode = str(form.get("risk_input_mode", "questionnaire"))
+    qset = str(form.get("qset", "")) or None
+
+    available_qsets = questionaires_repo.list_sets()
+    effective_qset = qset or (available_qsets[0] if available_qsets else "default")
+
+    try:
+        qs = questionaires_repo.load_objects(effective_qset)
+    except FileNotFoundError:
+        qs = {"tef": None, "vuln": None, "lm": None}
+
+    errors: list[str] = []
+    result = None
+
+    if mode == "manual":
+        # MANUAL: du har redan fälten i template.
+        # Här behöver du bygga "values" så Risk(values=...) förstår det.
+        # Jag antar att Risk(values=...) kan ta tef/vuln/lm som MonteCarloRange-dict eller liknande.
+        # Om du har en annan förväntad struktur, säg till så anpassar jag detta exakt.
+
+        values = {
+            "threat_event_frequency": {"min": str(_d(form.get("tef_min"))), "probable": str(_d(form.get("tef_probable"))), "max": str(_d(form.get("tef_max")))},
+            "vulnerability": {"min": str(_d(form.get("vuln_min"))), "probable": str(_d(form.get("vuln_probable"))), "max": str(_d(form.get("vuln_max")))},
+            "loss_magnitude": {"min": str(_d(form.get("lm_min"))), "probable": str(_d(form.get("lm_probable"))), "max": str(_d(form.get("lm_max")))},
+            "budget": _d(str(form.get("budget", "1000000")), Decimal("1000000")),
+            "currency": str(form.get("currency", "SEK") or "SEK"),
+        }
+
+        try:
+            risk = DiscreteRisk(values=values)
+            result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
+        except Exception as e:
+            errors.append(f"Kunde inte skapa Risk från manuella intervall: {e}")
+
+    else:
+        # QUESTIONNAIRE (standard)
+        tef_q = qs.get("tef")
+        vuln_q = qs.get("vuln")
+        lm_q = qs.get("lm")
+
+        if not tef_q or not vuln_q or not lm_q:
+            errors.append("Valt formulär saknar en eller flera dimensioner (tef/vuln/lm).")
+        print(form)
+        # Sätt answers i de faktiska Question-objekten
+        tef_n = _apply_answers_from_form(form, tef_q, "tef")
+        vuln_n = _apply_answers_from_form(form, vuln_q, "vuln")
+        lm_n = _apply_answers_from_form(form, lm_q, "lm")
+
+        #if tef_q and tef_n == 0:
+        #    errors.append("TEF: inga svar valda.")
+        #if vuln_q and vuln_n == 0:
+        #    errors.append("Vulnerability: inga svar valda.")
+        #if lm_q and lm_n == 0:
+        #    errors.append("Loss magnitude: inga svar valda.")
+
+        if not errors:
+            try:
+                questionaires = Questionaires(tef=tef_q, vuln=vuln_q, lm=lm_q)
+                values = questionaires.calculate_questionairy_values()
+
+                # Budget/valuta (i questionnaire-läge: antingen standard eller låt bli)
+                # Du kan antingen ha dolda inputs eller hårdkoda default:
+                values.update({"budget": Decimal("1000000")})
+                values.update({"currency": "SEK"})
+
+                risk = DiscreteRisk(values=values)
+                result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
+
+            except Exception as e:
+                raise e
+    return templates.TemplateResponse(
+        "risk_calc.html",
+        {
+            "request": request,
+            "available_qsets": available_qsets,
+            "qset": effective_qset,
+            "qs": qs,
+            "result": result,
+            "errors": errors,
+            "mode": mode,
+            "manual": {
+                "tef": {"min": form.get("tef_min", ""), "probable": form.get("tef_probable", ""), "max": form.get("tef_max", "")},
+                "vuln": {"min": form.get("vuln_min", ""), "probable": form.get("vuln_probable", ""), "max": form.get("vuln_max", "")},
+                "lm": {"min": form.get("lm_min", ""), "probable": form.get("lm_probable", ""), "max": form.get("lm_max", "")},
+                "budget": str(form.get("budget", "1000000")),
+                "currency": str(form.get("currency", "SEK")),
+            },
+        },
+    )
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

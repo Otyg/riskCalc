@@ -48,6 +48,8 @@ class RiskScenario():
             self.risk = parameters.get('risk')
             self.category = parameters.get('category', "")
             self.name = parameters.get('name', self.auto_desc())
+            if self.name == "":
+                self.name = self.auto_desc()
             tmp_risk = parameters.get('risk', Risk())
             if isinstance(tmp_risk, dict):
                 if 'discrete_risk' in tmp_risk:

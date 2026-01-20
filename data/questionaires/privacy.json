@@ -47,13 +47,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 1.0,
-                        "probable": 3.0,
-                        "max": 10.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Hur attraktiv är tillgången eller informationsmängden för den aktuella hotaktören ur ett integritetsperspektiv?",
@@ -100,13 +96,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 1.0,
-                        "probable": 3.0,
-                        "max": 10.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Hur resursstark och motiverad är den aktuella hotaktören att genomföra integritetsintrång?",
@@ -153,13 +145,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 1.0,
-                        "probable": 3.0,
-                        "max": 10.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "I vilken utsträckning är tillgången eller dataflödet exponerat för integritetsrelaterade hot?",
@@ -206,13 +194,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 1.0,
-                        "probable": 3.0,
-                        "max": 10.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Hur ser historiken ut avseende integritetsintrång eller integritetsrelaterade avvikelser i liknande tillgångar eller flöden?",
@@ -259,13 +243,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 1.0,
-                        "probable": 3.0,
-                        "max": 10.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             }
         ],
         "factor_mul": {
@@ -327,13 +307,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "LINDDUN: Non-repudiation/Detectability \u2014 hur bra \u00e4r sp\u00e5rbarhet, loggning och kontroll av vem som gjort vad (s\u00e5 att missbruk uppt\u00e4cks och kan utredas)?",
@@ -380,13 +356,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Solove: Information Processing \u2014 i vilken grad finns risk f\u00f6r sekund\u00e4ranv\u00e4ndning, \u00f6verbevarande, bristande data-minimering och felaktig aggregering/profilering i fl\u00f6det?",
@@ -433,13 +405,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "LINDDUN: Disclosure of information \u2014 hur sannolikt \u00e4r oavsiktlig/otill\u00e5ten spridning (felkonfig, felaktiga beh\u00f6righeter, delning med fel mottagare, dataexfiltration)?",
@@ -486,13 +454,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "LINDDUN: Unawareness/Non-compliance \u2014 hur stor \u00e4r risken att transparens, samtycke/r\u00e4ttslig grund, informationsplikt och registrerades r\u00e4ttigheter inte uppfylls i praktiken?",
@@ -539,13 +503,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             }
         ],
         "factor_mul": {
@@ -607,13 +567,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Hur allvarlig blir konsekvensen f\u00f6r den registrerade av att uppgifter r\u00f6js eller sprids till obeh\u00f6riga?",
@@ -660,13 +616,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Hur allvarlig blir konsekvensen f\u00f6r den registrerade av otill\u00e5ten anv\u00e4ndning (secondary use) eller behandling utanf\u00f6r f\u00f6rv\u00e4ntat \u00e4ndam\u00e5l?",
@@ -713,13 +665,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Hur allvarlig blir konsekvensen f\u00f6r den registrerade av f\u00f6rlust av kontroll och begr\u00e4nsad m\u00f6jlighet att ut\u00f6va sina r\u00e4ttigheter (insyn, r\u00e4ttelse, radering m.m.)?",
@@ -766,13 +714,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Hur allvarlig blir den samlade skadan f\u00f6r den registrerade (materiell och/eller immateriell)?",
@@ -819,13 +763,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Hur allvarlig blir konsekvensen f\u00f6r den registrerade av intr\u00e5ng i privatliv/personlig sf\u00e4r (\u00f6vervakning, kartl\u00e4ggning, o\u00f6nskad exponering)?",
@@ -872,13 +812,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             },
             {
                 "text": "Hur allvarlig blir konsekvensen f\u00f6r den registrerade om k\u00e4nsliga uppgifter (s\u00e4rskilt h\u00e4lsodata) exponeras eller anv\u00e4nds p\u00e5 ett s\u00e4tt som kan skapa stigma eller \u00f6kad s\u00e5rbarhet?",
@@ -925,13 +861,9 @@
                     }
                 ],
                 "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.25,
-                        "probable": 0.5,
-                        "max": 1.0
-                    }
-                }
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
             }
         ],
         "factor_mul": {
