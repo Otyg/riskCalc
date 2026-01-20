@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="layout">
+  <aside class="sidebar">
+    <h2>Riskuträkning</h2>
+    <p class="muted">Fristående beräkning utan scenario-metadata.</p>
+    <a class="item" href="/">← Start</a>
+  </aside>
+
+  <main class="main">
+    <h1 style="margin-top:0;">Fristående risk-uträkning</h1>
+
+    {% if errors and errors|length > 0 %}
+      <div class="card" style="border-color:#fecaca;">
+        <h3 style="margin-top:0;">Fel</h3>
+        <ul style="margin:0; padding-left:18px;">
+          {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    {% if result %}
+      <div class="card" style="margin-top:16px;">
+        <h2 style="margin-top:0;">Resultat</h2>
+
+        {% if result %}
+            <div>Sannolikhet: {{ result.get("discrete_risk").get("probability","") }} ({{ result.get("discrete_risk").get("probability_text","") }})</div>
+            <div>Konsekvens: {{ result.get("discrete_risk").get("consequence","") }} ({{ result.get("discrete_risk").get("consequence_text","") }})</div>
+            <div>Risk: <strong>{{ result.get("discrete_risk").get("risk","") }} ({{ result.get("discrete_risk").get("risk_text","") }})</strong></div>
+            <p>
+                <div>Budget: {{ result.get("budget","") }} {{ result.get("currency","") }}/år</div>
+                <div>Loss Event Frequency: {{ result.get("loss_event_frequency","").get("p90", "") | round(2) }} händelser/år</div>
+                <div>Loss Magnitude: {{ (result.get("loss_magnitude","").get("p90", "")*result.get("budget",""))| round(3) }} {{ result.get("currency","") }}/händelse</div>
+                <div>ALE: {{ result.get("annual_loss_expectancy","").get("p90", "") | round(3)}} {{ result.get("currency","") }}/år</div>
+            </p>
+            <details>
+                <pre>{{ result | tojson(indent=2) }}</pre>
+            </details>
+        {% else %}
+          <p class="muted" style="margin-top:12px;">
+            (Kunde inte serialisera Risk via to_dict(); TEF/VULN/LM visas ovan.)
+          </p>
+        {% endif %}
+      </div>
+    {% endif %}
+    <form method="post" action="/risk-calc" class="card">
+      <h2 style="margin-top:0;">Inmatning</h2>
+
+      <div class="card" style="margin-top:12px;">
+        <h3 style="margin-top:0;">Metod</h3>
+        <label style="display:flex; gap:10px; align-items:center; margin:6px 0;">
+          <input type="radio" name="risk_input_mode" value="questionnaire" {% if mode != 'manual' %}checked{% endif %}/>
+          <span>Frågeformulär (standard)</span>
+        </label>
+        <label style="display:flex; gap:10px; align-items:center; margin:6px 0;">
+          <input type="radio" name="risk_input_mode" value="manual" {% if mode == 'manual' %}checked{% endif %}/>
+          <span>Manuella intervall</span>
+        </label>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h3 style="margin-top:0;">Formulär</h3>
+        <label><strong>Questionaires-set</strong></label><br/>
+        <select id="qset_select" name="qset"
+                style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+          {% for setid in available_qsets %}
+            <option value="{{ setid }}" {% if setid == qset %}selected{% endif %}>{{ setid }}</option>
+          {% endfor %}
+        </select>
+        <p class="muted" style="margin:6px 0 0 0;">Byte laddar om sidan och visar frågor för vald mall.</p>
+      </div>
+
+      <!-- QUESTIONNAIRE BLOCK -->
+      <div id="questionnaire_block" style="margin-top:12px;">
+        {% for dim_key, title in [("tef","TEF"), ("vuln","Vulnerability"), ("lm","Loss magnitude")] %}
+          {% set qobj = qs.get(dim_key) %}
+          <div class="card" style="margin-top:12px;">
+            <h3 style="margin-top:0;">{{ title }}</h3>
+            {% if not qobj %}
+              <p class="muted">Saknar questionaire för {{ dim_key }} i detta set.</p>
+            {% else %}
+              {% for question in qobj.questions %}
+                {% set qi = loop.index0 %}
+                <div style="margin:10px 0; padding-top:10px; border-top:1px solid #e5e7eb;">
+                  <div><strong>{{ question.text }}</strong></div>
+                  <div style="margin-top:6px;">
+                    <select name="q_{{ dim_key }}_{{ qi }}"
+                            style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                      <option value="">N/A</option>
+                      {% for alt in question.alternatives %}
+  {% set ai = loop.index0 %}
+  <option value="{{ ai }}"
+    {% if
+      (question.answer is not none and question.answer.text is not none and question.answer.text == alt.text)
+      or (question.answer is number and question.answer == ai)
+      or (question.answer is not none and (question.answer|string) == (ai|string))
+    %}selected{% endif %}
+  >
+    {{ alt.text }}
+  </option>
+{% endfor %}
+                    </select>
+                  </div>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- MANUAL BLOCK -->
+      <div id="manual_block" style="display:none; margin-top:12px;">
+        <div class="card">
+          <h3 style="margin-top:0;">TEF (MonteCarloRange)</h3>
+          <div class="grid">
+            <div><label>min</label><input name="tef_min" value="{{ manual.tef.min }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
+            <div><label>probable</label><input name="tef_probable" value="{{ manual.tef.probable }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
+            <div><label>max</label><input name="tef_max" value="{{ manual.tef.max }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h3 style="margin-top:0;">Vulnerability (MonteCarloRange)</h3>
+          <div class="grid">
+            <div><label>min</label><input name="vuln_min" value="{{ manual.vuln.min }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
+            <div><label>probable</label><input name="vuln_probable" value="{{ manual.vuln.probable }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
+            <div><label>max</label><input name="vuln_max" value="{{ manual.vuln.max }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h3 style="margin-top:0;">Loss magnitude (MonteCarloRange)</h3>
+          <div class="grid">
+            <div><label>min</label><input name="lm_min" value="{{ manual.lm.min }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
+            <div><label>probable</label><input name="lm_probable" value="{{ manual.lm.probable }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
+            <div><label>max</label><input name="lm_max" value="{{ manual.lm.max }}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" /></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h3 style="margin-top:0;">Budget (visas bara i manual-läge)</h3>
+          <div class="grid">
+            <div>
+              <label><strong>budget</strong></label><br/>
+              <input name="budget" type="number" step="any" value="{{ manual.budget or '1000000' }}"
+                     style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+            </div>
+            <div>
+              <label><strong>currency</strong></label><br/>
+              <input name="currency" value="{{ manual.currency or 'SEK' }}"
+                     style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <button type="submit"
+                style="padding:12px 16px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+          🧮 Beräkna risk
+        </button>
+      </div>
+    </form>
+
+    <script>
+      // Mode toggle (questionnaire default)
+      const radios = document.querySelectorAll('input[name="risk_input_mode"]');
+      const manual = document.getElementById('manual_block');
+      const qblock = document.getElementById('questionnaire_block');
+
+      function syncMode() {
+        const mode = document.querySelector('input[name="risk_input_mode"]:checked')?.value || 'questionnaire';
+        manual.style.display = (mode === 'manual') ? 'block' : 'none';
+        qblock.style.display = (mode === 'questionnaire') ? 'block' : 'none';
+      }
+      radios.forEach(r => r.addEventListener('change', syncMode));
+      syncMode();
+
+      // Reload on qset change (like scenario page)
+      const qsetSelect = document.getElementById('qset_select');
+      if (qsetSelect) {
+        qsetSelect.addEventListener('change', () => {
+          const qset = encodeURIComponent(qsetSelect.value || '');
+          window.location.href = `/risk-calc?qset=${qset}`;
+        });
+      }
+    </script>
+
+  </main>
+</div>
+{% endblock %}

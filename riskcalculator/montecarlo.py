@@ -37,9 +37,6 @@ class MonteCarloRange():
             self.min = Decimal(self.probable/2)
         elif self.probable.is_zero and not self.max.is_zero():
             self.probable = (self.min + self.max)/2
-        if not (self.min <= self.probable <= self.max):
-            raise ValueError(
-                'Minimum is not less than or equal to probable or maximum is less than or equal to probable')
 
     def to_dict(self):
         return {
@@ -47,6 +44,14 @@ class MonteCarloRange():
             "probable": float(self.probable),
             "max": float(self.max)
         }
+    
+    def add(self, other = None):
+        print(other)
+        max = self.max + other.max
+        min = self.min + other.min
+        probable = self.probable + other.probable
+        result = MonteCarloRange(min=Decimal(min), probable=Decimal(probable), max=Decimal(max))
+        return result
 
     def __repr__(self):
         return str(self.to_dict())
@@ -67,8 +72,8 @@ class MonteCarloSimulation():
     def __init__(self, range: MonteCarloRange):
         if (range.min == range.max == range.probable):
             self.probable = Decimal(range.probable)
-            range.max = Decimal(range.probable*1.5)
-            range.min = Decimal(range.probable/1.5)
+            range.max = Decimal(Decimal(range.probable)+Decimal(0.000000000001))
+            range.min = Decimal(Decimal(range.probable)-Decimal(0.000000000001))
         
         pd = PertDistribution(range=range)
         self.__samples = pd.get()
