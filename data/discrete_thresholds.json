@@ -1,0 +1,85 @@
+{
+    "default_thresholds": {
+        "probability": [
+            {
+                "value": 1,
+                "text": "Mycket låg",
+                "threshold": 0.1
+            },
+            {
+                "value": 2,
+                "text": "Låg",
+                "threshold": 0.5
+            },
+            {
+                "value": 3,
+                "text": "Medel",
+                "threshold": 8.0
+            },
+            {
+                "value": 4,
+                "text": "Hög",
+                "threshold": 13.0
+            },
+            {
+                "value": 5,
+                "text": "Mycket hög",
+                "threshold": 13.01
+            }
+        ],
+        "consequence": [
+            {
+                "value": 1,
+                "text": "Försumbar påverkan",
+                "threshold": 0.001
+            },
+            {
+                "value": 2,
+                "text": "Begränsad påverkan",
+                "threshold": 0.005
+            },
+            {
+                "value": 3,
+                "text": "Märkbar påverkan",
+                "threshold": 0.02
+            },
+            {
+                "value": 4,
+                "text": "Allvarlig påverkan",
+                "threshold": 0.05
+            },
+            {
+                "value": 5,
+                "text": "Kritisk påverkan",
+                "threshold": 0.051
+            }
+        ],
+        "risk": [
+            {
+                "value": "very_low",
+                "text": "Mycket låg",
+                "threshold": 3
+            },
+            {
+                "value": "low",
+                "text": "Låg",
+                "threshold": 6
+            },
+            {
+                "value": "middle",
+                "text": "Medel",
+                "threshold": 10
+            },
+            {
+                "value": "high",
+                "text": "Hög",
+                "threshold": 15
+            },
+            {
+                "value": "critical",
+                "text": "Mycket hög",
+                "threshold": 25
+            }
+        ]
+    }
+}

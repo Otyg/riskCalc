@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 import uuid
 
+from riskcalculator.discret_scale import DiscreetThreshold
 from riskcalculator.util import ComplexEncoder
 
 
@@ -137,3 +138,21 @@ class JsonCategoryRepository:
         categories = data.get("categories", [])
         cleaned = sorted({str(c).strip() for c in categories if str(c).strip()})
         return cleaned
+    
+class DiscreteThresholdsRepository:
+    def __init__(self, path: Path):
+        self.path = path
+    def __read_file(self):
+        if not self.path.exists():
+            raise FileNotFoundError(self.path)
+        with self.path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data
+    
+    def get_set_names(self):
+        data = self.__read_file()
+        return data.keys()
+    
+    def load(self, threshold_set: str = "default_thresholds") -> DiscreetThreshold:
+        data=self.__read_file()
+        return DiscreetThreshold(thresholds=data.get(threshold_set, {}))

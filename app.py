@@ -39,7 +39,7 @@ from riskcalculator.risk import Risk
 from riskcalculator.scenario import RiskScenario
 from riskcalculator.discret_scale import DiscreteRisk
 from filesystem.actors_repo import JsonActorsRepository
-from filesystem.repo import JsonAnalysisRepository, DraftRepository, JsonCategoryRepository
+from filesystem.repo import DiscreteThresholdsRepository, JsonAnalysisRepository, DraftRepository, JsonCategoryRepository
 from filesystem.questionaires_repo import JsonQuestionairesRepository
 from riskcalculator.questionaire import Questionaire, Questionaires
 from filesystem.threats_repo import JsonThreatsRepository
@@ -47,7 +47,7 @@ from filesystem.vulnerabilities_repo import JsonVulnerabilitiesRepository
 from riskregister.assessment import RiskAssessment
 from filesystem.paths import ensure_user_data_initialized, packaged_root
 
-DEFAULT_QUESTIONAIRES_SET = "default"
+
 app = FastAPI()
 p = ensure_user_data_initialized()
 os.environ["TEMPLATES_DIR"] = str(packaged_root() / "templates")
@@ -55,6 +55,7 @@ os.environ["DATA_DIR"] = str(p["data"])
 BASE_DIR = Path(__file__).parent
 TEMPLATES_DIR = Path(os.environ.get("TEMPLATES_DIR", str(BASE_DIR / "templates")))
 DATA_DIR = Path(os.environ.get("DATA_DIR", str(BASE_DIR / "data")))
+DEFAULT_QUESTIONAIRES_SET = "default"
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
@@ -66,6 +67,7 @@ actors_repo = JsonActorsRepository(DATA_DIR / "actors.json")
 threats_repo = JsonThreatsRepository(DATA_DIR / "threats.json")
 vulns_repo = JsonVulnerabilitiesRepository(DATA_DIR / "vulnerabilities.json")
 categories_repo = JsonCategoryRepository(DATA_DIR / "categories.json")
+discrete_thresholds_repo = DiscreteThresholdsRepository(DATA_DIR / "discrete_thresholds.json")
 
 def _d(s: str, default: Decimal = Decimal(0)) -> Decimal:
     try:
@@ -295,11 +297,13 @@ async def create_scenario_save(request: Request, draft_id: str):
         )
 
     try:
+        
         questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
-        questionaires_values = questionaires.calculate_questionairy_values()
-        questionaires_values.update({'budget': Decimal(risk_dict.get('budget'))})
-        questionaires_values.update({'currency': risk_dict.get('currency')})
-        risk = DiscreteRisk(values=questionaires_values)
+        values = questionaires.calculate_questionairy_values()
+        values.update({'budget': Decimal(risk_dict.get('budget'))})
+        values.update({'currency': risk_dict.get('currency')})
+        values.update({'thresholds': discrete_thresholds_repo.load()})
+        risk = DiscreteRisk(values=values)
         scenario_obj = RiskScenario(parameters= {"name": name,
                                     "category": category,
                                     "actor": actor,
@@ -406,10 +410,11 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
 
     try:
         questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
-        questionaires_values = questionaires.calculate_questionairy_values()
-        questionaires_values.update({'budget': Decimal(risk_dict.get('budget'))})
-        questionaires_values.update({'currency': risk_dict.get('currency')})
-        risk = DiscreteRisk(values=questionaires_values)
+        values = questionaires.calculate_questionairy_values()
+        values.update({'budget': Decimal(risk_dict.get('budget'))})
+        values.update({'currency': risk_dict.get('currency')})
+        values.update({'thresholds': discrete_thresholds_repo.load()})
+        risk = DiscreteRisk(values=values)
         scenario_obj = RiskScenario(parameters= {"name": name,
                                     "category": category,
                                     "actor": actor,
@@ -536,6 +541,7 @@ async def risk_calc_submit(request: Request):
             "loss_magnitude": {"min": str(_d(form.get("lm_min"))), "probable": str(_d(form.get("lm_probable"))), "max": str(_d(form.get("lm_max")))},
             "budget": _d(str(form.get("budget", "1000000")), Decimal("1000000")),
             "currency": str(form.get("currency", "SEK") or "SEK"),
+            "thresholds": discrete_thresholds_repo.load()
         }
 
         try:
@@ -556,14 +562,6 @@ async def risk_calc_submit(request: Request):
         tef_n = _apply_answers_from_form(form, tef_q, "tef")
         vuln_n = _apply_answers_from_form(form, vuln_q, "vuln")
         lm_n = _apply_answers_from_form(form, lm_q, "lm")
-
-        #if tef_q and tef_n == 0:
-        #    errors.append("TEF: inga svar valda.")
-        #if vuln_q and vuln_n == 0:
-        #    errors.append("Vulnerability: inga svar valda.")
-        #if lm_q and lm_n == 0:
-        #    errors.append("Loss magnitude: inga svar valda.")
-
         if not errors:
             try:
                 questionaires = Questionaires(tef=tef_q, vuln=vuln_q, lm=lm_q)
@@ -573,6 +571,7 @@ async def risk_calc_submit(request: Request):
                 # Du kan antingen ha dolda inputs eller hårdkoda default:
                 values.update({"budget": Decimal("1000000")})
                 values.update({"currency": "SEK"})
+                values.update({"thresholds": discrete_thresholds_repo.load()})
 
                 risk = DiscreteRisk(values=values)
                 result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
