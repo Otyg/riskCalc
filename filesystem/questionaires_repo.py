@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
-
+from riskcalculator.questionaire import Questionaire
 
 class JsonQuestionairesRepository:
     """
@@ -41,7 +41,7 @@ class JsonQuestionairesRepository:
         och värden som är dina Questionaire-objekt.
         """
         raw = self.load_dict(set_id)
-        from riskcalculator.questionaire import Questionaire
+
 
         tef = Questionaire()
         tef.from_dict(raw.get("tef", {}))

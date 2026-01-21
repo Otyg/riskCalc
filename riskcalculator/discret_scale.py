@@ -66,8 +66,10 @@ class DiscreteRisk(Risk):
             super()
         if not values or 'thresholds' not in values:
             self.thresholds = DiscreetThreshold()
+        elif isinstance(values.get('thresholds'), DiscreetThreshold):
+            self.thresholds = values.get('thresholds')
         else:
-            self.thresholds = DiscreetThreshold(thresholds=values['thresholds'])
+            self.thresholds = DiscreetThreshold(thresholds=values.get('thresholds'))
         self.risk = {}
         self.calculate_probability()
         self.calculate_consequence()
