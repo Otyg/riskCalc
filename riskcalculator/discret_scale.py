@@ -22,19 +22,17 @@
 # SOFTWARE.
 #
 
-from decimal import Decimal
-from riskcalculator.montecarlo import MonteCarloRange
 from riskcalculator.risk import Risk
-from riskcalculator.util import montecarlorange_from_dict
+
 class DiscreetThreshold():
     def __init__(self,
                  thresholds = {
                      "probability": [
-                         {'value':1, 'text':'Mycket låg', 'threshold': float(0.1)},
-                         {'value':2, 'text':'Låg', 'threshold': float(0.5)},
-                         {'value':3, 'text':'Medel', 'threshold': float(8.0)},
-                         {'value':4, 'text':'Hög', 'threshold': float(13.0)},
-                         {'value':5, 'text':'Mycket hög', 'threshold': float(13.01)}],
+                         {'value':1, 'text':'Mycket låg', 'threshold': 0.1},
+                         {'value':2, 'text':'Låg', 'threshold': 0.5},
+                         {'value':3, 'text':'Medel', 'threshold': 8.0},
+                         {'value':4, 'text':'Hög', 'threshold': 13.0},
+                         {'value':5, 'text':'Mycket hög', 'threshold': 13.01}],
                      "consequence":[
                          {'value':1, 'text':'Försumbar påverkan', 'threshold': 0.001},
                          {'value':2, 'text':'Begränsad påverkan', 'threshold': 0.005},
