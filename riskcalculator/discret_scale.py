@@ -82,7 +82,7 @@ class DiscreteRisk(Risk):
         self.risk['risk'] = value
     
     def calculate_probability(self):
-        self.__set_values('probability', self.loss_event_frequency.p90, self.thresholds.probability_values)
+        self.__set_values('probability', self.loss_event_frequency.probable, self.thresholds.probability_values)
 
     def __set_values(self, key, non_discreet_value, thresholds):
         threshold_max = max(thresholds, key=lambda x:x['threshold'])
@@ -103,7 +103,7 @@ class DiscreteRisk(Risk):
         
     
     def calculate_consequence(self):
-        self.__set_values('consequence', self.loss_magnitude.p90, self.thresholds.consequence_values)
+        self.__set_values('consequence', self.loss_magnitude.probable, self.thresholds.consequence_values)
 
     def to_dict(self):
         me = super().to_dict()

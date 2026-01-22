@@ -24,11 +24,14 @@
 
 from decimal import Decimal
 import statistics
+
+import numpy
 from .montecarlo import MonteCarloRange
 
 
 class Alternative():
     def __init__(self, text: str = "", weight: MonteCarloRange = MonteCarloRange()):
+        # TODO: Dict i konstruktorn
         self.text = text
         self.weight = weight
     
@@ -43,6 +46,7 @@ class Alternative():
 
 class Question():
     def __init__(self, text: str = "", alternatives: list = []):
+        #TODO: dict i konstruktorn
         self.text = text
         self.alternatives = alternatives
         self.answer = Alternative()
@@ -80,6 +84,7 @@ class Question():
 
 class Questionaire():
     def __init__(self, factor: str="", questions: list = None):
+        # TODO: Konstruktorn ska ta en dict istället
         if questions is None:
             self.questions = []
         else:
@@ -167,11 +172,14 @@ class Questionaire():
         return Decimal(factor_min)
 
     def mode(self):
+        #TODO: Returnera max, mode, min
         if len(self.questions) == 0:
-            return Decimal(0.5)
+            return Decimal(0)
         mode=[]
         for q in self.questions:
             mode.append(q.answer.weight.probable)
+            mode.append(q.answer.weight.max)
+            mode.append(q.answer.weight.min)
         return Decimal(statistics.mode(mode))
 
     def range(self):
@@ -203,6 +211,7 @@ class Questionaires:
         }
 
     def calculate_questionairy_values(self):
+        # TODO: Anpassa och dokumentera uträkningarna, går det att lägga formlerna i JSON-filen och läsa in dem därifrån?
         values = dict()
         values.update({'threat_event_frequency': self.questionaires['tef'].mean()})
         values.update({'vulnerability': self.questionaires['vuln'].sum_factor()})
@@ -210,6 +219,7 @@ class Questionaires:
         return values
 
     def to_dict(self):
+        # TODO: Byt namn på nycklarna så att samma namn används konsekvent överallt
         return {
             'tef': self.questionaires['tef'].to_dict(),
             'vuln': self.questionaires['vuln'].to_dict(),

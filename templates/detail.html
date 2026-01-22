@@ -59,9 +59,9 @@
           <details>
             <div class="kv">
             <div>Budget</div><div>{{ risk.get("budget","") }} {{ risk.get("currency","") }}/år</div>
-            <div>Loss Event Frequency</div><div>{{ risk.get("loss_event_frequency","").get("p90", "")|round(5) }} händelser/år</div>
-            <div>Loss Magnitude</div><div>{{ (risk.get("loss_magnitude","").get("p90", "")*risk.get("budget",""))|round(2) }} {{ risk.get("currency","") }}/händelse</div>
-            <div>ALE</div><div>{{ risk.get("annual_loss_expectancy","").get("p90", "") | round(2)}} {{ risk.get("currency","") }}/år</div>
+            <div>Loss Event Frequency</div><div>{{ risk.get("loss_event_frequency","").get("probable", "")|round(5) }} händelser/år</div>
+            <div>Loss Magnitude</div><div>{{ (risk.get("loss_magnitude","").get("probable", "")*risk.get("budget",""))|round(2) }} {{ risk.get("currency","") }}/händelse</div>
+            <div>ALE</div><div>{{ risk.get("annual_loss_expectancy","").get("probable", "") | round(2)}} {{ risk.get("currency","") }}/år</div>
             </div>
           </details>
           
