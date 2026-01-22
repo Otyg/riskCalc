@@ -28,9 +28,9 @@
             <div>Risk: <strong>{{ result.get("discrete_risk").get("risk","") }} ({{ result.get("discrete_risk").get("risk_text","") }})</strong></div>
             <p>
                 <div>Budget: {{ result.get("budget","") }} {{ result.get("currency","") }}/år</div>
-                <div>Loss Event Frequency: {{ result.get("loss_event_frequency","").get("p90", "") | round(2) }} händelser/år</div>
-                <div>Loss Magnitude: {{ (result.get("loss_magnitude","").get("p90", "")*result.get("budget",""))| round(3) }} {{ result.get("currency","") }}/händelse</div>
-                <div>ALE: {{ result.get("annual_loss_expectancy","").get("p90", "") | round(3)}} {{ result.get("currency","") }}/år</div>
+                <div>Loss Event Frequency: {{ result.get("loss_event_frequency","").get("probable", "") | round(2) }} händelser/år</div>
+                <div>Loss Magnitude: {{ (result.get("loss_magnitude","").get("probable", "")*result.get("budget",""))| round(3) }} {{ result.get("currency","") }}/händelse</div>
+                <div>ALE: {{ result.get("annual_loss_expectancy","").get("probable", "") | round(3)}} {{ result.get("currency","") }}/år</div>
             </p>
             <details>
                 <pre>{{ result | tojson(indent=2) }}</pre>
