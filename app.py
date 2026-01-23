@@ -483,7 +483,7 @@ def _d(s: str, default: Decimal = Decimal("0")) -> Decimal:
 def risk_calc_page(request: Request, qset: str | None = None):
     available_qsets = questionaires_repo.list_sets()
     effective_qset = qset or (available_qsets[0] if available_qsets else "default")
-
+    available_thresholds_names = discrete_thresholds_repo.get_set_names()
     try:
         qs = questionaires_repo.load_objects(effective_qset)
     except FileNotFoundError:
@@ -496,6 +496,7 @@ def risk_calc_page(request: Request, qset: str | None = None):
             "available_qsets": available_qsets,
             "qset": effective_qset,
             "qs": qs,
+            "available_thresholds": available_thresholds_names,
             "result": None,
             "errors": [],
             "mode": "questionnaire",  # default
@@ -520,12 +521,17 @@ async def risk_calc_submit(request: Request):
 
     available_qsets = questionaires_repo.list_sets()
     effective_qset = qset or (available_qsets[0] if available_qsets else "default")
+    available_thresholds_names = discrete_thresholds_repo.get_set_names()
 
     try:
         qs = questionaires_repo.load_objects(effective_qset)
     except FileNotFoundError:
         qs = {"tef": None, "vuln": None, "lm": None}
-
+    try:
+        threshold_set = discrete_thresholds_repo.load(form.get("threshold_set", ""))
+    except Exception as e:
+        raise e
+    
     errors: list[str] = []
     result = None
 
@@ -541,7 +547,7 @@ async def risk_calc_submit(request: Request):
             "loss_magnitude": {"min": str(_d(form.get("lm_min"))), "probable": str(_d(form.get("lm_probable"))), "max": str(_d(form.get("lm_max")))},
             "budget": _d(str(form.get("budget", "1000000")), Decimal("1000000")),
             "currency": str(form.get("currency", "SEK") or "SEK"),
-            "thresholds": discrete_thresholds_repo.load()
+            "thresholds": threshold_set
         }
 
         try:
@@ -571,7 +577,7 @@ async def risk_calc_submit(request: Request):
                 # Du kan antingen ha dolda inputs eller hårdkoda default:
                 values.update({"budget": Decimal("1000000")})
                 values.update({"currency": "SEK"})
-                values.update({"thresholds": discrete_thresholds_repo.load()})
+                values.update({"thresholds": threshold_set})
 
                 risk = DiscreteRisk(values=values)
                 result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
@@ -588,6 +594,8 @@ async def risk_calc_submit(request: Request):
             "result": result,
             "errors": errors,
             "mode": mode,
+            "available_thresholds": available_thresholds_names,
+            "threshold_set": threshold_set,
             "manual": {
                 "tef": {"min": form.get("tef_min", ""), "probable": form.get("tef_probable", ""), "max": form.get("tef_max", "")},
                 "vuln": {"min": form.get("vuln_min", ""), "probable": form.get("vuln_probable", ""), "max": form.get("vuln_max", "")},

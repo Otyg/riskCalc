@@ -1,6 +1,7 @@
 {
   "tef": {
     "factor": "tef",
+    "calculation":"mean",
     "questions": [
       {
         "text": "Hur ofta observerar vi försök från denna typ av hotaktör att få åtkomst till tillgången?",
@@ -158,6 +159,7 @@
   },
     "vuln": {
         "factor": "vuln",
+        "calculation":"sum",
         "questions": [
             {
                 "text": "Hur starka \u00e4r v\u00e5ra kontroller i relation till hotakt\u00f6rens f\u00f6rm\u00e5ga?",
@@ -438,6 +440,7 @@
     },
     "lm": {
         "factor": "consequence",
+        "calculation":"mean_75",
         "questions": [
             {
                 "text": "Om h\u00e4ndelsen intr\u00e4ffar, vilken \u00e4r den allvarligaste rimliga konsekvensen f\u00f6r m\u00e4nniskors liv och h\u00e4lsa?",

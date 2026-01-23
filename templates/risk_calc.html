@@ -69,6 +69,17 @@
         <p class="muted" style="margin:6px 0 0 0;">Byte laddar om sidan och visar frågor för vald mall.</p>
       </div>
 
+      <div class="card" style="margin-top:12px;">
+        <h3 style="margin-top:0;">Diskreta nivåer</h3>
+        <label><strong>Thresholds</strong></label><br/>
+        <select id="threshold_select" name="threshold_set"
+                style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+          {% for setid in available_thresholds %}
+            <option value="{{ setid }}" {% if setid == threshold_set %}selected{% endif %}>{{ setid }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
       <!-- QUESTIONNAIRE BLOCK -->
       <div id="questionnaire_block" style="margin-top:12px;">
         {% for dim_key, title in [("tef","TEF"), ("vuln","Vulnerability"), ("lm","Loss magnitude")] %}

@@ -1,6 +1,7 @@
 {
     "tef": {
         "factor": "tef",
+        "calculation":"mean",
         "questions": [
             {
                 "text": "Hur ofta har den aktuella hotaktören möjlighet att komma i kontakt med tillgången på ett sätt som möjliggör ett integritetsintrång?",
@@ -261,6 +262,7 @@
     },
     "vuln": {
         "factor": "vuln",
+        "calculation":"sum",
         "questions": [
             {
                 "text": "LINDDUN: Linkability/Identifiability \u2014 hur v\u00e4l \u00e4r data/pseudonymer skyddade mot koppling & \u00e5teridentifiering (pseudonymisering, separation, k-anon-liknande skydd, \u00e5tkomst till nycklar)?",
@@ -521,6 +523,7 @@
     },
     "lm": {
         "factor": "lm",
+        "calculation":"mean_75",
         "questions": [
             {
                 "text": "Hur allvarlig blir konsekvensen f\u00f6r den registrerade av att kunna identifieras eller l\u00e4nkas/profileras?",

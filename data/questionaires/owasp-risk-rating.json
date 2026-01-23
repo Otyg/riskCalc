@@ -1,6 +1,7 @@
 {
   "tef": {
     "factor": "tef",
+    "calculation":"mean",
     "questions": [
       {
         "text": "How technically skilled is this group of threat agents?",
@@ -117,6 +118,7 @@
   },
     "vuln": {
         "factor": "vuln",
+        "calculation":"mean",
         "questions": [
             {
         "text": "How easy is it for this group of threat agents to discover this vulnerability?",
@@ -245,60 +247,205 @@
     },
     "lm": {
         "factor": "consequence",
+        "calculation":"mean_75",
         "questions": [
-            {
-                "text": "Om h\u00e4ndelsen intr\u00e4ffar, vilken \u00e4r den allvarligaste rimliga konsekvensen f\u00f6r m\u00e4nniskors liv och h\u00e4lsa?",
-                "alternatives": [
-                    {
-                        "text": "Inga eller obetydliga personskador utan medicinsk behandling",
-                        "weight": {
-                            "min": 0.001,
-                            "probable": 0.0055000000000000005,
-                            "max": 0.01
-                        }
-                    },
-                    {
-                        "text": "Lindriga personskador eller tillf\u00e4llig arbetsfr\u00e5nvaro",
-                        "weight": {
-                            "min": 0.005,
-                            "probable": 0.015000000000000001,
-                            "max": 0.025
-                        }
-                    },
-                    {
-                        "text": "Allvarlig personskada med l\u00e5ngvarig fr\u00e5nvaro eller best\u00e5ende men",
-                        "weight": {
-                            "min": 0.015,
-                            "probable": 0.0275,
-                            "max": 0.04
-                        }
-                    },
-                    {
-                        "text": "Mycket allvarlig skada, best\u00e5ende men eller enstaka d\u00f6dsfall",
-                        "weight": {
-                            "min": 0.03,
-                            "probable": 0.0475,
-                            "max": 0.065
-                        }
-                    },
-                    {
-                        "text": "Flera d\u00f6dsfall eller mycket omfattande p\u00e5verkan p\u00e5 m\u00e4nniskoliv",
-                        "weight": {
-                            "min": 0.05,
-                            "probable": 0.065,
-                            "max": 0.08
-                        }
-                    }
-                ],
-                "answer": {
-                    "text": "",
-                    "weight": {
-                        "min": 0.0,
-                        "probable": 0.0,
-                        "max": 0.0
-                    }
-                }
+          {
+            "text": "How much data could be disclosed and how sensitive is it?",
+            "alternatives": [
+              {
+                "text": "Minimal non-sensitive data disclosed",
+                "weight": { "min": 0, "probable": 2, "max": 3 }
+              },
+              {
+                "text": "Extensive non-sensitive data disclosed",
+                "weight": { "min": 3, "probable": 6, "max": 7 }
+              },
+              {
+                "text": "Minimal critical data disclosed",
+                "weight": { "min": 5, "probable": 6, "max": 7 }
+              },
+              {
+                "text": "Extensive critical data disclosed",
+                "weight": { "min": 6, "probable": 7, "max": 9 }
+              },
+              {
+                "text": "All data disclosed",
+                "weight": { "min": 8, "probable": 9, "max": 10 }
+              }
+            ],
+            "answer": {
+              "text": "",
+              "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
             }
+          },  {
+            "text": "How much data could be corrupted and how damaged is it?",
+            "alternatives": [
+              {
+                "text": "Minimal slightly corrupt data",
+                "weight": { "min": 0, "probable": 1, "max": 2 }
+              },
+              {
+                "text": "Minimal seriously corrupt data",
+                "weight": { "min": 2, "probable": 3, "max": 4 }
+              },
+              {
+                "text": "Extensive slightly corrupt data",
+                "weight": { "min": 4, "probable": 5, "max": 6 }
+              },
+              {
+                "text": "Extensive seriously corrupt data",
+                "weight": { "min": 6, "probable": 7, "max": 9 }
+              },
+              {
+                "text": "All data totally corrupted",
+                "weight": { "min": 8, "probable": 9, "max": 10 }
+              }
+            ],
+            "answer": {
+              "text": "",
+              "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+            }
+          },{
+            "text": "How much service could be lost and how vital is it?",
+            "alternatives": [
+              {
+                "text": "Minimal secondary services interrupted",
+                "weight": { "min": 0, "probable": 1, "max": 2 }
+              },
+              {
+                "text": "Extensive secondary services interrupted",
+                "weight": { "min": 2, "probable": 5, "max": 6 }
+              },
+              {
+                "text": "Minimal primary services interrupted",
+                "weight": { "min": 4, "probable": 5, "max": 6 }
+              },
+              {
+                "text": "Extensive primary services interrupted",
+                "weight": { "min": 6, "probable": 7, "max": 9 }
+              },
+              {
+                "text": "All services completely lost",
+                "weight": { "min": 8, "probable": 9, "max": 10 }
+              }
+            ],
+            "answer": {
+              "text": "",
+              "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+            }
+          },{
+            "text": "Are the threat agents’ actions traceable to an individual?",
+            "alternatives": [
+              {
+                "text": "Fully tracable",
+                "weight": { "min": 0, "probable": 1, "max": 2 }
+              },
+              {
+                "text": "Possibly tracable",
+                "weight": { "min": 2, "probable": 7, "max": 9 }
+              },
+              {
+                "text": "Completely anonymous",
+                "weight": { "min": 8, "probable": 9, "max": 10 }
+              }
+            ],
+            "answer": {
+              "text": "",
+              "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+            }
+          },{
+            "text": "How much financial damage will result from an exploit?",
+            "alternatives": [
+              {
+                "text": "Less than the cost to fix the vulnerability",
+                "weight": { "min": 0, "probable": 1, "max": 2 }
+              },
+              {
+                "text": "Minor effect on annual profit",
+                "weight": { "min": 2, "probable": 3, "max": 6 }
+              },
+              {
+                "text": "Significant effect on annual profit",
+                "weight": { "min": 6, "probable": 7, "max": 9 }
+              },
+              {
+                "text": "Bankruptcy",
+                "weight": { "min": 8, "probable": 9, "max": 10 }
+              }
+            ],
+            "answer": {
+              "text": "",
+              "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+            }
+          },{
+            "text": "Would an exploit result in reputation damage that would harm the business?",
+            "alternatives": [
+              {
+                "text": "No",
+                "weight": { "min": 0, "probable": 1, "max": 2 }
+              },
+              {
+                "text": "Some damage",
+                "weight": { "min": 2, "probable": 4, "max": 5 }
+              },
+              {
+                "text": "Noticeable damage",
+                "weight": { "min": 4, "probable": 5, "max": 6 }
+              },
+              {
+                "text": "Severe damage",
+                "weight": { "min": 7, "probable": 9, "max": 10 }
+              }
+            ],
+            "answer": {
+              "text": "",
+              "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+            }
+          },{
+            "text": "How much exposure does non-compliance introduce?",
+            "alternatives": [
+              {
+                "text": "Minor",
+                "weight": { "min": 0, "probable": 2, "max": 3 }
+              },
+              {
+                "text": "Clear violation",
+                "weight": { "min": 4, "probable": 5, "max": 6 }
+              },
+              {
+                "text": "High profile violation",
+                "weight": { "min": 6, "probable": 7, "max": 10 }
+              }
+            ],
+            "answer": {
+              "text": "",
+              "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+            }
+          },{
+            "text": "How much personally identifiable information could be disclosed?",
+            "alternatives": [
+              {
+                "text": "Single individuals",
+                "weight": { "min": 1, "probable": 3, "max": 4 }
+              },
+              {
+                "text": "Some individuals",
+                "weight": { "min": 3, "probable": 5, "max": 6 }
+              },
+              {
+                "text": "A lot of individuals",
+                "weight": { "min": 6, "probable": 7, "max": 8 }
+              },
+              {
+                "text": "All collected PII",
+                "weight": { "min": 8, "probable": 9, "max": 10 }
+              }
+            ],
+            "answer": {
+              "text": "",
+              "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+            }
+          }
         ],
         "factor_mul": {
             "min": 0.25,
