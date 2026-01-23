@@ -1,0 +1,314 @@
+{
+  "tef": {
+    "factor": "tef",
+    "questions": [
+      {
+        "text": "How technically skilled is this group of threat agents?",
+        "alternatives": [
+          {
+            "text": "No technical skills",
+            "weight": { "min": 0, "probable": 1, "max": 3 }
+          },
+          {
+            "text": "Some technical skills",
+            "weight": { "min": 1, "probable": 3, "max": 5 }
+          },
+          {
+            "text": "Advanced computer user",
+            "weight": { "min": 3, "probable": 5, "max": 6 }
+          },
+          {
+            "text": "Network and programming skills",
+            "weight": { "min": 5, "probable": 6, "max": 9 }
+          },
+          {
+            "text": "Security penetration skills",
+            "weight": { "min": 6, "probable": 9, "max": 10 }
+          }
+        ],
+        "answer": {
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
+      },{
+        "text": "How motivated is this group of threat agents to find and exploit this vulnerability?",
+        "alternatives": [
+          {
+            "text": "Low or no reward",
+            "weight": { "min": 0, "probable": 1, "max": 2 }
+          },
+          {
+            "text": "Possible reward",
+            "weight": { "min": 3, "probable": 4, "max": 5 }
+          },
+          {
+            "text": "Medium reward",
+            "weight": { "min": 6, "probable": 7, "max": 8 }
+          },
+          {
+            "text": "High reward",
+            "weight": { "min": 8, "probable": 9, "max": 10 }
+          }
+        ],
+        "answer": {
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
+      },{
+        "text": "What resources and opportunities are required for this group of threat agents to find and exploit this vulnerability?",
+        "alternatives": [
+          {
+            "text": "Full access or expensive resources required",
+            "weight": { "min": -1, "probable": 0, "max": 1 }
+          },
+          {
+            "text": "Special access or resources required",
+            "weight": { "min": 2, "probable": 4, "max": 5 }
+          },
+          {
+            "text": "Some access or resources required",
+            "weight": { "min": 6, "probable": 7, "max": 8 }
+          },
+          {
+            "text": "No access or resources required",
+            "weight": { "min": 8, "probable": 9, "max": 10 }
+          }
+        ],
+        "answer": {
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
+      },{
+        "text": "How large is this group of threat agents?",
+        "alternatives": [
+          {
+            "text": "Extremely small (specialists)",
+            "weight": { "min": 0, "probable": 1, "max": 2 }
+          },
+          {
+            "text": "Small (system developers/administrators)",
+            "weight": { "min": 1, "probable": 2, "max": 3 }
+          },
+          {
+            "text": "Medium/Limited  (intranet users)",
+            "weight": { "min": 3, "probable": 4, "max": 5 }
+          },
+          {
+            "text": "Medium (external partners)",
+            "weight": { "min": 4, "probable": 5, "max": 6 }
+          },
+          {
+            "text": "Large (authenticated external users)",
+            "weight": { "min": 5, "probable": 6, "max": 7 }
+          },
+          {
+            "text": "Very large (anonymous public access)",
+            "weight": { "min": 7, "probable": 9, "max": 10 }
+          }
+        ],
+        "answer": {
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
+      }
+    ],
+    "factor_mul": { "min": 1.0, "probable": 1.0, "max": 1.0 },
+    "factor_sum": { "min": 1.0, "probable": 1.0, "max": 1.0 }
+  },
+    "vuln": {
+        "factor": "vuln",
+        "questions": [
+            {
+        "text": "How easy is it for this group of threat agents to discover this vulnerability?",
+        "alternatives": [
+          {
+            "text": "Practically impossible",
+            "weight": { "min": 0, "probable": 1, "max": 2 }
+          },
+          {
+            "text": "Difficult",
+            "weight": { "min": 1, "probable": 3, "max": 5 }
+          },
+          {
+            "text": "Challenging",
+            "weight": { "min": 3, "probable": 5, "max": 6 }
+          },
+          {
+            "text": "Easy",
+            "weight": { "min": 5, "probable": 7, "max": 9 }
+          },
+          {
+            "text": "Automatic tools available",
+            "weight": { "min": 6, "probable": 9, "max": 10 }
+          }
+        ],
+        "answer": {
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
+      },{
+        "text": "How easy is it for this group of threat agents to actually exploit this vulnerability?",
+        "alternatives": [
+          {
+            "text": "Theoretical",
+            "weight": { "min": 0, "probable": 1, "max": 2 }
+          },
+          {
+            "text": "Difficult",
+            "weight": { "min": 1, "probable": 3, "max": 5 }
+          },
+          {
+            "text": "Challenging",
+            "weight": { "min": 3, "probable": 5, "max": 6 }
+          },
+          {
+            "text": "Easy",
+            "weight": { "min": 5, "probable": 7, "max": 9 }
+          },
+          {
+            "text": "Automatic tools available",
+            "weight": { "min": 6, "probable": 9, "max": 10 }
+          }
+        ],
+        "answer": {
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
+      },{
+        "text": "How well known is this vulnerability to this group of threat agents?",
+        "alternatives": [
+          {
+            "text": "Unknown",
+            "weight": { "min": 0, "probable": 1, "max": 2 }
+          },
+          {
+            "text": "Hidden",
+            "weight": { "min": 1, "probable": 3, "max": 5 }
+          },
+          {
+            "text": "Suspected",
+            "weight": { "min": 3, "probable": 5, "max": 6 }
+          },
+          {
+            "text": "Obvious",
+            "weight": { "min": 5, "probable": 7, "max": 9 }
+          },
+          {
+            "text": "Well known",
+            "weight": { "min": 6, "probable": 9, "max": 10 }
+          }
+        ],
+        "answer": {
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
+      },{
+        "text": "How likely is an exploit to be detected?",
+        "alternatives": [
+          {
+            "text": "Active detection present",
+            "weight": { "min": 0, "probable": 1, "max": 2 }
+          },
+          {
+            "text": "Logged and reviewed frequently",
+            "weight": { "min": 1, "probable": 3, "max": 5 }
+          },
+          {
+            "text": "Logged and reviewed",
+            "weight": { "min": 3, "probable": 5, "max": 6 }
+          },
+          {
+            "text": "Logged without review",
+            "weight": { "min": 5, "probable": 7, "max": 9 }
+          },
+          {
+            "text": "Not logged",
+            "weight": { "min": 6, "probable": 9, "max": 10 }
+          }
+        ],
+        "answer": {
+          "text": "",
+          "weight": { "min": 0.0, "probable": 0.0, "max": 0.0 }
+        }
+      }
+        ],
+        "factor_mul": {
+            "min": 0.25,
+            "probable": 0.5,
+            "max": 1.0
+        },
+        "factor_sum": {
+            "min": 0.25,
+            "probable": 0.5,
+            "max": 1.0
+        }
+    },
+    "lm": {
+        "factor": "consequence",
+        "questions": [
+            {
+                "text": "Om h\u00e4ndelsen intr\u00e4ffar, vilken \u00e4r den allvarligaste rimliga konsekvensen f\u00f6r m\u00e4nniskors liv och h\u00e4lsa?",
+                "alternatives": [
+                    {
+                        "text": "Inga eller obetydliga personskador utan medicinsk behandling",
+                        "weight": {
+                            "min": 0.001,
+                            "probable": 0.0055000000000000005,
+                            "max": 0.01
+                        }
+                    },
+                    {
+                        "text": "Lindriga personskador eller tillf\u00e4llig arbetsfr\u00e5nvaro",
+                        "weight": {
+                            "min": 0.005,
+                            "probable": 0.015000000000000001,
+                            "max": 0.025
+                        }
+                    },
+                    {
+                        "text": "Allvarlig personskada med l\u00e5ngvarig fr\u00e5nvaro eller best\u00e5ende men",
+                        "weight": {
+                            "min": 0.015,
+                            "probable": 0.0275,
+                            "max": 0.04
+                        }
+                    },
+                    {
+                        "text": "Mycket allvarlig skada, best\u00e5ende men eller enstaka d\u00f6dsfall",
+                        "weight": {
+                            "min": 0.03,
+                            "probable": 0.0475,
+                            "max": 0.065
+                        }
+                    },
+                    {
+                        "text": "Flera d\u00f6dsfall eller mycket omfattande p\u00e5verkan p\u00e5 m\u00e4nniskoliv",
+                        "weight": {
+                            "min": 0.05,
+                            "probable": 0.065,
+                            "max": 0.08
+                        }
+                    }
+                ],
+                "answer": {
+                    "text": "",
+                    "weight": {
+                        "min": 0.0,
+                        "probable": 0.0,
+                        "max": 0.0
+                    }
+                }
+            }
+        ],
+        "factor_mul": {
+            "min": 0.25,
+            "probable": 0.5,
+            "max": 1.0
+        },
+        "factor_sum": {
+            "min": 0.25,
+            "probable": 0.5,
+            "max": 1.0
+        }
+    }
+}
