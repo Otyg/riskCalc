@@ -83,13 +83,14 @@ class Question():
 
 
 class Questionaire():
-    def __init__(self, factor: str="", questions: list = None):
+    def __init__(self, factor: str="", calculation: str="mean", questions: list = None):
         # TODO: Konstruktorn ska ta en dict istället
         if questions is None:
             self.questions = []
         else:
             self.questions = list(questions)
         self.factor = factor
+        self.calculation = calculation
         self.sum_factor()
         self.multiply_factor()
         self.mean()
@@ -101,13 +102,13 @@ class Questionaire():
             questions.append(q.to_dict())
         return {
             "factor": self.factor,
-            "questions": questions,
-            "factor_mul": self.factor_mul.to_dict(),
-            "factor_sum": self.factor_sum.to_dict()
+            "calculation": self.calculation,
+            "questions": questions
         }
 
     def from_dict(self, dict:dict={}):
         self.factor = dict['factor']
+        self.calculation = dict.get('calculation', 'mean')
         for q in dict['questions']:
             alternatives = []
             for a in q['alternatives']:
@@ -123,6 +124,8 @@ class Questionaire():
     def append_question(self, question: Question = Question()):
         self.questions.append(question)
 
+    def sum(self):
+        return self.sum_factor()
     def sum_factor(self):
         max = 0
         min = 0
@@ -153,6 +156,7 @@ class Questionaire():
             if max < q.answer.weight.max:
                 max = q.answer.weight.max
         return factor_max
+    
     def max(self):
         if len(self.questions) == 0:
             return Decimal(1)
@@ -183,7 +187,14 @@ class Questionaire():
         return Decimal(statistics.mode(mode))
 
     def range(self):
-        self.factor_range = MonteCarloRange(min=self.min(), probable=self.mode(), max=self.max())
+        if len(self.questions) == 0:
+            return MonteCarloRange(min=Decimal(0), probable=Decimal(0), max=Decimal(0))
+        mode=[]
+        for q in self.questions:
+            mode.append(q.answer.weight.probable)
+            mode.append(q.answer.weight.max)
+            mode.append(q.answer.weight.min)
+        self.factor_range = MonteCarloRange(min=Decimal(numpy.min(mode)), probable=Decimal(statistics.mode(mode)), max=Decimal(numpy.max(mode)))
         return self.factor_range
 
     def count_answered_questions(self):
@@ -192,6 +203,7 @@ class Questionaire():
             if not (round(a.answer.weight.max, 10) == round(a.answer.weight.min, 10) == round(a.answer.weight.probable, 10)):
                 num +=1
         return num
+    
     def mean(self):
         if len(self.questions) == 0:
             return MonteCarloRange()
@@ -202,6 +214,23 @@ class Questionaire():
         self.factor_mean = MonteCarloRange(min=sum.min/non_zero_answers, max=sum.max/non_zero_answers, probable=sum.probable/non_zero_answers)
         return self.factor_mean
     
+    def mean_75(self):
+        if len(self.questions) == 0:
+            return MonteCarloRange()
+        weights=[]
+        for q in self.questions:
+            weights.append(q.answer.weight.probable)
+            weights.append(q.answer.weight.max)
+            weights.append(q.answer.weight.min)
+        weights.sort()
+        split = numpy.array_split(weights, 3)
+        p75 = split[2]
+        return MonteCarloRange(min=Decimal(numpy.min(p75)), probable=Decimal(statistics.mode(p75)), max=Decimal(numpy.max(p75)))
+
+    def calculate_questionaire_value(self):
+        calc = getattr(self, self.calculation)
+        return calc()
+
 class Questionaires:
     def __init__(self, tef: Questionaire=Questionaire(), vuln:Questionaire=Questionaire(), lm:Questionaire=Questionaire()):
         self.questionaires={
@@ -211,11 +240,10 @@ class Questionaires:
         }
 
     def calculate_questionairy_values(self):
-        # TODO: Anpassa och dokumentera uträkningarna, går det att lägga formlerna i JSON-filen och läsa in dem därifrån?
         values = dict()
-        values.update({'threat_event_frequency': self.questionaires['tef'].mean()})
-        values.update({'vulnerability': self.questionaires['vuln'].sum_factor()})
-        values.update({'loss_magnitude': self.questionaires['lm'].mean().add(self.questionaires['lm'].max_range())})
+        values.update({'threat_event_frequency': self.questionaires.get('tef').calculate_questionaire_value()})
+        values.update({'vulnerability': self.questionaires.get('vuln').calculate_questionaire_value()})
+        values.update({'loss_magnitude': self.questionaires.get('lm').calculate_questionaire_value()})
         return values
 
     def to_dict(self):

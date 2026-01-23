@@ -81,5 +81,88 @@
                 "threshold": 25
             }
         ]
+    },
+    "owasp_risk_rating": {
+        "probability": [
+            {
+                "value": 1,
+                "text": "Mycket låg",
+                "threshold": 12
+            },
+            {
+                "value": 2,
+                "text": "Låg",
+                "threshold": 24
+            },
+            {
+                "value": 3,
+                "text": "Medel",
+                "threshold": 36
+            },
+            {
+                "value": 4,
+                "text": "Hög",
+                "threshold": 48
+            },
+            {
+                "value": 5,
+                "text": "Mycket hög",
+                "threshold": 60
+            }
+        ],
+        "consequence": [
+            {
+                "value": 1,
+                "text": "Försumbar påverkan",
+                "threshold": 2
+            },
+            {
+                "value": 2,
+                "text": "Begränsad påverkan",
+                "threshold": 3
+            },
+            {
+                "value": 3,
+                "text": "Märkbar påverkan",
+                "threshold": 4
+            },
+            {
+                "value": 4,
+                "text": "Allvarlig påverkan",
+                "threshold": 5
+            },
+            {
+                "value": 5,
+                "text": "Kritisk påverkan",
+                "threshold": 6
+            }
+        ],
+        "risk": [
+            {
+                "value": "very_low",
+                "text": "Mycket låg",
+                "threshold": 3
+            },
+            {
+                "value": "low",
+                "text": "Låg",
+                "threshold": 6
+            },
+            {
+                "value": "middle",
+                "text": "Medel",
+                "threshold": 10
+            },
+            {
+                "value": "high",
+                "text": "Hög",
+                "threshold": 15
+            },
+            {
+                "value": "critical",
+                "text": "Mycket hög",
+                "threshold": 25
+            }
+        ]
     }
 }
