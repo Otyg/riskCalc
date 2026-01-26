@@ -14,6 +14,10 @@ env:
   APP_NAME: RiskAnalysisUI
   ENTRY_SCRIPT: app.py
 
+  # --- NEW: Qt GUI build ---
+  QT_APP_NAME: RiskAnalysisQT
+  QT_ENTRY_SCRIPT: qt_gui.py
+
 jobs:
   build:
     name: Build (${{ matrix.os }})
@@ -46,6 +50,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
+          # --- NEW: Qt runtime (PySide6) ---
+          pip install pyside6
 
       - name: Compute metadata
         id: meta
@@ -72,6 +78,9 @@ jobs:
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # -------------------------
+      # Build Tk/Classic app (existing)
+      # -------------------------
       - name: Build with PyInstaller (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -88,8 +97,6 @@ jobs:
             $env:ENTRY_SCRIPT
 
           New-Item -ItemType Directory -Force -Path out | Out-Null
-
-          # asset name includes platform
           Copy-Item "dist\$name.exe" "out\$name-windows.exe"
 
       - name: Build with PyInstaller (Linux)
@@ -107,6 +114,47 @@ jobs:
             --collect-all numpy \
             --collect-all python-multipart \
             "${ENTRY_SCRIPT}"
+
+          mkdir -p out
+          cp "dist/${name}" "out/${name}-linux"
+
+      # -------------------------
+      # NEW: Build Qt GUI
+      # -------------------------
+      - name: Build Qt GUI with PyInstaller (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $suffix = "${{ steps.meta.outputs.suffix }}"
+          $name = "${env:QT_APP_NAME}$suffix"
+
+          pyinstaller --noconfirm --clean --onefile `
+            --name $name `
+            --add-data "templates;templates" `
+            --add-data "data;data" `
+            --collect-all PySide6 `
+            --collect-all shiboken6 `
+            --collect-submodules PySide6 `
+            $env:QT_ENTRY_SCRIPT
+
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Copy-Item "dist\$name.exe" "out\$name-windows.exe"
+
+      - name: Build Qt GUI with PyInstaller (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          suffix="${{ steps.meta.outputs.suffix }}"
+          name="${QT_APP_NAME}${suffix}"
+
+          pyinstaller --noconfirm --clean --onefile \
+            --name "${name}" \
+            --add-data "templates:templates" \
+            --add-data "data:data" \
+            --collect-all PySide6 \
+            --collect-all shiboken6 \
+            --collect-submodules PySide6 \
+            "${QT_ENTRY_SCRIPT}"
 
           mkdir -p out
           cp "dist/${name}" "out/${name}-linux"
