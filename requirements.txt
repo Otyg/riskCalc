@@ -5,3 +5,4 @@ python-multipart>=0.0.21
 numpy>=2.2.6
 pyinstaller>=6.3
 PySide6>=6.10.1
+currencies==2020.12.12
