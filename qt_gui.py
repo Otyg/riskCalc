@@ -34,20 +34,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-# -------------------------
-# Domain imports (optional) + repo/paths init (som Tkinter-versionen)
-# -------------------------
 repo_available = False
 discrete_repo_available = False
 domain_available = False
-
-MonteCarloRange = None  # will be resolved if available
+MonteCarloRange = None
 
 try:
     from riskcalculator.discret_scale import DiscreteRisk
     from filesystem.repo import DiscreteThresholdsRepository
     from filesystem.questionaires_repo import JsonQuestionairesRepository
-    from riskcalculator.questionaire import Questionaire, Questionaires
+    from riskcalculator.questionaire import Questionaires
     from filesystem.paths import ensure_user_data_initialized, packaged_root
     from riskcalculator.montecarlo import MonteCarloRange
     
@@ -79,10 +75,6 @@ if domain_available:
     questionaires_repo = JsonQuestionairesRepository(DATA_DIR / "questionaires")
     discrete_thresholds_repo = DiscreteThresholdsRepository(DATA_DIR / "discrete_thresholds.json")
 
-
-# -------------------------
-# Repo loaders (samma mönster som Tkinter)
-# -------------------------
 def load_questionaire_sets() -> Dict[str, Any]:
     sets: Dict[str, Any] = {}
     if repo_available:
@@ -126,9 +118,6 @@ def load_threshold_set(name: str):
     return None
 
 
-# -------------------------
-# Demo fallback data
-# -------------------------
 SAMPLE_QS = {
     "default": {
         "tef": {"questions": [{"text": "Demo TEF fråga", "alternatives": [{"text": "Låg", "weight": {"min": 0.1, "probable": 0.2, "max": 0.3}}]}]},
@@ -138,9 +127,6 @@ SAMPLE_QS = {
 }
 
 
-# -------------------------
-# Helpers
-# -------------------------
 def D(x: Any) -> Decimal:
     if x is None:
         return Decimal(0)
@@ -173,9 +159,6 @@ def mean_of_selected(qset: dict, selections: Dict[str, List[str]], dim: str) -> 
     return {"min": sum(mins) / n, "probable": sum(probs) / n, "max": sum(maxs) / n}
 
 
-# -------------------------
-# Main Window
-# -------------------------
 class RiskCalcQt(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -327,9 +310,6 @@ class RiskCalcQt(QMainWindow):
 
         self.on_form_changed(self.form_combo.currentText())
 
-    # -------------------------
-    # Pages
-    # -------------------------
     def _build_questionnaire_page(self):
         layout = QVBoxLayout(self.page_questionnaire)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -392,9 +372,6 @@ class RiskCalcQt(QMainWindow):
         layout.addWidget(box)
         layout.addStretch(1)
 
-    # -------------------------
-    # Results helpers
-    # -------------------------
     def _clear_results(self):
         for k in ["sannolikhet", "konsekvens", "risk", "lef", "loss_magnitude", "ale"]:
             self.result_labels[k].setText("—")
@@ -402,9 +379,6 @@ class RiskCalcQt(QMainWindow):
     def _set_result(self, key: str, text: str):
         self.result_labels[key].setText(text if text else "—")
 
-    # -------------------------
-    # Render questions
-    # -------------------------
     def on_form_changed(self, form_id: str):
         self._clear_results()
         self.answer_combos = {"tef": [], "vuln": [], "lm": []}
@@ -431,7 +405,7 @@ class RiskCalcQt(QMainWindow):
                     v.addWidget(QLabel(getattr(q, "text", str(q))))
 
                     combo = QComboBox()
-                    combo.addItem("— Välj alternativ —")
+                    combo.addItem("N/A")
                     for alt in getattr(q, "alternatives", []):
                         alt_text = getattr(alt, "text", None) or (alt.get("text") if isinstance(alt, dict) else str(alt))
                         combo.addItem(alt_text)
@@ -442,7 +416,7 @@ class RiskCalcQt(QMainWindow):
                 for q in questions:
                     v.addWidget(QLabel(q.get("text", "")))
                     combo = QComboBox()
-                    combo.addItem("— Välj alternativ —")
+                    combo.addItem("N/A")
                     for alt in q.get("alternatives", []):
                         combo.addItem(alt.get("text", ""))
                     v.addWidget(combo)
@@ -459,9 +433,6 @@ class RiskCalcQt(QMainWindow):
             self.stack.setCurrentWidget(self.page_questionnaire)
         self._clear_results()
 
-    # -------------------------
-    # Calculate
-    # -------------------------
     def _build_range(self, min_s: str, prob_s: str, max_s: str):
         mn = D(min_s)
         pr = D(prob_s)
@@ -581,8 +552,6 @@ class RiskCalcQt(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Fel", f"Beräkning misslyckades (form/domain): {e}")
                 raise e
-
-        # Demo/fallback: mean-baserad
         try:
             selections = {
                 dim: [(cb.currentText() if not cb.currentText().startswith("—") else "") for cb in self.answer_combos[dim]]
@@ -624,7 +593,7 @@ class RiskCalcQt(QMainWindow):
 
         self._set_result("lef", f"{round(getattr(lef,'probable',None), 3)} (P90: {round(getattr(lef,'p90',None),3)})")
         self._set_result("loss_magnitude", f"{round(getattr(lm,'probable',None),3)} (P90: {round(getattr(lm,'p90',None),3)})")
-        self._set_result("ale", f"{currency_formatted.get_money_format(getattr(ale,'probable',None))} (P90: {currency_formatted.get_money_format(round(getattr(ale,'p90',None),2))})")
+        self._set_result("ale", f"{currency_formatted.get_money_format(round(getattr(ale,'probable',None),2))} (P90: {currency_formatted.get_money_format(round(getattr(ale,'p90',None),2))})")
 
 
 def main():
