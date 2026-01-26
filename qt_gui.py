@@ -9,6 +9,7 @@ import json
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from currencies import Currency
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDoubleValidator
@@ -70,6 +71,7 @@ DATA_DIR = Path(os.environ.get("DATA_DIR", str(BASE_DIR / "data")))
 
 DEFAULT_QUESTIONAIRES_SET = "default"
 QUESTIONAIRES_DIR = Path(str(BASE_DIR / "questionaires"))
+AVAILABLE_CURRENCIES = Currency.get_currency_formats()
 
 questionaires_repo = None
 discrete_thresholds_repo = None
@@ -85,10 +87,10 @@ def load_questionaire_sets() -> Dict[str, Any]:
     sets: Dict[str, Any] = {}
     if repo_available:
         try:
-            names = questionaires_repo.list_sets()  # type: ignore
+            names = questionaires_repo.list_sets()
             for name in names:
                 try:
-                    sets[name] = questionaires_repo.load_objects(name)  # type: ignore
+                    sets[name] = questionaires_repo.load_objects(name)
                 except Exception:
                     continue
         except Exception:
@@ -112,7 +114,7 @@ def load_questionaire_sets() -> Dict[str, Any]:
 def load_threshold_names() -> List[str]:
     if discrete_repo_available:
         try:
-            return list(discrete_thresholds_repo.get_set_names())  # type: ignore
+            return list(discrete_thresholds_repo.get_set_names())
         except Exception:
             return []
     return []
@@ -120,7 +122,7 @@ def load_threshold_names() -> List[str]:
 
 def load_threshold_set(name: str):
     if discrete_repo_available:
-        return discrete_thresholds_repo.load(name)  # type: ignore
+        return discrete_thresholds_repo.load(name)
     return None
 
 
@@ -180,25 +182,20 @@ class RiskCalcQt(QMainWindow):
         self.setWindowTitle("Risk Calculator (Qt)")
         self.resize(1100, 780)
 
-        # data
         self.sets = load_questionaire_sets()
         self.set_ids = list(self.sets.keys()) or [DEFAULT_QUESTIONAIRES_SET]
         self.thresholds = load_threshold_names() or ["default"]
 
-        # UI state holders
         self.answer_combos: Dict[str, List[QComboBox]] = {"tef": [], "vuln": [], "lm": []}
 
-        # manual inputs: dict key -> (min_edit, probable_edit, max_edit)
         self.manual_edits: Dict[str, tuple[QLineEdit, QLineEdit, QLineEdit]] = {}
 
-        # Root
         root = QWidget()
         self.setCentralWidget(root)
         root_layout = QVBoxLayout(root)
         root_layout.setContentsMargins(14, 14, 14, 14)
         root_layout.setSpacing(10)
 
-        # Top controls
         top = QFrame()
         top.setFrameShape(QFrame.StyledPanel)
         top_layout = QHBoxLayout(top)
@@ -237,10 +234,15 @@ class RiskCalcQt(QMainWindow):
         self.budget_edit.setMaximumWidth(140)
         top_layout.addWidget(self.budget_edit)
 
+        top_layout.addWidget(QLabel("Valuta:"))
+        self.budget_currency = QComboBox()
+        self.budget_currency.addItems(AVAILABLE_CURRENCIES)
+        self.budget_currency.setMinimumWidth(50)
+        top_layout.addWidget(self.budget_currency)
+
         top_layout.addItem(QSpacerItem(10, 10, QSizePolicy.Expanding, QSizePolicy.Minimum))
         root_layout.addWidget(top)
 
-        # Stacked area: questionnaire vs manual
         self.stack = QStackedWidget()
         root_layout.addWidget(self.stack, 1)
 
@@ -252,13 +254,11 @@ class RiskCalcQt(QMainWindow):
         self._build_questionnaire_page()
         self._build_manual_page()
 
-        # Shared bottom panel (under both pages)
         self.result_panel = QGroupBox("Resultat")
         rp = QVBoxLayout(self.result_panel)
         rp.setContentsMargins(10, 10, 10, 10)
         rp.setSpacing(8)
 
-        # Actions row
         actions = QHBoxLayout()
         self.calc_btn = QPushButton("🧮 Beräkna risk")
         self.calc_btn.clicked.connect(self.on_calculate)
@@ -266,17 +266,14 @@ class RiskCalcQt(QMainWindow):
         actions.addItem(QSpacerItem(10, 10, QSizePolicy.Expanding, QSizePolicy.Minimum))
         rp.addLayout(actions)
 
-        # Two-column results area
         cols = QHBoxLayout()
         cols.setSpacing(18)
 
-        # Left column: discrete scale (probability/consequence/risk)
         left_box = QGroupBox("Skala")
         left_layout = QGridLayout(left_box)
         left_layout.setHorizontalSpacing(12)
         left_layout.setVerticalSpacing(6)
 
-        # Right column: quantitative outputs (LEF/LM/ALE)
         right_box = QGroupBox("Kvantitativt")
         right_layout = QGridLayout(right_box)
         right_layout.setHorizontalSpacing(12)
@@ -315,7 +312,6 @@ class RiskCalcQt(QMainWindow):
         left_layout.setColumnStretch(1, 1)
         right_layout.setColumnStretch(1, 1)
 
-        # Make both columns share available width
         cols.addWidget(left_box, 1)
         cols.addWidget(right_box, 1)
         rp.addLayout(cols)
@@ -380,12 +376,10 @@ class RiskCalcQt(QMainWindow):
 
             self.manual_edits[key] = (e_min, e_prob, e_max)
 
-        # Du bad specifikt om LEF, VULN och LM:
         add_range_row(0, "LEF (loss_event_frequency)", "lef")
         add_range_row(1, "VULN (vulnerability)", "vuln")
         add_range_row(2, "LM (loss_magnitude)", "lm")
 
-        # rubriker över fälten
         b.addWidget(QLabel("min"), 3, 1)
         b.addWidget(QLabel("probable"), 3, 2)
         b.addWidget(QLabel("max"), 3, 3)
@@ -474,15 +468,12 @@ class RiskCalcQt(QMainWindow):
         mx = D(max_s)
 
         if MonteCarloRange is not None:
-            return MonteCarloRange(min=mn, probable=pr, max=mx)  # type: ignore
-
-        # fallback if MonteCarloRange is not importable:
+            return MonteCarloRange(min=mn, probable=pr, max=mx)
         return {"min": str(mn), "probable": str(pr), "max": str(mx)}
 
     def on_calculate(self):
         self._clear_results()
 
-        # thresholds
         try:
             threshold_name = self.threshold_combo.currentText().strip()
             threshold_set = load_threshold_set(threshold_name) if threshold_name else None
@@ -490,7 +481,6 @@ class RiskCalcQt(QMainWindow):
             QMessageBox.critical(self, "Fel", f"Kunde inte ladda threshold-set: {e}")
             return
 
-        # budget
         try:
             budget = D(self.budget_edit.text() or "1000000")
         except Exception:
@@ -503,7 +493,6 @@ class RiskCalcQt(QMainWindow):
             self._calculate_questionnaire(budget, threshold_set)
 
     def _calculate_manual(self, budget: Decimal, threshold_set: Any):
-        # read manual fields
         lef_min, lef_prob, lef_max = (e.text() for e in self.manual_edits["lef"])
         vuln_min, vuln_prob, vuln_max = (e.text() for e in self.manual_edits["vuln"])
         lm_min, lm_prob, lm_max = (e.text() for e in self.manual_edits["lm"])
@@ -511,27 +500,24 @@ class RiskCalcQt(QMainWindow):
         lef_range = self._build_range(lef_min, lef_prob, lef_max)
         vuln_range = self._build_range(vuln_min, vuln_prob, vuln_max)
         lm_range = self._build_range(lm_min, lm_prob, lm_max)
-
+        currency_str = self.budget_currency.currentText().strip()
         if domain_available:
             try:
-                # Primärt enligt din önskan: LEF/VULN/LM
                 values = {
                     "loss_event_frequency": lef_range,
                     "vulnerability": vuln_range,
                     "loss_magnitude": lm_range,
                     "budget": budget,
-                    "currency": "SEK",
+                    "currency": currency_str,
                     "thresholds": threshold_set,
                 }
 
                 try:
-                    risk = DiscreteRisk(values=values)  # type: ignore
+                    risk = DiscreteRisk(values=values)
                 except Exception:
-                    # Om ditt DiscreteRisk istället förväntar sig "threat_event_frequency" (Tk-versionen),
-                    # gör en kompatibilitetsretry:
                     values2 = dict(values)
                     values2["threat_event_frequency"] = values2.pop("loss_event_frequency")
-                    risk = DiscreteRisk(values=values2)  # type: ignore
+                    risk = DiscreteRisk(values=values2)
 
                 self._render_risk(risk)
                 return
@@ -539,8 +525,6 @@ class RiskCalcQt(QMainWindow):
                 QMessageBox.critical(self, "Fel", f"Beräkning misslyckades (manual/domain): {e}")
                 return
 
-        # Demo/fallback: enkel approx
-        # (Här antar vi att LEF och LM är “rate” och “magnitude”, och gör ALE = lef_probable * lm_probable * budget? )
         try:
             lef_p = D(lef_prob)
             lm_p = D(lm_prob)
@@ -558,7 +542,7 @@ class RiskCalcQt(QMainWindow):
     def _calculate_questionnaire(self, budget: Decimal, threshold_set: Any):
         form_id = self.form_combo.currentText()
         qset = self.sets.get(form_id, {})
-
+        currency_str = self.budget_currency.currentText().strip()
         if domain_available:
             try:
                 using_domain_objs = repo_available and hasattr(qset.get("tef"), "questions")
@@ -583,20 +567,20 @@ class RiskCalcQt(QMainWindow):
                             if found_idx is not None:
                                 qobj.questions[qi].set_answer(found_idx)
 
-                    questionaires = Questionaires(tef=qset["tef"], vuln=qset["vuln"], lm=qset["lm"])  # type: ignore
+                    questionaires = Questionaires(tef=qset["tef"], vuln=qset["vuln"], lm=qset["lm"])
                     values = questionaires.calculate_questionairy_values()
                 else:
                     values = {}
 
-                values.update({"budget": budget, "thresholds": threshold_set, "currency": "SEK"})
+                values.update({"budget": budget, "thresholds": threshold_set, "currency": currency_str})
 
-                risk = DiscreteRisk(values=values)  # type: ignore
+                risk = DiscreteRisk(values=values)
                 self._render_risk(risk)
                 return
 
             except Exception as e:
                 QMessageBox.critical(self, "Fel", f"Beräkning misslyckades (form/domain): {e}")
-                return
+                raise e
 
         # Demo/fallback: mean-baserad
         try:
@@ -624,6 +608,7 @@ class RiskCalcQt(QMainWindow):
 
     def _render_risk(self, risk: Any):
         risk_dict = getattr(risk, "risk", None) or {}
+        currency_formatted = Currency(self.budget_currency.currentText().strip())
         if isinstance(risk_dict, dict):
             self._set_result("sannolikhet", f"{risk_dict.get('probability_text')} ({risk_dict.get('probability')})")
             self._set_result("konsekvens", f"{risk_dict.get('consequence_text')} ({risk_dict.get('consequence')})")
@@ -639,7 +624,7 @@ class RiskCalcQt(QMainWindow):
 
         self._set_result("lef", f"{round(getattr(lef,'probable',None), 3)} (P90: {round(getattr(lef,'p90',None),3)})")
         self._set_result("loss_magnitude", f"{round(getattr(lm,'probable',None),3)} (P90: {round(getattr(lm,'p90',None),3)})")
-        self._set_result("ale", f"{round(getattr(ale,'probable',None),2)} (P90: {round(getattr(ale,'p90',None),2)})")
+        self._set_result("ale", f"{currency_formatted.get_money_format(getattr(ale,'probable',None))} (P90: {currency_formatted.get_money_format(round(getattr(ale,'p90',None),2))})")
 
 
 def main():
