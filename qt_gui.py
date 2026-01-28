@@ -85,8 +85,9 @@ def load_questionaire_sets() -> Dict[str, Any]:
                     sets[name] = questionaires_repo.load_objects(name)
                 except Exception:
                     continue
-        except Exception:
-            sets = SAMPLE_QS
+        except Exception as e:
+            QMessageBox(icon=QMessageBox.Icon.Critical, title="Cannot load questionaires", detailedText=e)
+            raise e
     else:
         if os.path.isdir(QUESTIONAIRES_DIR):
             for fn in os.listdir(QUESTIONAIRES_DIR):
@@ -166,7 +167,7 @@ class RiskCalcQt(QMainWindow):
         self.resize(1100, 780)
 
         self.sets = load_questionaire_sets()
-        self.set_ids = list(self.sets.keys()) or [DEFAULT_QUESTIONAIRES_SET]
+        self.set_ids = list(self.sets.keys()) or []
         self.thresholds = load_threshold_names() or ["default"]
 
         self.answer_combos: Dict[str, List[QComboBox]] = {"tef": [], "vuln": [], "lm": []}

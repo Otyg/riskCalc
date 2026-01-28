@@ -37,7 +37,14 @@ class MonteCarloRange():
             self.min = Decimal(self.probable/2)
         elif self.probable.is_zero and not self.max.is_zero():
             self.probable = (self.min + self.max)/2
-
+    
+    @classmethod
+    def from_dict(cls, values:dict = None):
+        for key in ['min', 'probable','max']:
+            if key not in values:
+                raise KeyError(f"Key {key} not in dictionary")
+        return MonteCarloRange(min=values.get('min'), probable=values.get('probable'), max=values.get('max'))
+    
     def to_dict(self):
         return {
             "min": float(self.min),
