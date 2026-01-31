@@ -22,9 +22,8 @@
 # SOFTWARE.
 #
 
-from riskcalculator.discret_scale import DiscreteRisk
 from riskcalculator.questionaire import Questionaire, Questionaires
-from riskcalculator.risk import Risk
+from otyg_risk_base.hybrid import HybridRisk
 
 
 class RiskScenario():
@@ -35,7 +34,7 @@ class RiskScenario():
             self.asset = ""
             self.threat = ""
             self.vulnerability = ""
-            self.risk = Risk()
+            self.risk = HybridRisk()
             self.category = ""
             self.name = ""
             self.questionaires = Questionaires(tef=Questionaire(factor="tef"), vuln=Questionaire(factor="vuln"), lm=Questionaire(factor="lm"))
@@ -45,19 +44,11 @@ class RiskScenario():
             self.asset = parameters.get('asset', "")
             self.threat = parameters.get('threat', "")
             self.vulnerability = parameters.get('vulnerability', "")
-            self.risk = parameters.get('risk')
+            self.risk = parameters.get('risk', HybridRisk())
             self.category = parameters.get('category', "")
             self.name = parameters.get('name', self.auto_desc())
             if self.name == "":
                 self.name = self.auto_desc()
-            tmp_risk = parameters.get('risk', Risk())
-            if isinstance(tmp_risk, dict):
-                if 'discrete_risk' in tmp_risk:
-                    self.risk = DiscreteRisk(tmp_risk)
-                else:
-                    self.risk = Risk(tmp_risk)
-            else:
-                self.risk = tmp_risk
             if parameters.get('questionaires') and isinstance(parameters.get('questionaires'), Questionaires):
                 self.questionaires = parameters.get('questionaires')
             elif parameters.get('questionaires'):
@@ -96,12 +87,7 @@ class RiskScenario():
         self.asset = dict['asset']
         self.threat = dict['threat']
         self.vulnerability = dict['vulnerability']
-        if 'discrete_risk' in dict['risk']:
-            risk = DiscreteRisk(dict['risk'])
-        else:
-            risk = Risk()
-            risk.from_dict(dict['risk'])
-        self.risk = risk
+        self.risk = HybridRisk.from_dict(dict.get('risk'))
         tef = Questionaire(factor=dict['questionaires']['tef']['factor'])
         tef.from_dict(dict['questionaires']['tef'])
         vuln = Questionaire(factor=dict['questionaires']['vuln']['factor'])
@@ -118,3 +104,5 @@ class RiskScenario():
 
     def __repr__(self):
         return str(self.to_dict())
+    
+    

@@ -26,7 +26,7 @@ from decimal import Decimal
 import statistics
 
 import numpy
-from .montecarlo import MonteCarloRange
+from otyg_risk_base.montecarlo import MonteCarloRange
 
 
 class Alternative():
