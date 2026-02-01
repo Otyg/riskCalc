@@ -41,15 +41,26 @@ class Alternative():
             "text": self.text,
             "weight": self.weight.to_dict()
         }
-
+    @classmethod
+    def from_dict(cls, values:dict):
+        new = Alternative()
+        new.text = values.get("text")
+        new.weight=MonteCarloRange.from_dict(values=values.get("weight"))
+        return new
+    
     def __repr__(self):
         return str(self.to_dict())
     
     def __hash__(self):
-        return hash(freeze(self.to_dict()))
+        return hash((self.text, self.weight.max.canonical(), self.weight.min.canonical(), self.weight.probable.canonical()))
+    
+    def __eq__(self, value):
+        if freeze(self.weight) == freeze(value.weight):
+            print(self.weight.max.canonical(), self.weight.min.canonical(), self.weight.probable.canonical())
+        return isinstance(value, Alternative) and self.__hash__() == value.__hash__()
 
 class Question():
-    def __init__(self, text: str = "", alternatives: list = []):
+    def __init__(self, text: str = "", alternatives: list = None):
         #TODO: dict i konstruktorn
         self.text = text
         self.alternatives = alternatives
@@ -64,6 +75,16 @@ class Question():
             "alternatives": alternatives,
             "answer": self.answer.to_dict()
         }
+    @classmethod
+    def from_dict(cls, values:dict):
+        new = Question()
+        new.text = values.get('text', "")
+        alternatives = list()
+        for a in values.get('alternatives'):
+            alternative = Alternative.from_dict(a)
+            alternatives.append(alternative)
+        new.alternatives = alternatives
+        new.answer = Alternative.from_dict(values.get("answer"))
     
     def __hash__(self):
         return hash(freeze(self.to_dict()))
@@ -92,6 +113,12 @@ class Question():
 class Questionaire():
     def __init__(self, factor: str="", calculation: str="mean", questions: list = None):
         # TODO: Konstruktorn ska ta en dict istället
+        
+        self.factor_sum=None
+        self.factor_mul=None
+        self.factor_range=None
+        self.factor_mean=None
+        self.factor_mean_75=None
         if questions is None:
             self.questions = []
         else:
@@ -107,30 +134,42 @@ class Questionaire():
         return hash(freeze(self.to_dict()))
     
     def to_dict(self):
+        self.sum_factor()
+        self.multiply_factor()
+        self.mean()
+        self.range()
+        self.mean_75()
         questions = []
         for q in self.questions:
             questions.append(q.to_dict())
         return {
             "factor": self.factor,
             "calculation": self.calculation,
-            "questions": questions
+            "questions": questions,
+            "factor_sum": self.factor_sum,
+            "factor_mul": self.factor_mul,
+            "factor_range": self.factor_range,
+            "factor_mean": self.factor_mean,
+            "factor_mean_75": self.factor_mean_75,
         }
     @classmethod
     def from_dict(cls, dict:dict={}):
-        
-        self.factor = dict['factor']
-        self.calculation = dict.get('calculation', 'mean')
+        qs = Questionaire()
+        qs.factor = dict['factor']
+        qs.calculation = dict.get('calculation', 'mean')
         for q in dict['questions']:
             alternatives = []
             for a in q['alternatives']:
                 alternatives.append(Alternative(text=a['text'], weight=MonteCarloRange(min=Decimal(a['weight']['min']), max=Decimal(a['weight']['max']), probable=Decimal(a['weight']['probable']))))
             question = Question(q['text'], alternatives=alternatives)
             question.set_answer(Alternative(text=q['answer']['text'], weight=MonteCarloRange(min=Decimal(q['answer']['weight']['min']), max=Decimal(q['answer']['weight']['max']), probable=Decimal(q['answer']['weight']['probable']))))
-            self.append_question(question=question)
-        self.sum_factor()
-        self.multiply_factor()
-        self.range()
-        self.mean()
+            qs.append_question(question=question)
+        qs.factor_sum = dict.get('factor_sum', MonteCarloRange())
+        qs.factor_mul = dict.get('factor_mul', MonteCarloRange(probable=1))
+        qs.factor_range = dict.get('factor_range', MonteCarloRange())
+        qs.factor_mean = dict.get('factor_mean', MonteCarloRange())
+        qs.factor_mean_75 = dict.get('factor_mean_75', MonteCarloRange())
+        return qs
 
     def append_question(self, question: Question = Question()):
         self.questions.append(question)
@@ -236,7 +275,8 @@ class Questionaire():
         weights.sort()
         split = numpy.array_split(weights, 3)
         p75 = split[2]
-        return MonteCarloRange(min=Decimal(numpy.min(p75)), probable=Decimal(statistics.mode(p75)), max=Decimal(numpy.max(p75)))
+        self.factor_mean_75 = MonteCarloRange(min=Decimal(numpy.min(p75)), probable=Decimal(statistics.mode(p75)), max=Decimal(numpy.max(p75)))
+        return self.factor_mean_75
 
     def calculate_questionaire_value(self):
         calc = getattr(self, self.calculation)
