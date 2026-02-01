@@ -27,6 +27,9 @@ import json
 
 from riskcalculator.montecarlo import MonteCarloRange
 
+def reduce_decimal_places(value:MonteCarloRange=None, ndigits:int=5) -> MonteCarloRange:
+    return MonteCarloRange(min=round(value.min, ndigits), probable=round(value.probable, ndigits), max=round(value.max, ndigits))
+
 def montecarlorange_from_dict(values:dict=None):
     if isinstance(values, dict):
         return MonteCarloRange(min=values['min'], probable=values['probable'], max=values['max'])
