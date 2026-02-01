@@ -27,6 +27,7 @@ import statistics
 
 import numpy
 from otyg_risk_base.montecarlo import MonteCarloRange
+from .util import freeze
 
 
 class Alternative():
@@ -43,6 +44,9 @@ class Alternative():
 
     def __repr__(self):
         return str(self.to_dict())
+    
+    def __hash__(self):
+        return hash(freeze(self.to_dict()))
 
 class Question():
     def __init__(self, text: str = "", alternatives: list = []):
@@ -60,7 +64,10 @@ class Question():
             "alternatives": alternatives,
             "answer": self.answer.to_dict()
         }
-
+    
+    def __hash__(self):
+        return hash(freeze(self.to_dict()))
+    
     def __repr__(self):
         return str(self.to_dict())
 
@@ -95,7 +102,10 @@ class Questionaire():
         self.multiply_factor()
         self.mean()
         self.range()
-
+    
+    def __hash__(self):
+        return hash(freeze(self.to_dict()))
+    
     def to_dict(self):
         questions = []
         for q in self.questions:
@@ -105,8 +115,9 @@ class Questionaire():
             "calculation": self.calculation,
             "questions": questions
         }
-
-    def from_dict(self, dict:dict={}):
+    @classmethod
+    def from_dict(cls, dict:dict={}):
+        
         self.factor = dict['factor']
         self.calculation = dict.get('calculation', 'mean')
         for q in dict['questions']:
@@ -247,22 +258,20 @@ class Questionaires:
         return values
 
     def to_dict(self):
-        # TODO: Byt namn på nycklarna så att samma namn används konsekvent överallt
         return {
             'tef': self.questionaires['tef'].to_dict(),
             'vuln': self.questionaires['vuln'].to_dict(),
             'lm': self.questionaires['lm'].to_dict(),
         }
-
-    def from_dict(self, dict:dict={}):
-        tef = Questionaire(factor=dict['tef']['factor'])
-        tef.from_dict(dict['tef'])
-        vuln = Questionaire(factor=dict['vuln']['factor'])
-        vuln.from_dict(dict['vuln'])
-        lm = Questionaire(factor=dict['lm']['factor'])
-        lm.from_dict(dict['lm'])
-        self.questionaires={
-            'tef': tef,
-            'vuln': vuln,
-            'lm': lm
-        }
+    def __hash__(self):
+        return hash(freeze(self.to_dict()))
+    
+    @classmethod
+    def from_dict(cls, values:dict={}):
+        tef = Questionaire(factor=values['tef']['factor'])
+        tef.from_dict(values['tef'])
+        vuln = Questionaire(factor=values['vuln']['factor'])
+        vuln.from_dict(values['vuln'])
+        lm = Questionaire(factor=values['lm']['factor'])
+        lm.from_dict(values['lm'])
+        return Questionaires(tef=tef, vuln=vuln, lm=lm)

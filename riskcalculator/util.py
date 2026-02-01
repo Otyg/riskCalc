@@ -39,3 +39,12 @@ class ComplexEncoder(json.JSONEncoder):
             return obj.to_dict()
         else:
             return json.JSONEncoder.default(self, obj)
+
+def freeze(x):
+    if isinstance(x, dict):
+        return frozenset((k, freeze(v)) for k, v in x.items())
+    if isinstance(x, (list, tuple)):
+        return tuple(freeze(i) for i in x)
+    if isinstance(x, set):
+        return frozenset(freeze(i) for i in x)
+    return x

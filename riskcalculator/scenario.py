@@ -34,10 +34,10 @@ class RiskScenario():
             self.asset = ""
             self.threat = ""
             self.vulnerability = ""
-            self.risk = HybridRisk()
+            self.risk = None
             self.category = ""
             self.name = ""
-            self.questionaires = Questionaires(tef=Questionaire(factor="tef"), vuln=Questionaire(factor="vuln"), lm=Questionaire(factor="lm"))
+            self.questionaires = None
         else:
             self.actor = parameters.get('actor', "")
             self.description = parameters.get('description', "")
@@ -79,23 +79,19 @@ class RiskScenario():
             "questionaires": self.questionaires.to_dict()
         }
     
-    def from_dict(self, dict:dict=None):
-        self.name = dict['name']
-        self.category = dict['category']
-        self.actor = dict['actor']
-        self.description = dict['description']
-        self.asset = dict['asset']
-        self.threat = dict['threat']
-        self.vulnerability = dict['vulnerability']
-        self.risk = HybridRisk.from_dict(dict.get('risk'))
-        tef = Questionaire(factor=dict['questionaires']['tef']['factor'])
-        tef.from_dict(dict['questionaires']['tef'])
-        vuln = Questionaire(factor=dict['questionaires']['vuln']['factor'])
-        vuln.from_dict(dict['questionaires']['vuln'])
-        lm = Questionaire(factor=dict['questionaires']['lm']['factor'])
-        lm.from_dict(dict['questionaires']['lm'])
-        questionaires = Questionaires(tef=tef, vuln=vuln, lm=lm)
-        self.questionaires = questionaires
+    @classmethod
+    def from_dict(cls, dict:dict=None):
+        new = RiskScenario()
+        new.name = dict.get('name', "")
+        new.category = dict.get('category', "")
+        new.actor = dict.get('actor', "")
+        new.asset = dict.get('asset', "")
+        new.threat = dict.get('threat', "")
+        new.vulnerability = dict.get('vulnerability', "")
+        new.description = dict.get("description")
+        new.risk = HybridRisk.from_dict(values=dict.get('risk', {}))
+        new.questionaires = Questionaires.from_dict(dict.get("questionaires"))
+        return new
 
     def __str__(self):
         short = self.name + "\n" + self.description + "\n"
