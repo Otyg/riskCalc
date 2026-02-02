@@ -48,6 +48,25 @@ class TestQuestionaires(unittest.TestCase):
         question_b = Question(text="Test 2", alternatives=[Alternative(text="Ja", weight=MonteCarloRange(probable=1)), Alternative(text="Nej", weight=MonteCarloRange(probable=1))])
         questionaire = Questionaire(questions=[question, question_b])
         self.assertTrue(questionaire == Questionaire.from_dict(questionaire.to_dict()))
+    
+    def test_questionaires_equality(self):
+        question = Question(text="Test 1", alternatives=[Alternative(text="Ja", weight=MonteCarloRange(probable=1)), Alternative(text="Nej", weight=MonteCarloRange(probable=1))])
+        question_b = Question(text="Test 2", alternatives=[Alternative(text="Ja", weight=MonteCarloRange(probable=1)), Alternative(text="Nej", weight=MonteCarloRange(probable=1))])
+        questionaire = Questionaire(questions=[question])
+        questionaire_b = Questionaire(questions=[question_b])
+        questionaire_c = Questionaire(questions=[question_b, question])
+        questionaires = Questionaires(tef=questionaire, vuln=questionaire_b, lm=questionaire_c)
+        self.assertTrue(questionaires == questionaires)
+        questionaires_b = Questionaires(tef=questionaire, vuln=questionaire_b, lm=questionaire_b)
+        self.assertFalse(questionaires == questionaires_b)
 
+    def test_questionaires_persistence(self):
+        question = Question(text="Test 1", alternatives=[Alternative(text="Ja", weight=MonteCarloRange(probable=1)), Alternative(text="Nej", weight=MonteCarloRange(probable=1))])
+        question_b = Question(text="Test 2", alternatives=[Alternative(text="Ja", weight=MonteCarloRange(probable=1)), Alternative(text="Nej", weight=MonteCarloRange(probable=1))])
+        questionaire = Questionaire(questions=[question])
+        questionaire_b = Questionaire(questions=[question_b])
+        questionaire_c = Questionaire(questions=[question_b, question])
+        questionaires = Questionaires(tef=questionaire, vuln=questionaire_b, lm=questionaire_c)
+        self.assertTrue(questionaires == Questionaires.from_dict(questionaires.to_dict()))
 if __name__ == '__main__':
     unittest.main()

@@ -315,13 +315,20 @@ class Questionaires:
         }
     def __hash__(self):
         return hash(freeze(self.to_dict()))
-    
+    def __eq__(self, other):
+        if isinstance(other, Questionaires):
+            if self.__hash__() == other.__hash__():
+                if not (self.questionaires['tef'].__hash__() == other.questionaires['tef'].__hash__()):
+                    return False
+                elif not (self.questionaires['vuln'].__hash__() == other.questionaires['vuln'].__hash__()):
+                    return False
+                elif not (self.questionaires['lm'].__hash__() == other.questionaires['lm'].__hash__()):
+                    return False
+                return True
+        return False
     @classmethod
     def from_dict(cls, values:dict={}):
-        tef = Questionaire(factor=values['tef']['factor'])
-        tef.from_dict(values['tef'])
-        vuln = Questionaire(factor=values['vuln']['factor'])
-        vuln.from_dict(values['vuln'])
-        lm = Questionaire(factor=values['lm']['factor'])
-        lm.from_dict(values['lm'])
+        tef = Questionaire.from_dict(dict=values['tef'])
+        vuln = Questionaire.from_dict(dict=values['vuln'])
+        lm = Questionaire.from_dict(dict=values['lm'])
         return Questionaires(tef=tef, vuln=vuln, lm=lm)
