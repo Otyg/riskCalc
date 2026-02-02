@@ -52,7 +52,7 @@ class Alternative():
         return str(self.to_dict())
     
     def __hash__(self):
-        reduced = reduce_decimal_places(value=self.weight, ndigits=10)
+        reduced = reduce_decimal_places(value=self.weight, ndigits=5)
         return hash((self.text, reduced.max, reduced.min, reduced.probable))
     
     def __eq__(self, value):
@@ -133,7 +133,7 @@ class Questionaire():
         for question in self.questions:
             questions_hash += hash((question.text, question.answer.__hash__()))
             for alternative in question.alternatives:
-                reduced = reduce_decimal_places(value=alternative.weight, ndigits=10)
+                reduced = reduce_decimal_places(value=alternative.weight, ndigits=5)
                 questions_hash += hash((alternative.text, reduced.max, reduced.min, reduced.probable))
         return hash((self.factor, self.calculation, questions_hash)) 
     
@@ -153,11 +153,11 @@ class Questionaire():
             "factor": self.factor,
             "calculation": self.calculation,
             "questions": questions,
-            "factor_sum": self.factor_sum.to_dict(),
-            "factor_mul": self.factor_mul.to_dict(),
-            "factor_range": self.factor_range.to_dict(),
-            "factor_mean": self.factor_mean.to_dict(),
-            "factor_mean_75": self.factor_mean_75.to_dict(),
+            "factor_sum": reduce_decimal_places(self.factor_sum).to_dict(),
+            "factor_mul": reduce_decimal_places(self.factor_mul).to_dict(),
+            "factor_range": reduce_decimal_places(self.factor_range).to_dict(),
+            "factor_mean": reduce_decimal_places(self.factor_mean).to_dict(),
+            "factor_mean_75": reduce_decimal_places(self.factor_mean_75).to_dict(),
         }
     @classmethod
     def from_dict(cls, dict:dict={}):
@@ -314,18 +314,21 @@ class Questionaires:
             'lm': self.questionaires['lm'].to_dict(),
         }
     def __hash__(self):
-        return hash(freeze(self.to_dict()))
+        return hash((self.questionaires.get('tef').__hash__(), self.questionaires.get('vuln').__hash__(), self.questionaires.get('lm').__hash__()))
+    
     def __eq__(self, other):
+        eq = False
         if isinstance(other, Questionaires):
             if self.__hash__() == other.__hash__():
-                if not (self.questionaires['tef'].__hash__() == other.questionaires['tef'].__hash__()):
-                    return False
+                eq = True
+                if not (self.questionaires['tef'] == other.questionaires['tef']):
+                    eq = False
                 elif not (self.questionaires['vuln'].__hash__() == other.questionaires['vuln'].__hash__()):
-                    return False
+                    eq = False
                 elif not (self.questionaires['lm'].__hash__() == other.questionaires['lm'].__hash__()):
-                    return False
-                return True
-        return False
+                    eq = False
+        return eq
+    
     @classmethod
     def from_dict(cls, values:dict={}):
         tef = Questionaire.from_dict(dict=values['tef'])

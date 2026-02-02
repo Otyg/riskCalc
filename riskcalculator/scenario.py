@@ -24,10 +24,11 @@
 
 from riskcalculator.questionaire import Questionaire, Questionaires
 from otyg_risk_base.hybrid import HybridRisk
+from .util import freeze
 
 
 class RiskScenario():
-    def __init__(self, parameters:dict = None):
+    def __init__(self, parameters: dict = None):
         if not parameters:
             self.actor = ""
             self.description = ""
@@ -52,16 +53,23 @@ class RiskScenario():
             if parameters.get('questionaires') and isinstance(parameters.get('questionaires'), Questionaires):
                 self.questionaires = parameters.get('questionaires')
             elif parameters.get('questionaires'):
-                tef = Questionaire(factor=parameters.get('questionaires').get('tef').get('factor', "tef"))
-                tef.from_dict(parameters.get('questionaires').get('tef', Questionaire()))
-                vuln = Questionaire(factor=parameters.get('questionaires').get('vuln').get('factor', "vuln"))
-                vuln.from_dict(parameters.get('questionaires').get('vuln', Questionaire()))
-                lm = Questionaire(factor=parameters.get('questionaires').get('lm').get('factor', "lm"))
-                tef.from_dict(parameters.get('questionaires').get('lm', Questionaire()))
+                tef = Questionaire(factor=parameters.get(
+                    'questionaires').get('tef').get('factor', "tef"))
+                tef.from_dict(parameters.get(
+                    'questionaires').get('tef', Questionaire()))
+                vuln = Questionaire(factor=parameters.get(
+                    'questionaires').get('vuln').get('factor', "vuln"))
+                vuln.from_dict(parameters.get(
+                    'questionaires').get('vuln', Questionaire()))
+                lm = Questionaire(factor=parameters.get(
+                    'questionaires').get('lm').get('factor', "lm"))
+                tef.from_dict(parameters.get(
+                    'questionaires').get('lm', Questionaire()))
                 questionaires = Questionaires(tef=tef, vuln=vuln, lm=lm)
                 self.questionaires = questionaires
             else:
-                self.questionaires = Questionaires(tef=Questionaire(factor="tef"), vuln=Questionaire(factor="vuln"), lm=Questionaire(factor="lm"))
+                self.questionaires = Questionaires(tef=Questionaire(
+                    factor="tef"), vuln=Questionaire(factor="vuln"), lm=Questionaire(factor="lm"))
 
     def auto_desc(self):
         return f"Risk att {self.actor} utnyttjar {self.vulnerability} för att realisera {self.threat} mot {self.asset}."
@@ -78,9 +86,9 @@ class RiskScenario():
             "risk": self.risk.to_dict(),
             "questionaires": self.questionaires.to_dict()
         }
-    
+
     @classmethod
-    def from_dict(cls, dict:dict=None):
+    def from_dict(cls, dict: dict = None):
         new = RiskScenario()
         new.name = dict.get('name', "")
         new.category = dict.get('category', "")
@@ -100,5 +108,9 @@ class RiskScenario():
 
     def __repr__(self):
         return str(self.to_dict())
-    
-    
+
+    def __hash__(self):
+        return hash((self.actor, self.description, self.asset, self.threat, freeze(self.vulnerability), self.category, self.name, self.risk.__hash__(), self.questionaires.__hash__()))
+
+    def __eq__(self, value):
+        return self.__hash__() == value.__hash__()
