@@ -1,8 +1,6 @@
 import unittest
-
-from riskcalculator.montecarlo import MonteCarloRange
+from otyg_risk_base.montecarlo import MonteCarloRange
 from riskcalculator.questionaire import Alternative, Question, Questionaire, Questionaires
-from riskcalculator.scenario import RiskScenario
 
 class TestQuestionaires(unittest.TestCase):
 

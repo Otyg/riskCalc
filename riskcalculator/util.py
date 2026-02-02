@@ -25,7 +25,7 @@
 import decimal
 import json
 
-from riskcalculator.montecarlo import MonteCarloRange
+from otyg_risk_base.montecarlo import MonteCarloRange
 
 def reduce_decimal_places(value:MonteCarloRange=None, ndigits:int=5) -> MonteCarloRange:
     return MonteCarloRange(min=round(value.min, ndigits), probable=round(value.probable, ndigits), max=round(value.max, ndigits))

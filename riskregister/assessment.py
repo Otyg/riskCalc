@@ -23,11 +23,11 @@
 #
 
 from riskcalculator.scenario import *
-
+from otyg_risk_base.hybrid import HybridRisk
 
 class RiskAssessment():
     def __init__(self, assessment:dict = None):
-        self.summary = {'critical': 0, 'high':0, 'middle': 0, 'low': 0, 'very_low':0}
+        self.summary = dict()
         self.scenarios = list()
         if assessment: 
             self.analysis_object = assessment["analysis_object"]
@@ -35,10 +35,10 @@ class RiskAssessment():
             self.date = assessment["date"]
             self.scope = assessment["scope"]
             self.owner = assessment["owner"]
-            for scenario in assessment["scenarios"]:
-                base_scenario = RiskScenario()
-                base_scenario.from_dict(scenario)
-                self.add_scenario(base_scenario)
+            if 'scenarios' in assessment:
+                for scenario in assessment["scenarios"]:
+                    base_scenario = RiskScenario.from_dict(scenario)
+                    self.add_scenario(base_scenario)
         else:
             self.analysis_object = str()
             self.version = float()
@@ -49,18 +49,21 @@ class RiskAssessment():
     def add_scenario(self, scenario:RiskScenario):
         self.scenarios.append(scenario)
         risk = scenario.risk
-        if isinstance(risk, DiscreteRisk):
-            self.summary[risk.risk['level']] += 1
+        if isinstance(risk, HybridRisk):
+            if risk.qualitative.overall_risk not in self.summary:
+                self.summary[risk.qualitative.overall_risk] = 1
+            else:
+                self.summary[risk.qualitative.overall_risk] += 1
 
     def update_scenario(self, index:int, scenario:RiskScenario):
         old_scenario = self.scenarios[index]
         risk = old_scenario.risk
-        if isinstance(risk, DiscreteRisk):
-            self.summary[risk.risk['level']] -= 1
+        if isinstance(risk, HybridRisk):
+            self.summary[risk.qualitative.overall_risk] -= 1
         self.scenarios[index] = scenario
         risk = scenario.risk
-        if isinstance(risk, DiscreteRisk):
-            self.summary[risk.risk['level']] += 1
+        if isinstance(risk, HybridRisk):
+            self.summary[risk.qualitative.overall_risk] += 1
 
     def to_dict(self):
         scenarios_as_dicts = []
@@ -75,6 +78,15 @@ class RiskAssessment():
             "scenarios": scenarios_as_dicts,
             "summary": self.summary
         }
+    
+    def __hash__(self):
+        scenario_hash = 0
+        for scenario in self.scenarios:
+            scenario_hash += scenario.__hash__()
+        return hash((self.analysis_object, self.version, self.date, self.scope, self.owner, scenario_hash, freeze(self.summary)))
+    
+    def __eq__(self, value):
+        return self.__hash__() == value.__hash__()
     
     def __str__(self):
         scenarios = str()
