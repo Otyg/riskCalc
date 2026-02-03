@@ -40,12 +40,12 @@ domain_available = False
 MonteCarloRange = None
 
 try:
-    from riskcalculator.discret_scale import DiscreteRisk
+    from otyg_risk_base.hybrid import HybridRisk
     from filesystem.repo import DiscreteThresholdsRepository
     from filesystem.questionaires_repo import JsonQuestionairesRepository
     from riskcalculator.questionaire import Questionaires
     from filesystem.paths import ensure_user_data_initialized, packaged_root
-    from riskcalculator.montecarlo import MonteCarloRange
+    from otyg_risk_base.montecarlo import MonteCarloRange
     
     repo_available = True
     discrete_repo_available = True
@@ -481,15 +481,15 @@ class RiskCalcQt(QMainWindow):
                     "loss_magnitude": lm_range,
                     "budget": budget,
                     "currency": currency_str,
-                    "thresholds": threshold_set,
+                    "mappings": threshold_set,
                 }
 
                 try:
-                    risk = DiscreteRisk(values=values)
+                    risk = HybridRisk(values=values)
                 except Exception:
                     values2 = dict(values)
                     values2["threat_event_frequency"] = values2.pop("loss_event_frequency")
-                    risk = DiscreteRisk(values=values2)
+                    risk = HybridRisk(values=values2)
 
                 self._render_risk(risk)
                 return
@@ -544,9 +544,9 @@ class RiskCalcQt(QMainWindow):
                 else:
                     values = {}
 
-                values.update({"budget": budget, "thresholds": threshold_set, "currency": currency_str})
+                values.update({"budget": budget, "mappings": threshold_set, "currency": currency_str})
 
-                risk = DiscreteRisk(values=values)
+                risk = HybridRisk(values=values)
                 self._render_risk(risk)
                 return
 
@@ -576,25 +576,26 @@ class RiskCalcQt(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Fel", f"Beräkning misslyckades (form/demo): {e}")
 
-    def _render_risk(self, risk: Any):
+    def _render_risk(self, risk: HybridRisk):
+        risk.qualitative.overall_likelihood
         risk_dict = getattr(risk, "risk", None) or {}
         currency_formatted = Currency(self.budget_currency.currentText().strip())
         if isinstance(risk_dict, dict):
-            self._set_result("sannolikhet", f"{risk_dict.get('probability_text')} ({risk_dict.get('probability')})")
-            self._set_result("konsekvens", f"{risk_dict.get('consequence_text')} ({risk_dict.get('consequence')})")
-            self._set_result("risk", f"{risk_dict.get('risk_text')} ({risk_dict.get('risk')})")
+            self._set_result("sannolikhet", f"{risk.qualitative.overall_likelihood}")
+            self._set_result("konsekvens", f"{risk.qualitative.impact}")
+            self._set_result("risk", f"{risk.qualitative.overall_risk}")
         else:
             self._set_result("sannolikhet", "")
             self._set_result("konsekvens", "")
             self._set_result("risk", "")
 
-        lef = getattr(risk, "loss_event_frequency", None)
-        lm = getattr(risk, "loss_magnitude", None)
-        ale = getattr(risk, "annual_loss_expectancy", None)
+        lef = risk.quantitative.loss_event_frequency
+        lm = risk.quantitative.loss_magnitude
+        ale = risk.quantitative.annual_loss_expectancy
 
-        self._set_result("lef", f"{round(getattr(lef,'probable',None), 3)} (P90: {round(getattr(lef,'p90',None),3)})")
-        self._set_result("loss_magnitude", f"{round(getattr(lm,'probable',None),3)} (P90: {round(getattr(lm,'p90',None),3)})")
-        self._set_result("ale", f"{currency_formatted.get_money_format(round(getattr(ale,'probable',None),2))} (P90: {currency_formatted.get_money_format(round(getattr(ale,'p90',None),2))})")
+        self._set_result("lef", f"{round(lef.probable, 3)} (P90: {round(lef.p90,3)})")
+        self._set_result("loss_magnitude", f"{round(lm.probable,3)} (P90: {round(lm.p90,3)})")
+        self._set_result("ale", f"{currency_formatted.get_money_format(round(ale.probable,2))} (P90: {currency_formatted.get_money_format(round(ale.p90,2))})")
 
 
 def main():
