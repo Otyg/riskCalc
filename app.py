@@ -535,11 +535,6 @@ async def risk_calc_submit(request: Request):
     result = None
 
     if mode == "manual":
-        # MANUAL: du har redan fälten i template.
-        # Här behöver du bygga "values" så Risk(values=...) förstår det.
-        # Jag antar att Risk(values=...) kan ta tef/vuln/lm som MonteCarloRange-dict eller liknande.
-        # Om du har en annan förväntad struktur, säg till så anpassar jag detta exakt.
-
         values = {
             "threat_event_frequency": {"min": str(_d(form.get("tef_min"))), "probable": str(_d(form.get("tef_probable"))), "max": str(_d(form.get("tef_max")))},
             "vulnerability": {"min": str(_d(form.get("vuln_min"))), "probable": str(_d(form.get("vuln_probable"))), "max": str(_d(form.get("vuln_max")))},
