@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 import uuid
 
-from riskcalculator.discret_scale import DiscreetThreshold
+from otyg_risk_base.qualitative_scale import QualitativeScale
 from riskcalculator.util import ComplexEncoder
 
 
@@ -153,6 +153,6 @@ class DiscreteThresholdsRepository:
         data = self.__read_file()
         return data.keys()
     
-    def load(self, threshold_set: str = "default_thresholds") -> DiscreetThreshold:
+    def load(self, threshold_set: str = "default_thresholds") -> QualitativeScale:
         data=self.__read_file()
-        return DiscreetThreshold(thresholds=data.get(threshold_set, {}))
+        return QualitativeScale(scales=data.get(threshold_set, {}))

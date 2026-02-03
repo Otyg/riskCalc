@@ -43,25 +43,25 @@
 
   {% for s in analysis.get("scenarios", []) %}
     {% set risk = s.get("risk", {}) %}
-    {% set discrete = risk.get("discrete_risk") %}
+    {% set discrete = risk.get("qualitative") %}
 
     <div class="card">
       <h3 style="margin-top: 0;">{{ s.get("name","") }}</h3>
-      <p style="white-space: pre-wrap;"><strong>Risk: {{ discrete.get("risk_text","").split(",")[0] }}</strong></p>
+      <p style="white-space: pre-wrap;"><strong>Risk: {{ discrete.get("overall_risk","") }}</strong></p>
       <p style="white-space: pre-wrap;">Riskområde: {{ s.get("category","") }}</p>
       <p style="white-space: pre-wrap;">{{ s.get("description","") }}</p>
       <details style="margin-top: 10px;">
         <h4>Risk</h4>
         <div class="kv">
-          <div>Sannolikhet</div><div>{{ discrete.get("probability","") }} ({{ discrete.get("probability_text","") }})</div>
-          <div>Konsekvens</div><div>{{ discrete.get("consequence","") }} ({{ discrete.get("consequence_text","") }})</div>
-          <div>Risk</div><div><strong>{{ discrete.get("risk","") }} ({{ discrete.get("risk_text","") }})</strong></div>
+          <div>Sannolikhet</div><div>{{ discrete.get("overall_likelihood","") }}</div>
+          <div>Konsekvens</div><div>{{ discrete.get("impact","") }}</div>
+          <div>Risk</div><div><strong>{{ discrete.get("overall_risk","") }}</strong></div>
           <details>
             <div class="kv">
-            <div>Budget</div><div>{{ risk.get("budget","") }} {{ risk.get("currency","") }}/år</div>
-            <div>Loss Event Frequency</div><div>{{ risk.get("loss_event_frequency","").get("probable", "")|round(5) }} händelser/år</div>
-            <div>Loss Magnitude</div><div>{{ (risk.get("loss_magnitude","").get("probable", "")*risk.get("budget",""))|round(2) }} {{ risk.get("currency","") }}/händelse</div>
-            <div>ALE</div><div>{{ risk.get("annual_loss_expectancy","").get("probable", "") | round(2)}} {{ risk.get("currency","") }}/år</div>
+            <div>Budget</div><div>{{ risk.get("quantitative").get("budget","") }} {{ risk.get("quantitative").get("currency","") }}/år</div>
+            <div>Loss Event Frequency</div><div>{{ risk.get("quantitative").get("loss_event_frequency","").get("probable", "")|round(5) }} händelser/år</div>
+            <div>Loss Magnitude</div><div>{{ risk.get("quantitative").get("loss_magnitude","").get("probable", "") }} %/händelse</div>
+            <div>ALE</div><div>{{ risk.get("quantitative").get("annual_loss_expectancy","").get("probable", "") | round(2)}} {{ risk.get("quantitative").get("currency","") }}/år</div>
             </div>
           </details>
           

@@ -25,6 +25,7 @@
 import decimal
 import json
 
+from numpy import ndarray
 from otyg_risk_base.montecarlo import MonteCarloRange
 
 def reduce_decimal_places(value:MonteCarloRange=None, ndigits:int=5) -> MonteCarloRange:
@@ -40,6 +41,9 @@ class ComplexEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj,'to_dict'):
             return obj.to_dict()
+        elif isinstance(obj, ndarray):
+            arr = obj.tolist()
+            return arr
         else:
             return json.JSONEncoder.default(self, obj)
 

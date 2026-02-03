@@ -34,10 +34,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.status import HTTP_303_SEE_OTHER, HTTP_200_OK
 
-from riskcalculator.montecarlo import MonteCarloRange
-from riskcalculator.risk import Risk
+from otyg_risk_base.montecarlo import MonteCarloRange
+from otyg_risk_base.hybrid import HybridRisk
 from riskcalculator.scenario import RiskScenario
-from riskcalculator.discret_scale import DiscreteRisk
 from filesystem.actors_repo import JsonActorsRepository
 from filesystem.repo import DiscreteThresholdsRepository, JsonAnalysisRepository, DraftRepository, JsonCategoryRepository
 from filesystem.questionaires_repo import JsonQuestionairesRepository
@@ -303,7 +302,7 @@ async def create_scenario_save(request: Request, draft_id: str):
         values.update({'budget': Decimal(risk_dict.get('budget'))})
         values.update({'currency': risk_dict.get('currency')})
         values.update({'thresholds': discrete_thresholds_repo.load()})
-        risk = DiscreteRisk(values=values)
+        risk = HybridRisk(values=values)
         scenario_obj = RiskScenario(parameters= {"name": name,
                                     "category": category,
                                     "actor": actor,
@@ -414,7 +413,7 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
         values.update({'budget': Decimal(risk_dict.get('budget'))})
         values.update({'currency': risk_dict.get('currency')})
         values.update({'thresholds': discrete_thresholds_repo.load()})
-        risk = DiscreteRisk(values=values)
+        risk = HybridRisk(values=values)
         scenario_obj = RiskScenario(parameters= {"name": name,
                                     "category": category,
                                     "actor": actor,
@@ -551,7 +550,7 @@ async def risk_calc_submit(request: Request):
         }
 
         try:
-            risk = DiscreteRisk(values=values)
+            risk = HybridRisk(values=values)
             result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
         except Exception as e:
             errors.append(f"Kunde inte skapa Risk från manuella intervall: {e}")
@@ -579,7 +578,7 @@ async def risk_calc_submit(request: Request):
                 values.update({"currency": "SEK"})
                 values.update({"thresholds": threshold_set})
 
-                risk = DiscreteRisk(values=values)
+                risk = HybridRisk(values=values)
                 result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
 
             except Exception as e:
