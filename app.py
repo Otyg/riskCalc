@@ -301,7 +301,7 @@ async def create_scenario_save(request: Request, draft_id: str):
         values = questionaires.calculate_questionairy_values()
         values.update({'budget': Decimal(risk_dict.get('budget'))})
         values.update({'currency': risk_dict.get('currency')})
-        values.update({'thresholds': discrete_thresholds_repo.load()})
+        values.update({'mappings': discrete_thresholds_repo.load()})
         risk = HybridRisk(values=values)
         scenario_obj = RiskScenario(parameters= {"name": name,
                                     "category": category,
@@ -412,7 +412,7 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
         values = questionaires.calculate_questionairy_values()
         values.update({'budget': Decimal(risk_dict.get('budget'))})
         values.update({'currency': risk_dict.get('currency')})
-        values.update({'thresholds': discrete_thresholds_repo.load()})
+        values.update({'mappings': discrete_thresholds_repo.load()})
         risk = HybridRisk(values=values)
         scenario_obj = RiskScenario(parameters= {"name": name,
                                     "category": category,
@@ -576,7 +576,7 @@ async def risk_calc_submit(request: Request):
                 # Du kan antingen ha dolda inputs eller hårdkoda default:
                 values.update({"budget": Decimal("1000000")})
                 values.update({"currency": "SEK"})
-                values.update({"thresholds": threshold_set})
+                values.update({"mappings": threshold_set})
 
                 risk = HybridRisk(values=values)
                 result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}

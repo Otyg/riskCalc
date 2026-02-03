@@ -23,17 +23,17 @@
         <h2 style="margin-top:0;">Resultat</h2>
 
         {% if result %}
-            <div>Sannolikhet: {{ result.get("discrete_risk").get("probability","") }} ({{ result.get("discrete_risk").get("probability_text","") }})</div>
-            <div>Konsekvens: {{ result.get("discrete_risk").get("consequence","") }} ({{ result.get("discrete_risk").get("consequence_text","") }})</div>
-            <div>Risk: <strong>{{ result.get("discrete_risk").get("risk","") }} ({{ result.get("discrete_risk").get("risk_text","") }})</strong></div>
+            <div>Sannolikhet: {{ result.get("qualitative").get("overall_likelihood","") }}</div>
+            <div>Konsekvens: {{ result.get("qualitative").get("impact","") }}</div>
+            <div>Risk: <strong>{{ result.get("qualitative").get("overall_risk","") }}</strong></div>
             <p>
-                <div>Budget: {{ result.get("budget","") }} {{ result.get("currency","") }}/år</div>
-                <div>Loss Event Frequency: {{ result.get("loss_event_frequency","").get("probable", "") | round(2) }} händelser/år</div>
-                <div>Loss Magnitude: {{ (result.get("loss_magnitude","").get("probable", "")*result.get("budget",""))| round(3) }} {{ result.get("currency","") }}/händelse</div>
-                <div>ALE: {{ result.get("annual_loss_expectancy","").get("probable", "") | round(3)}} {{ result.get("currency","") }}/år</div>
+                <div>Budget: {{ result.get("quantitative").get("budget",0) }} {{ result.get("currency","") }}/år</div>
+                <div>Loss Event Frequency: {{ result.get("quantitative").get("loss_event_frequency",0).get("probable") | round(2) }} händelser/år</div>
+                <div>Loss Magnitude: {{ (result.get("quantitative").get("loss_magnitude",0).get("probable")*result.get("quantitative").get("budget",""))| round(2) }} {{ result.get("quantitative").get("currency","") }}/händelse</div>
+                <div>ALE: {{ result.get("quantitative").get("annual_loss_expectancy",0).get("probable") | round(2)}} {{ result.get("quantitative").get("currency","") }}/år</div>
             </p>
             <details>
-                <pre>{{ result | tojson(indent=2) }}</pre>
+                <pre>{{ result }}</pre>
             </details>
         {% else %}
           <p class="muted" style="margin-top:12px;">

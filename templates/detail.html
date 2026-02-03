@@ -25,15 +25,15 @@
           <div>Antal scenarion</div>
           <div><code class="badge">{{ scenarios | length }}</code></div>
           <div>Mycket hög:</div>
-          <div><code class="badge">{{ analysis.get("summary", {}).get("critical", "") }}</code></div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("Very High", "") }}</code></div>
           <div>Hög:</div>
-          <div><code class="badge">{{ analysis.get("summary", {}).get("high", "") }}</code></div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("High", "") }}</code></div>
           <div>Medel:</div>
-          <div><code class="badge">{{ analysis.get("summary", {}).get("middle", "") }}</code></div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("Medium", "") }}</code></div>
           <div>Låg:</div>
-          <div><code class="badge">{{ analysis.get("summary", {}).get("low", "") }}</code></div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("Low", "") }}</code></div>
           <div>Mycket Låg:</div>
-          <div><code class="badge">{{ analysis.get("summary", {}).get("very_low", "") }}</code></div>
+          <div><code class="badge">{{ analysis.get("summary", {}).get("Very Low", "") }}</code></div>
         </div>
       </div>
     </div>
