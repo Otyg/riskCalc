@@ -571,8 +571,7 @@ async def risk_calc_submit(request: Request):
                 # Du kan antingen ha dolda inputs eller hårdkoda default:
                 values.update({"budget": Decimal("1000000")})
                 values.update({"currency": "SEK"})
-                values.update({"mappings": threshold_set})
-
+                values.update({"mappings": threshold_set.to_dict()})
                 risk = HybridRisk(values=values)
                 result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
 

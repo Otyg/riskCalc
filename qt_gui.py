@@ -113,9 +113,9 @@ def load_threshold_names() -> List[str]:
     return []
 
 
-def load_threshold_set(name: str):
+def load_threshold_set(name: str) -> dict:
     if discrete_repo_available:
-        return discrete_thresholds_repo.load(name)
+        return discrete_thresholds_repo.load(name).to_dict()
     return None
 
 
