@@ -527,8 +527,8 @@ class RiskCalcQt(QMainWindow):
 
                         for qi, combo in enumerate(self.answer_combos[dim]):
                             chosen = combo.currentText()
-                            if not chosen or chosen.startswith("—"):
-                                continue
+                            #if not chosen or chosen.startswith("—"):
+                            #    continue
 
                             found_idx = None
                             for ai, alt in enumerate(qobj.questions[qi].alternatives):
