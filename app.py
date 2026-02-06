@@ -23,6 +23,7 @@
 #
 
 from __future__ import annotations
+
 import uvicorn
 from decimal import Decimal, InvalidOperation
 import os
@@ -34,10 +35,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.status import HTTP_303_SEE_OTHER, HTTP_200_OK
 
-from riskcalculator.montecarlo import MonteCarloRange
-from riskcalculator.risk import Risk
+from otyg_risk_base.montecarlo import MonteCarloRange
+from otyg_risk_base.hybrid import HybridRisk
 from riskcalculator.scenario import RiskScenario
-from riskcalculator.discret_scale import DiscreteRisk
 from filesystem.actors_repo import JsonActorsRepository
 from filesystem.repo import DiscreteThresholdsRepository, JsonAnalysisRepository, DraftRepository, JsonCategoryRepository
 from filesystem.questionaires_repo import JsonQuestionairesRepository
@@ -302,8 +302,8 @@ async def create_scenario_save(request: Request, draft_id: str):
         values = questionaires.calculate_questionairy_values()
         values.update({'budget': Decimal(risk_dict.get('budget'))})
         values.update({'currency': risk_dict.get('currency')})
-        values.update({'thresholds': discrete_thresholds_repo.load()})
-        risk = DiscreteRisk(values=values)
+        values.update({'mappings': discrete_thresholds_repo.load().to_dict()})
+        risk = HybridRisk(values=values)
         scenario_obj = RiskScenario(parameters= {"name": name,
                                     "category": category,
                                     "actor": actor,
@@ -413,8 +413,8 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
         values = questionaires.calculate_questionairy_values()
         values.update({'budget': Decimal(risk_dict.get('budget'))})
         values.update({'currency': risk_dict.get('currency')})
-        values.update({'thresholds': discrete_thresholds_repo.load()})
-        risk = DiscreteRisk(values=values)
+        values.update({'mappings': discrete_thresholds_repo.load()})
+        risk = HybridRisk(values=values)
         scenario_obj = RiskScenario(parameters= {"name": name,
                                     "category": category,
                                     "actor": actor,
@@ -536,11 +536,6 @@ async def risk_calc_submit(request: Request):
     result = None
 
     if mode == "manual":
-        # MANUAL: du har redan fälten i template.
-        # Här behöver du bygga "values" så Risk(values=...) förstår det.
-        # Jag antar att Risk(values=...) kan ta tef/vuln/lm som MonteCarloRange-dict eller liknande.
-        # Om du har en annan förväntad struktur, säg till så anpassar jag detta exakt.
-
         values = {
             "threat_event_frequency": {"min": str(_d(form.get("tef_min"))), "probable": str(_d(form.get("tef_probable"))), "max": str(_d(form.get("tef_max")))},
             "vulnerability": {"min": str(_d(form.get("vuln_min"))), "probable": str(_d(form.get("vuln_probable"))), "max": str(_d(form.get("vuln_max")))},
@@ -551,7 +546,7 @@ async def risk_calc_submit(request: Request):
         }
 
         try:
-            risk = DiscreteRisk(values=values)
+            risk = HybridRisk(values=values)
             result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
         except Exception as e:
             errors.append(f"Kunde inte skapa Risk från manuella intervall: {e}")
@@ -577,9 +572,8 @@ async def risk_calc_submit(request: Request):
                 # Du kan antingen ha dolda inputs eller hårdkoda default:
                 values.update({"budget": Decimal("1000000")})
                 values.update({"currency": "SEK"})
-                values.update({"thresholds": threshold_set})
-
-                risk = DiscreteRisk(values=values)
+                values.update({"mappings": threshold_set.to_dict()})
+                risk = HybridRisk(values=values)
                 result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
 
             except Exception as e:

@@ -43,10 +43,7 @@ class JsonQuestionairesRepository:
         raw = self.load_dict(set_id)
 
 
-        tef = Questionaire()
-        tef.from_dict(raw.get("tef", {}))
-        vuln = Questionaire()
-        vuln.from_dict(raw.get("vuln", {}))
-        lm = Questionaire()
-        lm.from_dict(raw.get("lm", {}))
+        tef = Questionaire.from_dict(raw.get("tef", {}))
+        vuln = Questionaire.from_dict(raw.get("vuln", {}))
+        lm = Questionaire.from_dict(raw.get("lm", {}))
         return {"qset": set_id, "tef": tef, "vuln": vuln, "lm": lm}
