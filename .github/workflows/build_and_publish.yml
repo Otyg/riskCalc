@@ -5,28 +5,27 @@ on:
     branches:
       - develop
     tags:
-      - "v*.*.*"   # semantic version tags, ex: v1.2.3
+      - "v*.*.*"      # semantic version tags, ex: v1.2.3
+    tags-ignore:
+      - "*-rc*"       # undvik loop när workflow skapar/pushar rc-taggar
 
 permissions:
-  contents: write  # create releases + upload assets
+  contents: write  # create tags + releases + upload assets
 
 env:
   APP_NAME: RiskAnalysisUI
   ENTRY_SCRIPT: app.py
 
-  # --- NEW: Qt GUI build ---
+  # --- Qt GUI build ---
   QT_APP_NAME: RiskAnalysisQT
   QT_ENTRY_SCRIPT: qt_gui.py
 
 jobs:
-  build:
-    name: Build (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-22.04]
-        python: ["3.10"]
+  prepare:
+    name: Prepare version/tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     outputs:
       channel: ${{ steps.meta.outputs.channel }}
@@ -35,6 +34,93 @@ jobs:
       release_name: ${{ steps.meta.outputs.release_name }}
       prerelease: ${{ steps.meta.outputs.prerelease }}
       version: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute metadata + create rc tag (develop)
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            # Release build (tag push, ex: v1.2.3)
+            VERSION="${GITHUB_REF_NAME}"
+            echo "channel=release" >> "$GITHUB_OUTPUT"
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+            echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "release_name=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # develop branch => rc-tag baserat på __version__
+          git fetch --tags --force
+
+          VER="$(python - <<'PY'
+import re, pathlib
+p = pathlib.Path("riskcalculator/__init__.py")
+s = p.read_text(encoding="utf-8")
+m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", s)
+if not m:
+    raise SystemExit("Kunde inte hitta __version__ i riskcalculator/__init__.py")
+print(m.group(1))
+PY
+          )"
+
+          BASE="v${VER}"
+          LAST="$(git tag -l "${BASE}-rc*" --sort=version:refname | tail -n 1 || true)"
+
+          # rcN räknas per version; om ingen finns -> rc0
+          NEXT=0
+          if [[ -n "${LAST}" && "${LAST}" =~ ^${BASE}-rc([0-9]+)$ ]]; then
+            NEXT=$((BASH_REMATCH[1] + 1))
+          fi
+
+          TAG="${BASE}-rc${NEXT}"
+
+          # Skapa och pusha tagg (pekar på nuvarande develop-commit)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Om taggen redan finns (t.ex. re-run), skapa inte igen
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} finns redan, använder den."
+          else
+            git tag -a "${TAG}" -m "Prerelease ${TAG}"
+            git push origin "${TAG}"
+          fi
+
+          echo "channel=develop" >> "$GITHUB_OUTPUT"
+          echo "suffix=-SNAPSHOT" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "release_name=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=true" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: prepare
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-22.04]
+        python: ["3.10"]
+
+    outputs:
+      channel: ${{ needs.prepare.outputs.channel }}
+      suffix: ${{ needs.prepare.outputs.suffix }}
+      tag: ${{ needs.prepare.outputs.tag }}
+      release_name: ${{ needs.prepare.outputs.release_name }}
+      prerelease: ${{ needs.prepare.outputs.prerelease }}
+      version: ${{ needs.prepare.outputs.version }}
 
     steps:
       - name: Checkout
@@ -50,42 +136,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
-          # --- NEW: Qt runtime (PySide6) ---
           pip install pyside6
 
-      - name: Compute metadata
-        id: meta
-        shell: bash
-        run: |
-          SHORT_SHA="${GITHUB_SHA::7}"
-
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            # Release build (tag push, ex: v1.2.3)
-            VERSION="${GITHUB_REF_NAME}"
-            echo "channel=release" >> "$GITHUB_OUTPUT"
-            echo "suffix=" >> "$GITHUB_OUTPUT"
-            echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
-            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-            echo "release_name=${VERSION}" >> "$GITHUB_OUTPUT"
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          else
-            # Snapshot build (develop)
-            echo "channel=develop" >> "$GITHUB_OUTPUT"
-            echo "suffix=-SNAPSHOT" >> "$GITHUB_OUTPUT"
-            echo "tag=snapshot-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-            echo "version=snapshot-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-            echo "release_name=Snapshot ${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          fi
-
       # -------------------------
-      # Build Tk/Classic app (existing)
+      # Build Tk/Classic app
       # -------------------------
       - name: Build with PyInstaller (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $suffix = "${{ steps.meta.outputs.suffix }}"
+          $suffix = "${{ needs.prepare.outputs.suffix }}"
           $name = "${env:APP_NAME}$suffix"
           pyinstaller --noconfirm --clean --onefile `
             --name $name `
@@ -103,7 +163,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          suffix="${{ steps.meta.outputs.suffix }}"
+          suffix="${{ needs.prepare.outputs.suffix }}"
           name="${APP_NAME}${suffix}"
 
           pyinstaller --noconfirm --clean --onefile \
@@ -119,13 +179,13 @@ jobs:
           cp "dist/${name}" "out/${name}-linux"
 
       # -------------------------
-      # NEW: Build Qt GUI
+      # Build Qt GUI
       # -------------------------
       - name: Build Qt GUI with PyInstaller (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $suffix = "${{ steps.meta.outputs.suffix }}"
+          $suffix = "${{ needs.prepare.outputs.suffix }}"
           $name = "${env:QT_APP_NAME}$suffix"
 
           pyinstaller --noconfirm --clean --onefile `
@@ -144,7 +204,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          suffix="${{ steps.meta.outputs.suffix }}"
+          suffix="${{ needs.prepare.outputs.suffix }}"
           name="${QT_APP_NAME}${suffix}"
 
           pyinstaller --noconfirm --clean --onefile \
@@ -162,7 +222,7 @@ jobs:
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APP_NAME }}-${{ runner.os }}${{ steps.meta.outputs.suffix }}
+          name: ${{ env.APP_NAME }}-${{ runner.os }}${{ needs.prepare.outputs.suffix }}
           path: out/*
           if-no-files-found: error
 
