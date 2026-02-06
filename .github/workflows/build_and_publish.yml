@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - develop
-      - refactor
     tags:
       - "v*.*.*"   # semantic version tags, ex: v1.2.3
 
