@@ -11,7 +11,7 @@ permissions:
   contents: write  # create tags + releases + upload assets
 
 env:
-  APP_NAME: RiskAnalysisUI
+  APP_NAME: RiskAnalysisWebUI
   ENTRY_SCRIPT: app.py
 
   # --- Qt GUI build ---
