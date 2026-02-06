@@ -48,7 +48,6 @@ jobs:
           set -euo pipefail
 
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            # Release build (tag push, ex: v1.2.3)
             VERSION="${GITHUB_REF_NAME}"
             echo "channel=release" >> "$GITHUB_OUTPUT"
             echo "suffix=" >> "$GITHUB_OUTPUT"
@@ -59,19 +58,13 @@ jobs:
             exit 0
           fi
 
-          # develop branch => rc-tag baserat på __version__
           git fetch --tags --force
 
-          VER="$(python - <<'PY'
-import re, pathlib
-p = pathlib.Path("riskcalculator/__init__.py")
-s = p.read_text(encoding="utf-8")
-m = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", s)
-if not m:
-    raise SystemExit("Kunde inte hitta __version__ i riskcalculator/__init__.py")
-print(m.group(1))
-PY
-          )"
+          VER="$(python -c "import re,pathlib; s=pathlib.Path('riskcalculator/__init__.py').read_text(encoding='utf-8'); m=re.search(r\"__version__\\s*=\\s*['\\\"]([^'\\\"]+)['\\\"]\", s); print(m.group(1) if m else '')")"
+          if [[ -z "${VER}" ]]; then
+            echo "Kunde inte hitta __version__ i riskcalculator/__init__.py" >&2
+            exit 1
+          fi
 
           BASE="v${VER}"
           LAST="$(git tag -l "${BASE}-rc*" --sort=version:refname | tail -n 1 || true)"
@@ -84,7 +77,6 @@ PY
 
           TAG="${BASE}-rc${NEXT}"
 
-          # Skapa och pusha tagg (pekar på nuvarande develop-commit)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
