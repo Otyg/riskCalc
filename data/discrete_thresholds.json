@@ -1,89 +1,7 @@
 {
-    "default_thresholds": {
-        "probability": [
-            {
-                "value": 1,
-                "text": "Mycket låg",
-                "threshold": 0.1
-            },
-            {
-                "value": 2,
-                "text": "Låg",
-                "threshold": 0.5
-            },
-            {
-                "value": 3,
-                "text": "Medel",
-                "threshold": 8.0
-            },
-            {
-                "value": 4,
-                "text": "Hög",
-                "threshold": 13.0
-            },
-            {
-                "value": 5,
-                "text": "Mycket hög",
-                "threshold": 13.01
-            }
-        ],
-        "consequence": [
-            {
-                "value": 1,
-                "text": "Försumbar påverkan",
-                "threshold": 0.001
-            },
-            {
-                "value": 2,
-                "text": "Begränsad påverkan",
-                "threshold": 0.005
-            },
-            {
-                "value": 3,
-                "text": "Märkbar påverkan",
-                "threshold": 0.02
-            },
-            {
-                "value": 4,
-                "text": "Allvarlig påverkan",
-                "threshold": 0.05
-            },
-            {
-                "value": 5,
-                "text": "Kritisk påverkan",
-                "threshold": 0.051
-            }
-        ],
-        "risk": [
-            {
-                "value": "very_low",
-                "text": "Mycket låg",
-                "threshold": 3
-            },
-            {
-                "value": "low",
-                "text": "Låg",
-                "threshold": 6
-            },
-            {
-                "value": "middle",
-                "text": "Medel",
-                "threshold": 10
-            },
-            {
-                "value": "high",
-                "text": "Hög",
-                "threshold": 15
-            },
-            {
-                "value": "critical",
-                "text": "Mycket hög",
-                "threshold": 25
-            }
-        ]
-    },
+    "default_thresholds": {"likelihood_initiation_or_occurence": [{"value": 1, "low": 0.01, "high": 0.1}, {"value": 2, "low": 0.1, "high": 1}, {"value": 3, "low": 1, "high": 10}, {"value": 4, "low": 10, "high": 100}, {"value": 5, "low": 100, "high": 1000}], "likelihood_adverse_impact": [{"value": 1, "low": 0.01, "high": 0.12}, {"value": 2, "low": 0.12, "high": 0.25}, {"value": 3, "low": 0.25, "high": 0.5}, {"value": 4, "low": 0.5, "high": 0.75}, {"value": 5, "low": 0.75, "high": 1}], "impact": [{"value": 1, "low": 0.0001, "high": 0.005}, {"value": 2, "low": 0.005, "high": 0.01}, {"value": 3, "low": 0.01, "high": 0.02}, {"value": 4, "low": 0.02, "high": 0.05}, {"value": 5, "low": 0.05, "high": 1}], "num_to_text": {"5": "Very High", "4": "High", "3": "Moderate", "2": "Low", "1": "Very Low", "0": "Very Low"}, "risk": [{"value": 1, "low": 1, "high": 5}, {"value": 2, "low": 5, "high": 9}, {"value": 3, "low": 9, "high": 13}, {"value": 4, "low": 13, "high": 20}, {"value": 5, "low": 20, "high": 26}]},
     "owasp_risk_rating": {
-        "probability": [
+        "likelihood_initiation_or_occurence": [
             {
                 "value": 1,
                 "text": "Mycket låg",
@@ -110,7 +28,7 @@
                 "threshold": 60
             }
         ],
-        "consequence": [
+        "impact": [
             {
                 "value": 1,
                 "text": "Försumbar påverkan",

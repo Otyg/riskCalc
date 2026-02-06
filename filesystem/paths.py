@@ -17,7 +17,6 @@ logger.addHandler(log_stream)
 
 def packaged_root() -> Path:
     """
-    Roten för paketerade resurser.
     Vid PyInstaller onefile finns allt i sys._MEIPASS.
     """
     base = getattr(sys, "_MEIPASS", None)
