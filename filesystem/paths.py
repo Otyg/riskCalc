@@ -9,11 +9,12 @@ import logging
 APP_NAME = "RiskAnalysisUI"
 logger = logging.getLogger(APP_NAME)
 logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(levelname)s:    %(message)s')
+formatter = logging.Formatter("%(levelname)s:    %(message)s")
 log_stream = logging.StreamHandler()
 log_stream.setLevel(logging.INFO)
 log_stream.setFormatter(formatter)
 logger.addHandler(log_stream)
+
 
 def packaged_root() -> Path:
     """
@@ -43,7 +44,7 @@ def ensure_user_data_initialized() -> dict[str, Path]:
     Returnerar paths:
       root, data, analyses, drafts, questionaires, actors_json, threats_json, vulnerabilities_json
     """
-    
+
     root = user_app_root()
     logger.info("Setting up datadirectories, base: " + str(root.absolute()))
     data_dir = root / "data"
@@ -60,7 +61,13 @@ def ensure_user_data_initialized() -> dict[str, Path]:
     seed_questionaires_dir = seed_data_dir / "questionaires"
 
     # Kopiera listfiler om de saknas
-    for filename in ["actors.json", "threats.json", "vulnerabilities.json", "categories.json", "discrete_thresholds.json"]:
+    for filename in [
+        "actors.json",
+        "threats.json",
+        "vulnerabilities.json",
+        "categories.json",
+        "discrete_thresholds.json",
+    ]:
         src = seed_data_dir / filename
         dst = data_dir / filename
         if src.exists() and not dst.exists():
@@ -73,7 +80,9 @@ def ensure_user_data_initialized() -> dict[str, Path]:
         for src in seed_questionaires_dir.glob("*.json"):
             dst = questionaires_dir / src.name
             if not dst.exists():
-                logger.info("Copy " + str(src.absolute()) + " to " + str(dst.absolute()))
+                logger.info(
+                    "Copy " + str(src.absolute()) + " to " + str(dst.absolute())
+                )
                 shutil.copy2(src, dst)
 
     return {

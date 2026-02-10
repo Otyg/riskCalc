@@ -79,6 +79,7 @@ class DraftRepository:
     """
     Sparar utkast under data/drafts/<draft_id>.json
     """
+
     def __init__(self, drafts_folder: Path):
         self.folder = drafts_folder
         self.folder.mkdir(parents=True, exist_ok=True)
@@ -126,6 +127,7 @@ class DraftRepository:
         if p.exists():
             p.unlink()
 
+
 class JsonCategoryRepository:
     def __init__(self, path: Path):
         self.path = path
@@ -138,21 +140,23 @@ class JsonCategoryRepository:
         categories = data.get("categories", [])
         cleaned = sorted({str(c).strip() for c in categories if str(c).strip()})
         return cleaned
-    
+
+
 class DiscreteThresholdsRepository:
     def __init__(self, path: Path):
         self.path = path
+
     def __read_file(self):
         if not self.path.exists():
             raise FileNotFoundError(self.path)
         with self.path.open("r", encoding="utf-8") as f:
             data = json.load(f)
         return data
-    
+
     def get_set_names(self):
         data = self.__read_file()
         return data.keys()
-    
+
     def load(self, threshold_set: str = "default_thresholds") -> QualitativeScale:
-        data=self.__read_file()
+        data = self.__read_file()
         return QualitativeScale(scales=data.get(threshold_set, {}))

@@ -6,10 +6,11 @@ from pathlib import Path
 import unittest
 
 from filesystem.questionaires_repo import JsonQuestionairesRepository
-from filesystem.repo import DiscreteThresholdsRepository, JsonAnalysisRepository
+from filesystem.repo import DiscreteThresholdsRepository
 from otyg_risk_base.qualitative_scale import QualitativeScale
 
 from riskcalculator.questionaire import Questionaire
+
 
 class TestPersistence(unittest.TestCase):
     def setUp(self):
@@ -30,7 +31,13 @@ class TestPersistence(unittest.TestCase):
         seed_questionaires_dir = seed_data_dir / "questionaires"
 
         # Kopiera listfiler om de saknas
-        for filename in ["actors.json", "threats.json", "vulnerabilities.json", "categories.json", "discrete_thresholds.json"]:
+        for filename in [
+            "actors.json",
+            "threats.json",
+            "vulnerabilities.json",
+            "categories.json",
+            "discrete_thresholds.json",
+        ]:
             src = seed_data_dir / filename
             dst = data_dir / filename
             if src.exists() and not dst.exists():
@@ -44,7 +51,7 @@ class TestPersistence(unittest.TestCase):
                 if not dst.exists():
                     shutil.copy2(src, dst)
 
-        self.paths= {
+        self.paths = {
             "root": root,
             "data": data_dir,
             "analyses": analyses_dir,
@@ -55,15 +62,19 @@ class TestPersistence(unittest.TestCase):
             "vulnerabilities_json": data_dir / "vulnerabilities.json",
             "discrete_thresholds.json": data_dir / "discrete_thresholds.json",
         }
-    
+
     def tearDown(self):
         self.user_app_root.cleanup()
 
     def test_qualitative_mappings_repo(self):
-        repo = DiscreteThresholdsRepository(path=self.paths.get("discrete_thresholds.json"))
+        repo = DiscreteThresholdsRepository(
+            path=self.paths.get("discrete_thresholds.json")
+        )
         self.assertIn("default_thresholds", repo.get_set_names())
         self.assertIsInstance(repo.load(), QualitativeScale)
-    
+
     def test_questionaires_repo(self):
         repo = JsonQuestionairesRepository(folder=self.paths.get("questionaires"))
-        self.assertIsInstance(repo.load_objects(repo.list_sets()[0]).get("tef"), Questionaire)
+        self.assertIsInstance(
+            repo.load_objects(repo.list_sets()[0]).get("tef"), Questionaire
+        )
