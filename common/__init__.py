@@ -62,3 +62,13 @@ def set_scenario_parameters(form: FormData = None) -> dict[str:str]:
         "description": str(form.get("description", "")).strip(),
         "category": str(form.get("category", "")).strip(),
     }
+
+
+def _d(s: str, default: Decimal = Decimal("0")) -> Decimal:
+    try:
+        ss = (s or "").strip()
+        if ss == "":
+            return default
+        return Decimal(ss)
+    except Exception:
+        return default

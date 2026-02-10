@@ -25,7 +25,7 @@
 from __future__ import annotations
 
 import uvicorn
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 import os
 from pathlib import Path
 from typing import Any
@@ -35,7 +35,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.status import HTTP_303_SEE_OTHER, HTTP_200_OK
 
-from otyg_risk_base.montecarlo import MonteCarloRange
 from otyg_risk_base.hybrid import HybridRisk
 from filesystem.actors_repo import JsonActorsRepository
 from filesystem.repo import (
@@ -50,7 +49,7 @@ from filesystem.threats_repo import JsonThreatsRepository
 from filesystem.vulnerabilities_repo import JsonVulnerabilitiesRepository
 from riskregister.assessment import RiskAssessment
 from filesystem.paths import ensure_user_data_initialized, packaged_root
-from common import get_scenario, set_questionaire_answers, set_scenario_parameters
+from common import get_scenario, set_questionaire_answers, set_scenario_parameters, _d
 
 
 app = FastAPI()
@@ -75,14 +74,6 @@ categories_repo = JsonCategoryRepository(DATA_DIR / "categories.json")
 discrete_thresholds_repo = DiscreteThresholdsRepository(
     DATA_DIR / "discrete_thresholds.json"
 )
-
-
-def _d(s: str, default: Decimal = Decimal(0)) -> Decimal:
-    try:
-        s = (s or "").strip()
-        return Decimal(s) if s != "" else default
-    except (InvalidOperation, ValueError):
-        return default
 
 
 def _default_scenario_form() -> dict[str, str]:
@@ -403,44 +394,6 @@ def delete_scenario(draft_id: str, scenario_index: int):
         draft["scenarios"] = scenarios
         draft_repo.save(draft_id, draft)
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
-
-
-def _apply_answers_from_form(form, qobj, dim_key: str) -> int:
-    """
-    Läser q_<dim>_<qi> från form och sätter question.set_answer(ans_idx).
-    Returnerar antal satta svar.
-    """
-    if not qobj:
-        return 0
-
-    count = 0
-    for qi, question in enumerate(qobj.questions):
-        raw = form.get(f"q_{dim_key}_{qi}")
-        if raw is None or str(raw).strip() == "":
-            question.set_answer(MonteCarloRange())
-        try:
-            ans_idx = int(raw)
-        except ValueError:
-            continue
-
-        # säkra index
-        if ans_idx < 0 or ans_idx >= len(question.alternatives):
-            continue
-
-        question.set_answer(ans_idx)
-        count += 1
-
-    return count
-
-
-def _d(s: str, default: Decimal = Decimal("0")) -> Decimal:
-    try:
-        ss = (s or "").strip()
-        if ss == "":
-            return default
-        return Decimal(ss)
-    except Exception:
-        return default
 
 
 @app.get("/risk-calc", response_class=HTMLResponse)
