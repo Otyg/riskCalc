@@ -65,7 +65,10 @@ class RiskAssessment:
         self.scenarios[index] = scenario
         risk = scenario.risk
         if isinstance(risk, HybridRisk):
-            self.summary[risk.qualitative.overall_risk] += 1
+            if self.summary.get(risk.qualitative.overall_risk):
+                self.summary[risk.qualitative.overall_risk] += 1
+            else:
+                self.summary[risk.qualitative.overall_risk] = 1
 
     def to_dict(self):
         scenarios_as_dicts = []
