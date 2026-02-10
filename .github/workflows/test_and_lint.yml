@@ -30,7 +30,7 @@ jobs:
         run: python -m unittest
 
       - name: Ruff format (check)
-        run: ruff format --check --preview --output-format=github --target-version=py310 .
+        run: ruff format --check --diff --target-version=py310 .
 
       - name: Ruff lint
         run: ruff check --output-format=github --target-version=py310 --ignore=E702 .
