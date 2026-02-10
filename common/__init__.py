@@ -6,7 +6,9 @@ from riskcalculator.scenario import RiskScenario
 from otyg_risk_base.hybrid import HybridRisk
 
 
-def get_scenario(qs=None, risk_dict=None, parameters:dict=None, discrete_thresholds_repo=None) -> RiskScenario:
+def get_scenario(
+    qs=None, risk_dict=None, parameters: dict = None, discrete_thresholds_repo=None
+) -> RiskScenario:
     try:
         questionaires = Questionaires(
             tef=qs.get("tef"), vuln=qs.get("vuln"), lm=qs.get("lm")
@@ -21,7 +23,10 @@ def get_scenario(qs=None, risk_dict=None, parameters:dict=None, discrete_thresho
     except Exception as e:
         raise e
 
-def set_questionaire_answers(form=None, questionaires_repo=None, errors=None, qset=None, qs=None):
+
+def set_questionaire_answers(
+    form=None, questionaires_repo=None, errors=None, qset=None, qs=None
+):
     if not qs:
         try:
             qs = questionaires_repo.load_objects(qset)
@@ -46,7 +51,8 @@ def set_questionaire_answers(form=None, questionaires_repo=None, errors=None, qs
             question.set_answer(ans_idx)
     return qs
 
-def set_scenario_parameters(form:FormData=None) -> dict[str:str]:
+
+def set_scenario_parameters(form: FormData = None) -> dict[str:str]:
     return {
         "name": str(form.get("name", "")).strip(),
         "actor": str(form.get("actor", "")).strip(),
@@ -56,4 +62,3 @@ def set_scenario_parameters(form:FormData=None) -> dict[str:str]:
         "description": str(form.get("description", "")).strip(),
         "category": str(form.get("category", "")).strip(),
     }
-    

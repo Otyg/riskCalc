@@ -272,7 +272,9 @@ async def create_scenario_save(request: Request, draft_id: str):
         "currency": str(form.get("currency", "SEK")) or "SEK",
     }
     if risk_input_mode == "questionnaire":
-        qs = set_questionaire_answers(form=form, questionaires_repo=questionaires_repo, qset=qset, errors=errors)
+        qs = set_questionaire_answers(
+            form=form, questionaires_repo=questionaires_repo, qset=qset, errors=errors
+        )
 
     if errors:
         try:
@@ -298,7 +300,12 @@ async def create_scenario_save(request: Request, draft_id: str):
             },
             status_code=400,
         )
-    scenario_obj = get_scenario(qs=qs, risk_dict=risk_dict, discrete_thresholds_repo=discrete_thresholds_repo, parameters=set_scenario_parameters(form))
+    scenario_obj = get_scenario(
+        qs=qs,
+        risk_dict=risk_dict,
+        discrete_thresholds_repo=discrete_thresholds_repo,
+        parameters=set_scenario_parameters(form),
+    )
     draft.add_scenario(scenario=scenario_obj)
     draft_repo.save(draft_id, draft.to_dict())
 
@@ -344,7 +351,13 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
         except FileNotFoundError:
             errors.append(f"Kunde inte ladda questionaires-set: {qset}")
             qs = {"tef": None, "vuln": None, "lm": None}
-        qs = set_questionaire_answers(form=form, questionaires_repo=questionaires_repo, qset=qset, errors=errors, qs=qs)
+        qs = set_questionaire_answers(
+            form=form,
+            questionaires_repo=questionaires_repo,
+            qset=qset,
+            errors=errors,
+            qs=qs,
+        )
 
     if errors:
         try:
@@ -370,7 +383,12 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
             },
             status_code=400,
         )
-    scenario_obj = get_scenario(qs=qs, risk_dict=risk_dict, discrete_thresholds_repo=discrete_thresholds_repo, parameters=set_scenario_parameters(form=form))
+    scenario_obj = get_scenario(
+        qs=qs,
+        risk_dict=risk_dict,
+        discrete_thresholds_repo=discrete_thresholds_repo,
+        parameters=set_scenario_parameters(form=form),
+    )
     draft.update_scenario(index=scenario_index, scenario=scenario_obj)
     draft_repo.save(draft_id, draft.to_dict())
 
@@ -521,7 +539,13 @@ async def risk_calc_submit(request: Request):
                 "Valt formulär saknar en eller flera dimensioner (tef/vuln/lm)."
             )
         # Sätt answers i de faktiska Question-objekten
-        qs = set_questionaire_answers(form=form, questionaires_repo=questionaires_repo, errors=errors, qset=qset, qs=qs)
+        qs = set_questionaire_answers(
+            form=form,
+            questionaires_repo=questionaires_repo,
+            errors=errors,
+            qset=qset,
+            qs=qs,
+        )
         if not errors:
             try:
                 questionaires = Questionaires(tef=tef_q, vuln=vuln_q, lm=lm_q)
