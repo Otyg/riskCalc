@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 from riskcalculator.questionaire import Questionaire
 
+
 class JsonQuestionairesRepository:
     """
     Laddar ett 'questionaires set' från data/questionaires/<set_id>.json
@@ -41,7 +42,6 @@ class JsonQuestionairesRepository:
         och värden som är dina Questionaire-objekt.
         """
         raw = self.load_dict(set_id)
-
 
         tef = Questionaire.from_dict(raw.get("tef", {}))
         vuln = Questionaire.from_dict(raw.get("vuln", {}))
