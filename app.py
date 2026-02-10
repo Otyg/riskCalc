@@ -413,7 +413,7 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
         values = questionaires.calculate_questionairy_values()
         values.update({'budget': Decimal(risk_dict.get('budget'))})
         values.update({'currency': risk_dict.get('currency')})
-        values.update({'mappings': discrete_thresholds_repo.load()})
+        values.update({'mappings': discrete_thresholds_repo.load().to_dict()})
         risk = HybridRisk(values=values)
         scenario_obj = RiskScenario(parameters= {"name": name,
                                     "category": category,
