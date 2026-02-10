@@ -37,7 +37,6 @@ from starlette.status import HTTP_303_SEE_OTHER, HTTP_200_OK
 
 from otyg_risk_base.montecarlo import MonteCarloRange
 from otyg_risk_base.hybrid import HybridRisk
-from riskcalculator.scenario import RiskScenario
 from filesystem.actors_repo import JsonActorsRepository
 from filesystem.repo import (
     DiscreteThresholdsRepository,
