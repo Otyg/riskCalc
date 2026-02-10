@@ -51,6 +51,7 @@ from filesystem.threats_repo import JsonThreatsRepository
 from filesystem.vulnerabilities_repo import JsonVulnerabilitiesRepository
 from riskregister.assessment import RiskAssessment
 from filesystem.paths import ensure_user_data_initialized, packaged_root
+from common import get_scenario, set_questionaire_answers
 
 
 app = FastAPI()
@@ -278,28 +279,7 @@ async def create_scenario_save(request: Request, draft_id: str):
         "currency": str(form.get("currency", "SEK")) or "SEK",
     }
     if risk_input_mode == "questionnaire":
-        try:
-            qs = questionaires_repo.load_objects(qset)
-        except FileNotFoundError:
-            errors.append(f"Kunde inte ladda questionaires-set: {qset}")
-            qs = {"tef": None, "vuln": None, "lm": None}
-
-        # Sätt answers från dropdowns: q_<dim>_<qi> = alt_index
-        for dim_key in ("tef", "vuln", "lm"):
-            qobj = qs.get(dim_key)
-            if qobj is None:
-                continue
-
-            for qi, question in enumerate(qobj.questions):
-                raw = form.get(f"q_{dim_key}_{qi}")
-                if raw is None or str(raw).strip() == "":
-                    continue
-                try:
-                    ans_idx = int(raw)
-                except ValueError:
-                    continue
-
-                question.set_answer(ans_idx)
+        qs = set_questionaire_answers(form=form, questionaires_repo=questionaires_repo, qset=qset, errors=errors)
 
     if errors:
         try:
@@ -325,18 +305,7 @@ async def create_scenario_save(request: Request, draft_id: str):
             },
             status_code=400,
         )
-
-    try:
-        questionaires = Questionaires(
-            tef=qs.get("tef"), vuln=qs.get("vuln"), lm=qs.get("lm")
-        )
-        values = questionaires.calculate_questionairy_values()
-        values.update({"budget": Decimal(risk_dict.get("budget"))})
-        values.update({"currency": risk_dict.get("currency")})
-        values.update({"mappings": discrete_thresholds_repo.load().to_dict()})
-        risk = HybridRisk(values=values)
-        scenario_obj = RiskScenario(
-            parameters={
+    parameters = {
                 "name": name,
                 "category": category,
                 "actor": actor,
@@ -344,13 +313,8 @@ async def create_scenario_save(request: Request, draft_id: str):
                 "threat": threat,
                 "vulnerability_desc": vulnerability,
                 "description": description,
-                "risk": risk,
-                "questionaires": questionaires,
             }
-        )
-    except Exception as e:
-        raise e
-
+    scenario_obj = get_scenario(qs=qs, risk_dict=risk_dict, discrete_thresholds_repo=discrete_thresholds_repo, parameters=parameters)
     draft.add_scenario(scenario=scenario_obj)
     draft_repo.save(draft_id, draft.to_dict())
 
@@ -404,23 +368,7 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
         except FileNotFoundError:
             errors.append(f"Kunde inte ladda questionaires-set: {qset}")
             qs = {"tef": None, "vuln": None, "lm": None}
-
-        # Sätt answers från dropdowns: q_<dim>_<qi> = alt_index
-        for dim_key in ("tef", "vuln", "lm"):
-            qobj = qs.get(dim_key)
-            if qobj is None:
-                continue
-
-            for qi, question in enumerate(qobj.questions):
-                raw = form.get(f"q_{dim_key}_{qi}")
-                if raw is None or str(raw).strip() == "":
-                    continue
-                try:
-                    ans_idx = int(raw)
-                except ValueError:
-                    continue
-
-                question.set_answer(ans_idx)
+        qs = set_questionaire_answers(form=form, questionaires_repo=questionaires_repo, qset=qset, errors=errors, qs=qs)
 
     if errors:
         try:
@@ -446,18 +394,7 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
             },
             status_code=400,
         )
-
-    try:
-        questionaires = Questionaires(
-            tef=qs.get("tef"), vuln=qs.get("vuln"), lm=qs.get("lm")
-        )
-        values = questionaires.calculate_questionairy_values()
-        values.update({"budget": Decimal(risk_dict.get("budget"))})
-        values.update({"currency": risk_dict.get("currency")})
-        values.update({"mappings": discrete_thresholds_repo.load().to_dict()})
-        risk = HybridRisk(values=values)
-        scenario_obj = RiskScenario(
-            parameters={
+    parameters = {
                 "name": name,
                 "category": category,
                 "actor": actor,
@@ -465,13 +402,8 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
                 "threat": threat,
                 "vulnerability_desc": vulnerability,
                 "description": description,
-                "risk": risk,
-                "questionaires": questionaires,
             }
-        )
-    except Exception as e:
-        raise e
-
+    scenario_obj = get_scenario(qs=qs, risk_dict=risk_dict, discrete_thresholds_repo=discrete_thresholds_repo, parameters=parameters)
     draft.update_scenario(index=scenario_index, scenario=scenario_obj)
     draft_repo.save(draft_id, draft.to_dict())
 
