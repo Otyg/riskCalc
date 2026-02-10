@@ -39,7 +39,12 @@ from otyg_risk_base.montecarlo import MonteCarloRange
 from otyg_risk_base.hybrid import HybridRisk
 from riskcalculator.scenario import RiskScenario
 from filesystem.actors_repo import JsonActorsRepository
-from filesystem.repo import DiscreteThresholdsRepository, JsonAnalysisRepository, DraftRepository, JsonCategoryRepository
+from filesystem.repo import (
+    DiscreteThresholdsRepository,
+    JsonAnalysisRepository,
+    DraftRepository,
+    JsonCategoryRepository,
+)
 from filesystem.questionaires_repo import JsonQuestionairesRepository
 from riskcalculator.questionaire import Questionaires
 from filesystem.threats_repo import JsonThreatsRepository
@@ -67,7 +72,10 @@ actors_repo = JsonActorsRepository(DATA_DIR / "actors.json")
 threats_repo = JsonThreatsRepository(DATA_DIR / "threats.json")
 vulns_repo = JsonVulnerabilitiesRepository(DATA_DIR / "vulnerabilities.json")
 categories_repo = JsonCategoryRepository(DATA_DIR / "categories.json")
-discrete_thresholds_repo = DiscreteThresholdsRepository(DATA_DIR / "discrete_thresholds.json")
+discrete_thresholds_repo = DiscreteThresholdsRepository(
+    DATA_DIR / "discrete_thresholds.json"
+)
+
 
 def _d(s: str, default: Decimal = Decimal(0)) -> Decimal:
     try:
@@ -106,7 +114,12 @@ def index(request: Request, selected: str | None = None):
 
     return templates.TemplateResponse(
         "list.html",
-        {"request": request, "analyses": analyses, "selected": selected, "analysis": analysis},
+        {
+            "request": request,
+            "analyses": analyses,
+            "selected": selected,
+            "analysis": analysis,
+        },
     )
 
 
@@ -153,11 +166,15 @@ def create_analysis_finalize(draft_id: str):
     analysis_id = analyses_repo.save_new(draft)
     draft_repo.delete(draft_id)
 
-    return RedirectResponse(url=f"/?selected={analysis_id}", status_code=HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        url=f"/?selected={analysis_id}", status_code=HTTP_303_SEE_OTHER
+    )
 
 
 @app.get("/create/{draft_id}/scenario/new", response_class=HTMLResponse)
-def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QUESTIONAIRES_SET):
+def create_scenario_page(
+    request: Request, draft_id: str, qset: str = DEFAULT_QUESTIONAIRES_SET
+):
     draft_repo.load(draft_id)
     threat_suggestions = threats_repo.load()
     actor_suggestions = actors_repo.load()
@@ -176,7 +193,9 @@ def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QU
             "request": request,
             "draft_id": draft_id,
             "defaults": _default_scenario_form(),
-            "errors": [] if qs["tef"] else [f"Kunde inte ladda questionaires-set: {qset}"],
+            "errors": []
+            if qs["tef"]
+            else [f"Kunde inte ladda questionaires-set: {qset}"],
             "qs": qs,
             "qset": qset,
             "available_qsets": questionaires_repo.list_sets(),
@@ -187,13 +206,20 @@ def create_scenario_page(request: Request, draft_id: str, qset: str = DEFAULT_QU
         },
     )
 
-@app.get("/create/{draft_id}/scenario/{scenario_index}/edit", response_class=HTMLResponse)
-def edit_scenario_page(request: Request, draft_id: str, scenario_index: int, qset: str | None = None):
+
+@app.get(
+    "/create/{draft_id}/scenario/{scenario_index}/edit", response_class=HTMLResponse
+)
+def edit_scenario_page(
+    request: Request, draft_id: str, scenario_index: int, qset: str | None = None
+):
     draft = draft_repo.load(draft_id)
     scenarios = draft.get("scenarios", [])
 
     if scenario_index < 0 or scenario_index >= len(scenarios):
-        return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+        return RedirectResponse(
+            url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER
+        )
 
     scenario = scenarios[scenario_index]
     scenario_qset = (scenario.get("questionaires") or {}).get("qset")
@@ -228,10 +254,11 @@ def edit_scenario_page(request: Request, draft_id: str, scenario_index: int, qse
         },
     )
 
+
 @app.post("/create/{draft_id}/scenario/save")
 async def create_scenario_save(request: Request, draft_id: str):
     draft_dict = draft_repo.load(draft_id)
-    draft=RiskAssessment(draft_dict)
+    draft = RiskAssessment(draft_dict)
     form = await request.form()
 
     name = str(form.get("name", "")).strip()
@@ -245,7 +272,7 @@ async def create_scenario_save(request: Request, draft_id: str):
     qset = str(form.get("qset", DEFAULT_QUESTIONAIRES_SET))
     threat_suggestions = threats_repo.load()
     errors: list[str] = []
-    
+
     risk_dict: dict[str, Any] = {
         "budget": str(_d(str(form.get("budget", "1000000")), Decimal(1000000))),
         "currency": str(form.get("currency", "SEK")) or "SEK",
@@ -285,7 +312,10 @@ async def create_scenario_save(request: Request, draft_id: str):
             {
                 "request": request,
                 "draft_id": draft_id,
-                "defaults": {**_default_scenario_form(), "risk_input_mode": risk_input_mode},
+                "defaults": {
+                    **_default_scenario_form(),
+                    "risk_input_mode": risk_input_mode,
+                },
                 "errors": errors,
                 "qs": qs,
                 "qset": qset,
@@ -297,22 +327,27 @@ async def create_scenario_save(request: Request, draft_id: str):
         )
 
     try:
-        
-        questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
+        questionaires = Questionaires(
+            tef=qs.get("tef"), vuln=qs.get("vuln"), lm=qs.get("lm")
+        )
         values = questionaires.calculate_questionairy_values()
-        values.update({'budget': Decimal(risk_dict.get('budget'))})
-        values.update({'currency': risk_dict.get('currency')})
-        values.update({'mappings': discrete_thresholds_repo.load().to_dict()})
+        values.update({"budget": Decimal(risk_dict.get("budget"))})
+        values.update({"currency": risk_dict.get("currency")})
+        values.update({"mappings": discrete_thresholds_repo.load().to_dict()})
         risk = HybridRisk(values=values)
-        scenario_obj = RiskScenario(parameters= {"name": name,
-                                    "category": category,
-                                    "actor": actor,
-                                    "asset": asset,
-                                    "threat": threat,
-                                    "vulnerability_desc": vulnerability,
-                                    "description": description,
-                                    "risk": risk,
-                                    "questionaires": questionaires})
+        scenario_obj = RiskScenario(
+            parameters={
+                "name": name,
+                "category": category,
+                "actor": actor,
+                "asset": asset,
+                "threat": threat,
+                "vulnerability_desc": vulnerability,
+                "description": description,
+                "risk": risk,
+                "questionaires": questionaires,
+            }
+        )
     except Exception as e:
         raise e
 
@@ -320,6 +355,7 @@ async def create_scenario_save(request: Request, draft_id: str):
     draft_repo.save(draft_id, draft.to_dict())
 
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
 
 @app.post("/analysis/{analysis_id}/new-version")
 def new_version_from_analysis(analysis_id: str):
@@ -339,7 +375,7 @@ def new_version_from_analysis(analysis_id: str):
 @app.post("/create/{draft_id}/scenario/{scenario_index}/update")
 async def edit_scenario_save(request: Request, draft_id: str, scenario_index: int):
     draft_dict = draft_repo.load(draft_id)
-    draft=RiskAssessment(draft_dict)
+    draft = RiskAssessment(draft_dict)
     form = await request.form()
 
     name = str(form.get("name", "")).strip()
@@ -353,16 +389,16 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
     qset = str(form.get("qset", DEFAULT_QUESTIONAIRES_SET))
     threat_suggestions = threats_repo.load()
     errors: list[str] = []
-    
+
     risk_dict: dict[str, Any] = {
         "budget": str(_d(str(form.get("budget", "1000000")), Decimal(1000000))),
         "currency": str(form.get("currency", "SEK")) or "SEK",
     }
     if risk_input_mode == "questionnaire":
         try:
-            tef = draft.scenarios[scenario_index].questionaires.questionaires['tef']
-            vuln = draft.scenarios[scenario_index].questionaires.questionaires['vuln']
-            lm = draft.scenarios[scenario_index].questionaires.questionaires['lm']
+            tef = draft.scenarios[scenario_index].questionaires.questionaires["tef"]
+            vuln = draft.scenarios[scenario_index].questionaires.questionaires["vuln"]
+            lm = draft.scenarios[scenario_index].questionaires.questionaires["lm"]
             qs = {"qset": scenario_index, "tef": tef, "vuln": vuln, "lm": lm}
 
         except FileNotFoundError:
@@ -397,7 +433,10 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
             {
                 "request": request,
                 "draft_id": draft_id,
-                "defaults": {**_default_scenario_form(), "risk_input_mode": risk_input_mode},
+                "defaults": {
+                    **_default_scenario_form(),
+                    "risk_input_mode": risk_input_mode,
+                },
                 "errors": errors,
                 "qs": qs,
                 "qset": qset,
@@ -409,21 +448,27 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
         )
 
     try:
-        questionaires = Questionaires(tef=qs.get('tef'), vuln=qs.get('vuln'), lm=qs.get('lm'))
+        questionaires = Questionaires(
+            tef=qs.get("tef"), vuln=qs.get("vuln"), lm=qs.get("lm")
+        )
         values = questionaires.calculate_questionairy_values()
-        values.update({'budget': Decimal(risk_dict.get('budget'))})
-        values.update({'currency': risk_dict.get('currency')})
-        values.update({'mappings': discrete_thresholds_repo.load().to_dict()})
+        values.update({"budget": Decimal(risk_dict.get("budget"))})
+        values.update({"currency": risk_dict.get("currency")})
+        values.update({"mappings": discrete_thresholds_repo.load().to_dict()})
         risk = HybridRisk(values=values)
-        scenario_obj = RiskScenario(parameters= {"name": name,
-                                    "category": category,
-                                    "actor": actor,
-                                    "asset": asset,
-                                    "threat": threat,
-                                    "vulnerability_desc": vulnerability,
-                                    "description": description,
-                                    "risk": risk,
-                                    "questionaires": questionaires})
+        scenario_obj = RiskScenario(
+            parameters={
+                "name": name,
+                "category": category,
+                "actor": actor,
+                "asset": asset,
+                "threat": threat,
+                "vulnerability_desc": vulnerability,
+                "description": description,
+                "risk": risk,
+                "questionaires": questionaires,
+            }
+        )
     except Exception as e:
         raise e
 
@@ -431,6 +476,7 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
     draft_repo.save(draft_id, draft.to_dict())
 
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
 
 @app.post("/create/{draft_id}/scenario/{scenario_index}/delete")
 def delete_scenario(draft_id: str, scenario_index: int):
@@ -441,6 +487,7 @@ def delete_scenario(draft_id: str, scenario_index: int):
         draft["scenarios"] = scenarios
         draft_repo.save(draft_id, draft)
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
+
 
 def _apply_answers_from_form(form, qobj, dim_key: str) -> int:
     """
@@ -478,6 +525,7 @@ def _d(s: str, default: Decimal = Decimal("0")) -> Decimal:
         return Decimal(ss)
     except Exception:
         return default
+
 
 @app.get("/risk-calc", response_class=HTMLResponse)
 def risk_calc_page(request: Request, qset: str | None = None):
@@ -531,18 +579,30 @@ async def risk_calc_submit(request: Request):
         threshold_set = discrete_thresholds_repo.load(form.get("threshold_set", ""))
     except Exception as e:
         raise e
-    
+
     errors: list[str] = []
     result = None
 
     if mode == "manual":
         values = {
-            "threat_event_frequency": {"min": str(_d(form.get("tef_min"))), "probable": str(_d(form.get("tef_probable"))), "max": str(_d(form.get("tef_max")))},
-            "vulnerability": {"min": str(_d(form.get("vuln_min"))), "probable": str(_d(form.get("vuln_probable"))), "max": str(_d(form.get("vuln_max")))},
-            "loss_magnitude": {"min": str(_d(form.get("lm_min"))), "probable": str(_d(form.get("lm_probable"))), "max": str(_d(form.get("lm_max")))},
+            "threat_event_frequency": {
+                "min": str(_d(form.get("tef_min"))),
+                "probable": str(_d(form.get("tef_probable"))),
+                "max": str(_d(form.get("tef_max"))),
+            },
+            "vulnerability": {
+                "min": str(_d(form.get("vuln_min"))),
+                "probable": str(_d(form.get("vuln_probable"))),
+                "max": str(_d(form.get("vuln_max"))),
+            },
+            "loss_magnitude": {
+                "min": str(_d(form.get("lm_min"))),
+                "probable": str(_d(form.get("lm_probable"))),
+                "max": str(_d(form.get("lm_max"))),
+            },
             "budget": _d(str(form.get("budget", "1000000")), Decimal("1000000")),
             "currency": str(form.get("currency", "SEK") or "SEK"),
-            "thresholds": threshold_set
+            "thresholds": threshold_set,
         }
 
         try:
@@ -558,7 +618,9 @@ async def risk_calc_submit(request: Request):
         lm_q = qs.get("lm")
 
         if not tef_q or not vuln_q or not lm_q:
-            errors.append("Valt formulär saknar en eller flera dimensioner (tef/vuln/lm).")
+            errors.append(
+                "Valt formulär saknar en eller flera dimensioner (tef/vuln/lm)."
+            )
         # Sätt answers i de faktiska Question-objekten
         _apply_answers_from_form(form, tef_q, "tef")
         _apply_answers_from_form(form, vuln_q, "vuln")
@@ -574,7 +636,9 @@ async def risk_calc_submit(request: Request):
                 values.update({"currency": "SEK"})
                 values.update({"mappings": threshold_set.to_dict()})
                 risk = HybridRisk(values=values)
-                result = risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
+                result = (
+                    risk.to_dict() if hasattr(risk, "to_dict") else {"risk": str(risk)}
+                )
 
             except Exception as e:
                 raise e
@@ -591,14 +655,27 @@ async def risk_calc_submit(request: Request):
             "available_thresholds": available_thresholds_names,
             "threshold_set": threshold_set,
             "manual": {
-                "tef": {"min": form.get("tef_min", ""), "probable": form.get("tef_probable", ""), "max": form.get("tef_max", "")},
-                "vuln": {"min": form.get("vuln_min", ""), "probable": form.get("vuln_probable", ""), "max": form.get("vuln_max", "")},
-                "lm": {"min": form.get("lm_min", ""), "probable": form.get("lm_probable", ""), "max": form.get("lm_max", "")},
+                "tef": {
+                    "min": form.get("tef_min", ""),
+                    "probable": form.get("tef_probable", ""),
+                    "max": form.get("tef_max", ""),
+                },
+                "vuln": {
+                    "min": form.get("vuln_min", ""),
+                    "probable": form.get("vuln_probable", ""),
+                    "max": form.get("vuln_max", ""),
+                },
+                "lm": {
+                    "min": form.get("lm_min", ""),
+                    "probable": form.get("lm_probable", ""),
+                    "max": form.get("lm_max", ""),
+                },
                 "budget": str(form.get("budget", "1000000")),
                 "currency": str(form.get("currency", "SEK")),
             },
         },
     )
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

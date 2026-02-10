@@ -27,24 +27,36 @@ import json
 from numpy import ndarray
 from otyg_risk_base.montecarlo import MonteCarloRange
 
-def reduce_decimal_places(value:MonteCarloRange=None, ndigits:int=5) -> MonteCarloRange:
-    return MonteCarloRange(min=round(value.min, ndigits), probable=round(value.probable, ndigits), max=round(value.max, ndigits))
 
-def montecarlorange_from_dict(values:dict=None):
+def reduce_decimal_places(
+    value: MonteCarloRange = None, ndigits: int = 5
+) -> MonteCarloRange:
+    return MonteCarloRange(
+        min=round(value.min, ndigits),
+        probable=round(value.probable, ndigits),
+        max=round(value.max, ndigits),
+    )
+
+
+def montecarlorange_from_dict(values: dict = None):
     if isinstance(values, dict):
-        return MonteCarloRange(min=values['min'], probable=values['probable'], max=values['max'])
+        return MonteCarloRange(
+            min=values["min"], probable=values["probable"], max=values["max"]
+        )
     else:
         return values
 
+
 class ComplexEncoder(json.JSONEncoder):
     def default(self, obj):
-        if hasattr(obj,'to_dict'):
+        if hasattr(obj, "to_dict"):
             return obj.to_dict()
         elif isinstance(obj, ndarray):
             arr = obj.tolist()
             return arr
         else:
             return json.JSONEncoder.default(self, obj)
+
 
 def freeze(x):
     if isinstance(x, dict):

@@ -26,17 +26,18 @@ from riskcalculator.scenario import RiskScenario
 from otyg_risk_base.hybrid import HybridRisk
 from riskcalculator.util import freeze
 
-class RiskAssessment():
-    def __init__(self, assessment:dict = None):
+
+class RiskAssessment:
+    def __init__(self, assessment: dict = None):
         self.summary = dict()
         self.scenarios = list()
-        if assessment: 
+        if assessment:
             self.analysis_object = assessment["analysis_object"]
             self.version = assessment["version"]
             self.date = assessment["date"]
             self.scope = assessment["scope"]
             self.owner = assessment["owner"]
-            if 'scenarios' in assessment:
+            if "scenarios" in assessment:
                 for scenario in assessment["scenarios"]:
                     base_scenario = RiskScenario.from_dict(scenario)
                     self.add_scenario(base_scenario)
@@ -46,8 +47,8 @@ class RiskAssessment():
             self.date = str()
             self.scope = str()
             self.owner = str()
-    
-    def add_scenario(self, scenario:RiskScenario):
+
+    def add_scenario(self, scenario: RiskScenario):
         self.scenarios.append(scenario)
         risk = scenario.risk
         if isinstance(risk, HybridRisk):
@@ -56,7 +57,7 @@ class RiskAssessment():
             else:
                 self.summary[risk.qualitative.overall_risk] += 1
 
-    def update_scenario(self, index:int, scenario:RiskScenario):
+    def update_scenario(self, index: int, scenario: RiskScenario):
         old_scenario = self.scenarios[index]
         risk = old_scenario.risk
         if isinstance(risk, HybridRisk):
@@ -77,20 +78,30 @@ class RiskAssessment():
             "scope": self.scope,
             "owner": self.owner,
             "scenarios": scenarios_as_dicts,
-            "summary": self.summary
+            "summary": self.summary,
         }
-    
+
     def __hash__(self):
         scenario_hash = 0
         for scenario in self.scenarios:
             scenario_hash += scenario.__hash__()
-        return hash((self.analysis_object, self.version, self.date, self.scope, self.owner, scenario_hash, freeze(self.summary)))
-    
+        return hash(
+            (
+                self.analysis_object,
+                self.version,
+                self.date,
+                self.scope,
+                self.owner,
+                scenario_hash,
+                freeze(self.summary),
+            )
+        )
+
     def __eq__(self, value):
         return self.__hash__() == value.__hash__()
-    
+
     def __str__(self):
         scenarios = str()
         for scenario in self.scenarios:
-            scenarios += str(scenario) +"\n"
+            scenarios += str(scenario) + "\n"
         return f"Objekt: {self.analysis_object} (Ägare: {self.owner})\nScope: {self.scope}\nVersion: {self.version} (Upprättad: {self.date})\n\n{scenarios}"

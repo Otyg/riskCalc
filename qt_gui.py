@@ -46,7 +46,7 @@ try:
     from riskcalculator.questionaire import Questionaires
     from filesystem.paths import ensure_user_data_initialized, packaged_root
     from otyg_risk_base.montecarlo import MonteCarloRange
-    
+
     repo_available = True
     discrete_repo_available = True
     domain_available = True
@@ -73,7 +73,10 @@ questionaires_repo = None
 discrete_thresholds_repo = None
 if domain_available:
     questionaires_repo = JsonQuestionairesRepository(DATA_DIR / "questionaires")
-    discrete_thresholds_repo = DiscreteThresholdsRepository(DATA_DIR / "discrete_thresholds.json")
+    discrete_thresholds_repo = DiscreteThresholdsRepository(
+        DATA_DIR / "discrete_thresholds.json"
+    )
+
 
 def load_questionaire_sets() -> Dict[str, Any]:
     sets: Dict[str, Any] = {}
@@ -86,14 +89,20 @@ def load_questionaire_sets() -> Dict[str, Any]:
                 except Exception:
                     continue
         except Exception as e:
-            QMessageBox(icon=QMessageBox.Icon.Critical, title="Cannot load questionaires", detailedText=e)
+            QMessageBox(
+                icon=QMessageBox.Icon.Critical,
+                title="Cannot load questionaires",
+                detailedText=e,
+            )
             raise e
     else:
         if os.path.isdir(QUESTIONAIRES_DIR):
             for fn in os.listdir(QUESTIONAIRES_DIR):
                 if fn.lower().endswith(".json"):
                     try:
-                        with open(os.path.join(QUESTIONAIRES_DIR, fn), "r", encoding="utf-8") as f:
+                        with open(
+                            os.path.join(QUESTIONAIRES_DIR, fn), "r", encoding="utf-8"
+                        ) as f:
                             data = json.load(f)
                         k = os.path.splitext(fn)[0]
                         sets[k] = data
@@ -121,9 +130,45 @@ def load_threshold_set(name: str) -> dict:
 
 SAMPLE_QS = {
     "default": {
-        "tef": {"questions": [{"text": "Demo TEF fråga", "alternatives": [{"text": "Låg", "weight": {"min": 0.1, "probable": 0.2, "max": 0.3}}]}]},
-        "vuln": {"questions": [{"text": "Demo VULN fråga", "alternatives": [{"text": "Låg", "weight": {"min": 0.1, "probable": 0.2, "max": 0.3}}]}]},
-        "lm": {"questions": [{"text": "Demo LM fråga", "alternatives": [{"text": "Låg", "weight": {"min": 0.1, "probable": 0.2, "max": 0.3}}]}]},
+        "tef": {
+            "questions": [
+                {
+                    "text": "Demo TEF fråga",
+                    "alternatives": [
+                        {
+                            "text": "Låg",
+                            "weight": {"min": 0.1, "probable": 0.2, "max": 0.3},
+                        }
+                    ],
+                }
+            ]
+        },
+        "vuln": {
+            "questions": [
+                {
+                    "text": "Demo VULN fråga",
+                    "alternatives": [
+                        {
+                            "text": "Låg",
+                            "weight": {"min": 0.1, "probable": 0.2, "max": 0.3},
+                        }
+                    ],
+                }
+            ]
+        },
+        "lm": {
+            "questions": [
+                {
+                    "text": "Demo LM fråga",
+                    "alternatives": [
+                        {
+                            "text": "Låg",
+                            "weight": {"min": 0.1, "probable": 0.2, "max": 0.3},
+                        }
+                    ],
+                }
+            ]
+        },
     }
 }
 
@@ -139,7 +184,9 @@ def D(x: Any) -> Decimal:
     return Decimal(s)
 
 
-def mean_of_selected(qset: dict, selections: Dict[str, List[str]], dim: str) -> Dict[str, Decimal]:
+def mean_of_selected(
+    qset: dict, selections: Dict[str, List[str]], dim: str
+) -> Dict[str, Decimal]:
     weights = []
     for qi, selected_text in enumerate(selections.get(dim, [])):
         if not selected_text:
@@ -170,7 +217,11 @@ class RiskCalcQt(QMainWindow):
         self.set_ids = list(self.sets.keys()) or []
         self.thresholds = load_threshold_names() or ["default"]
 
-        self.answer_combos: Dict[str, List[QComboBox]] = {"tef": [], "vuln": [], "lm": []}
+        self.answer_combos: Dict[str, List[QComboBox]] = {
+            "tef": [],
+            "vuln": [],
+            "lm": [],
+        }
 
         self.manual_edits: Dict[str, tuple[QLineEdit, QLineEdit, QLineEdit]] = {}
 
@@ -224,7 +275,9 @@ class RiskCalcQt(QMainWindow):
         self.budget_currency.setMinimumWidth(50)
         top_layout.addWidget(self.budget_currency)
 
-        top_layout.addItem(QSpacerItem(10, 10, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        top_layout.addItem(
+            QSpacerItem(10, 10, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        )
         root_layout.addWidget(top)
 
         self.stack = QStackedWidget()
@@ -338,14 +391,22 @@ class RiskCalcQt(QMainWindow):
         b.setHorizontalSpacing(10)
         b.setVerticalSpacing(6)
 
-        def add_range_row(row: int, label: str, key: str, defaults: tuple[str, str, str] = ("", "", "")):
+        def add_range_row(
+            row: int,
+            label: str,
+            key: str,
+            defaults: tuple[str, str, str] = ("", "", ""),
+        ):
             b.addWidget(QLabel(label), row, 0)
 
             v = QDoubleValidator(0.0, 1e18, 8)
 
-            e_min = QLineEdit(defaults[0]); e_min.setValidator(v)
-            e_prob = QLineEdit(defaults[1]); e_prob.setValidator(v)
-            e_max = QLineEdit(defaults[2]); e_max.setValidator(v)
+            e_min = QLineEdit(defaults[0])
+            e_min.setValidator(v)
+            e_prob = QLineEdit(defaults[1])
+            e_prob.setValidator(v)
+            e_max = QLineEdit(defaults[2])
+            e_max.setValidator(v)
 
             e_min.setPlaceholderText("min")
             e_prob.setPlaceholderText("probable")
@@ -393,7 +454,11 @@ class RiskCalcQt(QMainWindow):
         qset = self.sets.get(form_id, {})
         using_domain_objs = repo_available and hasattr(qset.get("tef"), "questions")
 
-        for dim_key, title in [("tef", "TEF"), ("vuln", "Vulnerability"), ("lm", "Loss magnitude")]:
+        for dim_key, title in [
+            ("tef", "TEF"),
+            ("vuln", "Vulnerability"),
+            ("lm", "Loss magnitude"),
+        ]:
             box = QGroupBox(title)
             v = QVBoxLayout(box)
             v.setContentsMargins(10, 10, 10, 10)
@@ -408,7 +473,9 @@ class RiskCalcQt(QMainWindow):
                     combo = QComboBox()
                     combo.addItem("N/A")
                     for alt in getattr(q, "alternatives", []):
-                        alt_text = getattr(alt, "text", None) or (alt.get("text") if isinstance(alt, dict) else str(alt))
+                        alt_text = getattr(alt, "text", None) or (
+                            alt.get("text") if isinstance(alt, dict) else str(alt)
+                        )
                         combo.addItem(alt_text)
                     v.addWidget(combo)
                     self.answer_combos[dim_key].append(combo)
@@ -448,7 +515,9 @@ class RiskCalcQt(QMainWindow):
 
         try:
             threshold_name = self.threshold_combo.currentText().strip()
-            threshold_set = load_threshold_set(threshold_name) if threshold_name else None
+            threshold_set = (
+                load_threshold_set(threshold_name) if threshold_name else None
+            )
         except Exception as e:
             QMessageBox.critical(self, "Fel", f"Kunde inte ladda threshold-set: {e}")
             return
@@ -488,13 +557,17 @@ class RiskCalcQt(QMainWindow):
                     risk = HybridRisk(values=values)
                 except Exception:
                     values2 = dict(values)
-                    values2["threat_event_frequency"] = values2.pop("loss_event_frequency")
+                    values2["threat_event_frequency"] = values2.pop(
+                        "loss_event_frequency"
+                    )
                     risk = HybridRisk(values=values2)
 
                 self._render_risk(risk)
                 return
             except Exception as e:
-                QMessageBox.critical(self, "Fel", f"Beräkning misslyckades (manual/domain): {e}")
+                QMessageBox.critical(
+                    self, "Fel", f"Beräkning misslyckades (manual/domain): {e}"
+                )
                 return
 
         try:
@@ -509,7 +582,9 @@ class RiskCalcQt(QMainWindow):
             self._set_result("loss_magnitude", f"{lm_p * budget} (P90: —)")
             self._set_result("ale", f"{ale} (P90: —)")
         except Exception as e:
-            QMessageBox.critical(self, "Fel", f"Beräkning misslyckades (manual/demo): {e}")
+            QMessageBox.critical(
+                self, "Fel", f"Beräkning misslyckades (manual/demo): {e}"
+            )
 
     def _calculate_questionnaire(self, budget: Decimal, threshold_set: Any):
         form_id = self.form_combo.currentText()
@@ -517,7 +592,9 @@ class RiskCalcQt(QMainWindow):
         currency_str = self.budget_currency.currentText().strip()
         if domain_available:
             try:
-                using_domain_objs = repo_available and hasattr(qset.get("tef"), "questions")
+                using_domain_objs = repo_available and hasattr(
+                    qset.get("tef"), "questions"
+                )
 
                 if using_domain_objs:
                     for dim in ("tef", "vuln", "lm"):
@@ -529,30 +606,47 @@ class RiskCalcQt(QMainWindow):
                             chosen = combo.currentText()
                             found_idx = None
                             for ai, alt in enumerate(qobj.questions[qi].alternatives):
-                                alt_text = getattr(alt, "text", None) or (alt.get("text") if isinstance(alt, dict) else str(alt))
+                                alt_text = getattr(alt, "text", None) or (
+                                    alt.get("text")
+                                    if isinstance(alt, dict)
+                                    else str(alt)
+                                )
                                 if alt_text == chosen:
                                     found_idx = ai
                                     break
                             if found_idx is not None:
                                 qobj.questions[qi].set_answer(found_idx)
 
-                    questionaires = Questionaires(tef=qset["tef"], vuln=qset["vuln"], lm=qset["lm"])
+                    questionaires = Questionaires(
+                        tef=qset["tef"], vuln=qset["vuln"], lm=qset["lm"]
+                    )
                     values = questionaires.calculate_questionairy_values()
                 else:
                     values = {}
 
-                values.update({"budget": budget, "mappings": threshold_set, "currency": currency_str})
+                values.update(
+                    {
+                        "budget": budget,
+                        "mappings": threshold_set,
+                        "currency": currency_str,
+                    }
+                )
 
                 risk = HybridRisk(values=values)
                 self._render_risk(risk)
                 return
 
             except Exception as e:
-                QMessageBox.critical(self, "Fel", f"Beräkning misslyckades (form/domain): {e}")
+                QMessageBox.critical(
+                    self, "Fel", f"Beräkning misslyckades (form/domain): {e}"
+                )
                 raise e
         try:
             selections = {
-                dim: [(cb.currentText() if not cb.currentText().startswith("—") else "") for cb in self.answer_combos[dim]]
+                dim: [
+                    (cb.currentText() if not cb.currentText().startswith("—") else "")
+                    for cb in self.answer_combos[dim]
+                ]
                 for dim in ("tef", "vuln", "lm")
             }
 
@@ -571,7 +665,9 @@ class RiskCalcQt(QMainWindow):
             self._set_result("loss_magnitude", f"{lm_amount} (P90: —)")
             self._set_result("ale", f"{ale} (P90: —)")
         except Exception as e:
-            QMessageBox.critical(self, "Fel", f"Beräkning misslyckades (form/demo): {e}")
+            QMessageBox.critical(
+                self, "Fel", f"Beräkning misslyckades (form/demo): {e}"
+            )
 
     def _render_risk(self, risk: HybridRisk):
         risk.qualitative.overall_likelihood
@@ -590,9 +686,14 @@ class RiskCalcQt(QMainWindow):
         lm = risk.quantitative.loss_magnitude
         ale = risk.quantitative.annual_loss_expectancy
 
-        self._set_result("lef", f"{round(lef.probable, 3)} (P90: {round(lef.p90,3)})")
-        self._set_result("loss_magnitude", f"{round(lm.probable,3)} (P90: {round(lm.p90,3)})")
-        self._set_result("ale", f"{currency_formatted.get_money_format(round(ale.probable,2))} (P90: {currency_formatted.get_money_format(round(ale.p90,2))})")
+        self._set_result("lef", f"{round(lef.probable, 3)} (P90: {round(lef.p90, 3)})")
+        self._set_result(
+            "loss_magnitude", f"{round(lm.probable, 3)} (P90: {round(lm.p90, 3)})"
+        )
+        self._set_result(
+            "ale",
+            f"{currency_formatted.get_money_format(round(ale.probable, 2))} (P90: {currency_formatted.get_money_format(round(ale.p90, 2))})",
+        )
 
 
 def main():
