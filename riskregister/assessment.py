@@ -22,8 +22,9 @@
 # SOFTWARE.
 #
 
-from riskcalculator.scenario import *
+from riskcalculator.scenario import RiskScenario
 from otyg_risk_base.hybrid import HybridRisk
+from riskcalculator.util import freeze
 
 class RiskAssessment():
     def __init__(self, assessment:dict = None):

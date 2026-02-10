@@ -44,7 +44,7 @@ class RiskScenario():
             self.description = parameters.get('description', "")
             self.asset = parameters.get('asset', "")
             self.threat = parameters.get('threat', "")
-            self.vulnerability = parameters.get('vulnerability', "")
+            self.vulnerability = parameters.get('vulnerability_desc', "")
             self.risk = parameters.get('risk', HybridRisk())
             self.category = parameters.get('category', "")
             self.name = parameters.get('name', self.auto_desc())
@@ -81,7 +81,7 @@ class RiskScenario():
             "actor": self.actor,
             "asset": self.asset,
             "threat": self.threat,
-            "vulnerability": self.vulnerability,
+            "vulnerability_desc": self.vulnerability,
             "description": self.description,
             "risk": self.risk.to_dict(),
             "questionaires": self.questionaires.to_dict()
@@ -95,7 +95,7 @@ class RiskScenario():
         new.actor = dict.get('actor', "")
         new.asset = dict.get('asset', "")
         new.threat = dict.get('threat', "")
-        new.vulnerability = dict.get('vulnerability', "")
+        new.vulnerability = dict.get('vulnerability_desc', "")
         new.description = dict.get("description")
         new.risk = HybridRisk.from_dict(values=dict.get('risk', {}))
         new.questionaires = Questionaires.from_dict(dict.get("questionaires"))

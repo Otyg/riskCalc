@@ -6,7 +6,7 @@ from pathlib import Path
 import unittest
 
 from filesystem.questionaires_repo import JsonQuestionairesRepository
-from filesystem.repo import DiscreteThresholdsRepository, JsonAnalysisRepository
+from filesystem.repo import DiscreteThresholdsRepository
 from otyg_risk_base.qualitative_scale import QualitativeScale
 
 from riskcalculator.questionaire import Questionaire

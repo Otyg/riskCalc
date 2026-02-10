@@ -22,7 +22,6 @@
 # SOFTWARE.
 #
 
-import decimal
 import json
 
 from numpy import ndarray

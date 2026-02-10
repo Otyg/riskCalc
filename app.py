@@ -41,7 +41,7 @@ from riskcalculator.scenario import RiskScenario
 from filesystem.actors_repo import JsonActorsRepository
 from filesystem.repo import DiscreteThresholdsRepository, JsonAnalysisRepository, DraftRepository, JsonCategoryRepository
 from filesystem.questionaires_repo import JsonQuestionairesRepository
-from riskcalculator.questionaire import Questionaire, Questionaires
+from riskcalculator.questionaire import Questionaires
 from filesystem.threats_repo import JsonThreatsRepository
 from filesystem.vulnerabilities_repo import JsonVulnerabilitiesRepository
 from riskregister.assessment import RiskAssessment
@@ -309,7 +309,7 @@ async def create_scenario_save(request: Request, draft_id: str):
                                     "actor": actor,
                                     "asset": asset,
                                     "threat": threat,
-                                    "vulnerability": vulnerability,
+                                    "vulnerability_desc": vulnerability,
                                     "description": description,
                                     "risk": risk,
                                     "questionaires": questionaires})
@@ -420,7 +420,7 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
                                     "actor": actor,
                                     "asset": asset,
                                     "threat": threat,
-                                    "vulnerability": vulnerability,
+                                    "vulnerability_desc": vulnerability,
                                     "description": description,
                                     "risk": risk,
                                     "questionaires": questionaires})
@@ -560,9 +560,9 @@ async def risk_calc_submit(request: Request):
         if not tef_q or not vuln_q or not lm_q:
             errors.append("Valt formulär saknar en eller flera dimensioner (tef/vuln/lm).")
         # Sätt answers i de faktiska Question-objekten
-        tef_n = _apply_answers_from_form(form, tef_q, "tef")
-        vuln_n = _apply_answers_from_form(form, vuln_q, "vuln")
-        lm_n = _apply_answers_from_form(form, lm_q, "lm")
+        _apply_answers_from_form(form, tef_q, "tef")
+        _apply_answers_from_form(form, vuln_q, "vuln")
+        _apply_answers_from_form(form, lm_q, "lm")
         if not errors:
             try:
                 questionaires = Questionaires(tef=tef_q, vuln=vuln_q, lm=lm_q)

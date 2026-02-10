@@ -4,14 +4,6 @@ from riskcalculator.questionaire import Alternative, Question, Questionaire, Que
 
 class TestQuestionaires(unittest.TestCase):
 
-    def test_questionaires_equality(self):
-        no_questionaires = Questionaires()
-        self.assertTrue(no_questionaires == no_questionaires)
-        question = Question(text="Test 1", alternatives=[Alternative(text="Ja", weight=MonteCarloRange(probable=1)), Alternative(text="Nej", weight=MonteCarloRange(probable=1))])
-        questionaire = Questionaire(questions=[question])
-        questionaires = Questionaires(tef=questionaire, vuln=questionaire, lm=questionaire)
-        self.assertFalse(no_questionaires == questionaires)
-
     def test_questionaire_equality(self):
         questionaire = Questionaire()
         self.assertTrue(questionaire == questionaire)
@@ -48,6 +40,12 @@ class TestQuestionaires(unittest.TestCase):
         self.assertTrue(questionaire == Questionaire.from_dict(questionaire.to_dict()))
     
     def test_questionaires_equality(self):
+        no_questionaires = Questionaires()
+        self.assertTrue(no_questionaires == no_questionaires)
+        question = Question(text="Test 1", alternatives=[Alternative(text="Ja", weight=MonteCarloRange(probable=1)), Alternative(text="Nej", weight=MonteCarloRange(probable=1))])
+        questionaire = Questionaire(questions=[question])
+        questionaires = Questionaires(tef=questionaire, vuln=questionaire, lm=questionaire)
+        self.assertFalse(no_questionaires == questionaires)
         question = Question(text="Test 1", alternatives=[Alternative(text="Ja", weight=MonteCarloRange(probable=1)), Alternative(text="Nej", weight=MonteCarloRange(probable=1))])
         question_b = Question(text="Test 2", alternatives=[Alternative(text="Ja", weight=MonteCarloRange(probable=1)), Alternative(text="Nej", weight=MonteCarloRange(probable=1))])
         questionaire = Questionaire(questions=[question])
