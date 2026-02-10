@@ -521,9 +521,7 @@ async def risk_calc_submit(request: Request):
                 "Valt formulär saknar en eller flera dimensioner (tef/vuln/lm)."
             )
         # Sätt answers i de faktiska Question-objekten
-        _apply_answers_from_form(form, tef_q, "tef")
-        _apply_answers_from_form(form, vuln_q, "vuln")
-        _apply_answers_from_form(form, lm_q, "lm")
+        qs = set_questionaire_answers(form=form, questionaires_repo=questionaires_repo, errors=errors, qset=qset, qs=qs)
         if not errors:
             try:
                 questionaires = Questionaires(tef=tef_q, vuln=vuln_q, lm=lm_q)
