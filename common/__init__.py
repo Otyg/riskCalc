@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 
 from fastapi.datastructures import FormData
 from riskcalculator.questionaire import Questionaires
@@ -65,10 +66,15 @@ def set_scenario_parameters(form: FormData = None) -> dict[str:str]:
 
 
 def _d(s: str, default: Decimal = Decimal("0")) -> Decimal:
-    try:
-        ss = (s or "").strip()
-        if ss == "":
-            return default
-        return Decimal(ss)
-    except Exception:
-        return default
+    return D(s)
+
+
+def D(x: Any) -> Decimal:
+    if x is None:
+        return Decimal(0)
+    if isinstance(x, Decimal):
+        return x
+    s = str(x).strip().replace(" ", "").replace(",", ".")
+    if s == "":
+        return Decimal(0)
+    return Decimal(s)

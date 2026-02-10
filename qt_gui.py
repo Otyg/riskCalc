@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os
 import sys
-import json
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List
@@ -33,34 +32,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-repo_available = False
-discrete_repo_available = False
-domain_available = False
-MonteCarloRange = None
-
-try:
-    from otyg_risk_base.hybrid import HybridRisk
-    from filesystem.repo import DiscreteThresholdsRepository
-    from filesystem.questionaires_repo import JsonQuestionairesRepository
-    from riskcalculator.questionaire import Questionaires
-    from filesystem.paths import ensure_user_data_initialized, packaged_root
-    from otyg_risk_base.montecarlo import MonteCarloRange
-
-    repo_available = True
-    discrete_repo_available = True
-    domain_available = True
-except Exception:
-    repo_available = False
-    discrete_repo_available = False
-    domain_available = False
+from otyg_risk_base.hybrid import HybridRisk
+from filesystem.repo import DiscreteThresholdsRepository
+from filesystem.questionaires_repo import JsonQuestionairesRepository
+from riskcalculator.questionaire import Questionaires
+from filesystem.paths import ensure_user_data_initialized, packaged_root
+from otyg_risk_base.montecarlo import MonteCarloRange
+from common import D
 
 BASE_DIR = Path(__file__).parent
 
-if domain_available:
-    p = ensure_user_data_initialized()
-    os.environ["TEMPLATES_DIR"] = str(packaged_root() / "templates")
-    os.environ["DATA_DIR"] = str(p["data"])
+
+p = ensure_user_data_initialized()
+os.environ["TEMPLATES_DIR"] = str(packaged_root() / "templates")
+os.environ["DATA_DIR"] = str(p["data"])
 
 TEMPLATES_DIR = Path(os.environ.get("TEMPLATES_DIR", str(BASE_DIR / "templates")))
 DATA_DIR = Path(os.environ.get("DATA_DIR", str(BASE_DIR / "data")))
@@ -71,140 +56,41 @@ AVAILABLE_CURRENCIES = Currency.get_currency_formats()
 
 questionaires_repo = None
 discrete_thresholds_repo = None
-if domain_available:
-    questionaires_repo = JsonQuestionairesRepository(DATA_DIR / "questionaires")
-    discrete_thresholds_repo = DiscreteThresholdsRepository(
-        DATA_DIR / "discrete_thresholds.json"
-    )
+questionaires_repo = JsonQuestionairesRepository(DATA_DIR / "questionaires")
+discrete_thresholds_repo = DiscreteThresholdsRepository(
+    DATA_DIR / "discrete_thresholds.json"
+)
 
 
 def load_questionaire_sets() -> Dict[str, Any]:
     sets: Dict[str, Any] = {}
-    if repo_available:
-        try:
-            names = questionaires_repo.list_sets()
-            for name in names:
-                try:
-                    sets[name] = questionaires_repo.load_objects(name)
-                except Exception:
-                    continue
-        except Exception as e:
-            QMessageBox(
-                icon=QMessageBox.Icon.Critical,
-                title="Cannot load questionaires",
-                detailedText=e,
-            )
-            raise e
-    else:
-        if os.path.isdir(QUESTIONAIRES_DIR):
-            for fn in os.listdir(QUESTIONAIRES_DIR):
-                if fn.lower().endswith(".json"):
-                    try:
-                        with open(
-                            os.path.join(QUESTIONAIRES_DIR, fn), "r", encoding="utf-8"
-                        ) as f:
-                            data = json.load(f)
-                        k = os.path.splitext(fn)[0]
-                        sets[k] = data
-                    except Exception:
-                        continue
-        if not sets:
-            sets = SAMPLE_QS
+    try:
+        names = questionaires_repo.list_sets()
+        for name in names:
+            try:
+                sets[name] = questionaires_repo.load_objects(name)
+            except Exception:
+                continue
+    except Exception as e:
+        QMessageBox(
+            icon=QMessageBox.Icon.Critical,
+            title="Cannot load questionaires",
+            detailedText=e,
+        )
+        raise e
     return sets
 
 
 def load_threshold_names() -> List[str]:
-    if discrete_repo_available:
-        try:
-            return list(discrete_thresholds_repo.get_set_names())
-        except Exception:
-            return []
+    try:
+        return list(discrete_thresholds_repo.get_set_names())
+    except Exception:
+        return []
     return []
 
 
 def load_threshold_set(name: str) -> dict:
-    if discrete_repo_available:
-        return discrete_thresholds_repo.load(name).to_dict()
-    return None
-
-
-SAMPLE_QS = {
-    "default": {
-        "tef": {
-            "questions": [
-                {
-                    "text": "Demo TEF fråga",
-                    "alternatives": [
-                        {
-                            "text": "Låg",
-                            "weight": {"min": 0.1, "probable": 0.2, "max": 0.3},
-                        }
-                    ],
-                }
-            ]
-        },
-        "vuln": {
-            "questions": [
-                {
-                    "text": "Demo VULN fråga",
-                    "alternatives": [
-                        {
-                            "text": "Låg",
-                            "weight": {"min": 0.1, "probable": 0.2, "max": 0.3},
-                        }
-                    ],
-                }
-            ]
-        },
-        "lm": {
-            "questions": [
-                {
-                    "text": "Demo LM fråga",
-                    "alternatives": [
-                        {
-                            "text": "Låg",
-                            "weight": {"min": 0.1, "probable": 0.2, "max": 0.3},
-                        }
-                    ],
-                }
-            ]
-        },
-    }
-}
-
-
-def D(x: Any) -> Decimal:
-    if x is None:
-        return Decimal(0)
-    if isinstance(x, Decimal):
-        return x
-    s = str(x).strip().replace(" ", "").replace(",", ".")
-    if s == "":
-        return Decimal(0)
-    return Decimal(s)
-
-
-def mean_of_selected(
-    qset: dict, selections: Dict[str, List[str]], dim: str
-) -> Dict[str, Decimal]:
-    weights = []
-    for qi, selected_text in enumerate(selections.get(dim, [])):
-        if not selected_text:
-            continue
-        alts = qset.get(dim, {}).get("questions", [])[qi].get("alternatives", [])
-        for alt in alts:
-            if alt.get("text") == selected_text:
-                weights.append(alt.get("weight", {}))
-                break
-
-    if not weights:
-        return {"min": Decimal(0), "probable": Decimal(0), "max": Decimal(0)}
-
-    mins = [D(w.get("min")) for w in weights]
-    probs = [D(w.get("probable")) for w in weights]
-    maxs = [D(w.get("max")) for w in weights]
-    n = Decimal(len(weights))
-    return {"min": sum(mins) / n, "probable": sum(probs) / n, "max": sum(maxs) / n}
+    return discrete_thresholds_repo.load(name).to_dict()
 
 
 class RiskCalcQt(QMainWindow):
@@ -354,14 +240,6 @@ class RiskCalcQt(QMainWindow):
         rp.addLayout(cols)
 
         root_layout.addWidget(self.result_panel, 0)
-
-        if not domain_available:
-            QMessageBox.information(
-                self,
-                "Demo-läge",
-                "Domänmoduler hittades inte. GUI kör i demo-läge (förenklade beräkningar).",
-            )
-
         self.on_form_changed(self.form_combo.currentText())
 
     def _build_questionnaire_page(self):
@@ -452,7 +330,6 @@ class RiskCalcQt(QMainWindow):
                 w.deleteLater()
 
         qset = self.sets.get(form_id, {})
-        using_domain_objs = repo_available and hasattr(qset.get("tef"), "questions")
 
         for dim_key, title in [
             ("tef", "TEF"),
@@ -464,34 +341,21 @@ class RiskCalcQt(QMainWindow):
             v.setContentsMargins(10, 10, 10, 10)
             v.setSpacing(8)
 
-            if using_domain_objs:
-                qobj = qset.get(dim_key)
-                questions = list(getattr(qobj, "questions", []))
-                for q in questions:
-                    v.addWidget(QLabel(getattr(q, "text", str(q))))
+            qobj = qset.get(dim_key)
+            questions = list(getattr(qobj, "questions", []))
+            for q in questions:
+                v.addWidget(QLabel(getattr(q, "text", str(q))))
 
-                    combo = QComboBox()
-                    combo.addItem("N/A")
-                    for alt in getattr(q, "alternatives", []):
-                        alt_text = getattr(alt, "text", None) or (
-                            alt.get("text") if isinstance(alt, dict) else str(alt)
-                        )
-                        combo.addItem(alt_text)
-                    v.addWidget(combo)
-                    self.answer_combos[dim_key].append(combo)
-            else:
-                questions = qset.get(dim_key, {}).get("questions", [])
-                for q in questions:
-                    v.addWidget(QLabel(q.get("text", "")))
-                    combo = QComboBox()
-                    combo.addItem("N/A")
-                    for alt in q.get("alternatives", []):
-                        combo.addItem(alt.get("text", ""))
-                    v.addWidget(combo)
-                    self.answer_combos[dim_key].append(combo)
-
+                combo = QComboBox()
+                combo.addItem("N/A")
+                for alt in getattr(q, "alternatives", []):
+                    alt_text = getattr(alt, "text", None) or (
+                        alt.get("text") if isinstance(alt, dict) else str(alt)
+                    )
+                    combo.addItem(alt_text)
+                v.addWidget(combo)
+                self.answer_combos[dim_key].append(combo)
             self.questions_layout.addWidget(box)
-
         self.questions_layout.addStretch(1)
 
     def on_mode_toggled(self):
@@ -502,13 +366,7 @@ class RiskCalcQt(QMainWindow):
         self._clear_results()
 
     def _build_range(self, min_s: str, prob_s: str, max_s: str):
-        mn = D(min_s)
-        pr = D(prob_s)
-        mx = D(max_s)
-
-        if MonteCarloRange is not None:
-            return MonteCarloRange(min=mn, probable=pr, max=mx)
-        return {"min": str(mn), "probable": str(pr), "max": str(mx)}
+        return MonteCarloRange(min=D(min_s), probable=D(prob_s), max=D(max_s))
 
     def on_calculate(self):
         self._clear_results()
@@ -542,132 +400,64 @@ class RiskCalcQt(QMainWindow):
         vuln_range = self._build_range(vuln_min, vuln_prob, vuln_max)
         lm_range = self._build_range(lm_min, lm_prob, lm_max)
         currency_str = self.budget_currency.currentText().strip()
-        if domain_available:
-            try:
-                values = {
-                    "loss_event_frequency": lef_range,
-                    "vulnerability": vuln_range,
-                    "loss_magnitude": lm_range,
-                    "budget": budget,
-                    "currency": currency_str,
-                    "mappings": threshold_set,
-                }
-
-                try:
-                    risk = HybridRisk(values=values)
-                except Exception:
-                    values2 = dict(values)
-                    values2["threat_event_frequency"] = values2.pop(
-                        "loss_event_frequency"
-                    )
-                    risk = HybridRisk(values=values2)
-
-                self._render_risk(risk)
-                return
-            except Exception as e:
-                QMessageBox.critical(
-                    self, "Fel", f"Beräkning misslyckades (manual/domain): {e}"
-                )
-                return
-
         try:
-            lef_p = D(lef_prob)
-            lm_p = D(lm_prob)
-            ale = lef_p * lm_p * budget
-
-            self._set_result("sannolikhet", "N/A (demo-läge)")
-            self._set_result("konsekvens", "N/A (demo-läge)")
-            self._set_result("risk", "N/A (demo-läge)")
-            self._set_result("lef", f"{lef_p} (P90: —)")
-            self._set_result("loss_magnitude", f"{lm_p * budget} (P90: —)")
-            self._set_result("ale", f"{ale} (P90: —)")
+            values = {
+                "loss_event_frequency": lef_range,
+                "threat_event_frequency": lef_range,
+                "vulnerability": vuln_range,
+                "loss_magnitude": lm_range,
+                "budget": budget,
+                "currency": currency_str,
+                "mappings": threshold_set,
+            }
+            risk = HybridRisk(values=values)
+            self._render_risk(risk)
         except Exception as e:
             QMessageBox.critical(
-                self, "Fel", f"Beräkning misslyckades (manual/demo): {e}"
+                self, "Fel", f"Beräkning misslyckades (manual/domain): {e}"
             )
 
     def _calculate_questionnaire(self, budget: Decimal, threshold_set: Any):
         form_id = self.form_combo.currentText()
         qset = self.sets.get(form_id, {})
         currency_str = self.budget_currency.currentText().strip()
-        if domain_available:
-            try:
-                using_domain_objs = repo_available and hasattr(
-                    qset.get("tef"), "questions"
-                )
-
-                if using_domain_objs:
-                    for dim in ("tef", "vuln", "lm"):
-                        qobj = qset.get(dim)
-                        if qobj is None:
-                            raise ValueError(f"Saknar {dim} i valt formulär.")
-
-                        for qi, combo in enumerate(self.answer_combos[dim]):
-                            chosen = combo.currentText()
-                            found_idx = None
-                            for ai, alt in enumerate(qobj.questions[qi].alternatives):
-                                alt_text = getattr(alt, "text", None) or (
-                                    alt.get("text")
-                                    if isinstance(alt, dict)
-                                    else str(alt)
-                                )
-                                if alt_text == chosen:
-                                    found_idx = ai
-                                    break
-                            if found_idx is not None:
-                                qobj.questions[qi].set_answer(found_idx)
-
-                    questionaires = Questionaires(
-                        tef=qset["tef"], vuln=qset["vuln"], lm=qset["lm"]
-                    )
-                    values = questionaires.calculate_questionairy_values()
-                else:
-                    values = {}
-
-                values.update(
-                    {
-                        "budget": budget,
-                        "mappings": threshold_set,
-                        "currency": currency_str,
-                    }
-                )
-
-                risk = HybridRisk(values=values)
-                self._render_risk(risk)
-                return
-
-            except Exception as e:
-                QMessageBox.critical(
-                    self, "Fel", f"Beräkning misslyckades (form/domain): {e}"
-                )
-                raise e
         try:
-            selections = {
-                dim: [
-                    (cb.currentText() if not cb.currentText().startswith("—") else "")
-                    for cb in self.answer_combos[dim]
-                ]
-                for dim in ("tef", "vuln", "lm")
-            }
+            for dim in ("tef", "vuln", "lm"):
+                qobj = qset.get(dim)
+                if qobj is None:
+                    raise ValueError(f"Saknar {dim} i valt formulär.")
 
-            tef = mean_of_selected(qset, selections, "tef")
-            vuln = mean_of_selected(qset, selections, "vuln")
-            lm = mean_of_selected(qset, selections, "lm")
+                for qi, combo in enumerate(self.answer_combos[dim]):
+                    chosen = combo.currentText()
+                    found_idx = None
+                    for ai, alt in enumerate(qobj.questions[qi].alternatives):
+                        alt_text = getattr(alt, "text", None) or (
+                            alt.get("text") if isinstance(alt, dict) else str(alt)
+                        )
+                        if alt_text == chosen:
+                            found_idx = ai
+                            break
+                    if found_idx is not None:
+                        qobj.questions[qi].set_answer(found_idx)
+            questionaires = Questionaires(
+                tef=qset["tef"], vuln=qset["vuln"], lm=qset["lm"]
+            )
+            values = questionaires.calculate_questionairy_values()
+            values.update(
+                {
+                    "budget": budget,
+                    "mappings": threshold_set,
+                    "currency": currency_str,
+                }
+            )
 
-            ale = tef["probable"] * vuln["probable"] * lm["probable"] * budget
-            lef = tef["probable"] * vuln["probable"]
-            lm_amount = lm["probable"] * budget
-
-            self._set_result("sannolikhet", "N/A (demo-läge)")
-            self._set_result("konsekvens", "N/A (demo-läge)")
-            self._set_result("risk", "N/A (demo-läge)")
-            self._set_result("lef", f"{lef} (P90: —)")
-            self._set_result("loss_magnitude", f"{lm_amount} (P90: —)")
-            self._set_result("ale", f"{ale} (P90: —)")
+            risk = HybridRisk(values=values)
+            self._render_risk(risk)
         except Exception as e:
             QMessageBox.critical(
-                self, "Fel", f"Beräkning misslyckades (form/demo): {e}"
+                self, "Fel", f"Beräkning misslyckades (form/domain): {e}"
             )
+            raise e
 
     def _render_risk(self, risk: HybridRisk):
         risk.qualitative.overall_likelihood
