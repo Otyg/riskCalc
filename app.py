@@ -35,7 +35,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.status import HTTP_200_OK, HTTP_303_SEE_OTHER
 
-from common import _d, get_scenario, set_questionaire_answers, set_scenario_parameters
+from common import D, get_scenario, set_questionaire_answers, set_scenario_parameters
 from filesystem.actors_repo import JsonActorsRepository
 from filesystem.paths import ensure_user_data_initialized, packaged_root
 from filesystem.questionaires_repo import JsonQuestionairesRepository
@@ -113,7 +113,7 @@ def _scenario_suggestions() -> dict[str, Any]:
 
 def _build_risk_dict(form: Any) -> dict[str, Any]:
     return {
-        "budget": str(_d(str(form.get("budget", "1000000")), Decimal(1000000))),
+        "budget": str(D(str(form.get("budget", "1000000")))),
         "currency": str(form.get("currency", "SEK")) or "SEK",
     }
 
@@ -433,21 +433,21 @@ async def risk_calc_submit(request: Request):
     if mode == "manual":
         values = {
             "threat_event_frequency": {
-                "min": str(_d(form.get("tef_min"))),
-                "probable": str(_d(form.get("tef_probable"))),
-                "max": str(_d(form.get("tef_max"))),
+                "min": str(D(form.get("tef_min"))),
+                "probable": str(D(form.get("tef_probable"))),
+                "max": str(D(form.get("tef_max"))),
             },
             "vulnerability": {
-                "min": str(_d(form.get("vuln_min"))),
-                "probable": str(_d(form.get("vuln_probable"))),
-                "max": str(_d(form.get("vuln_max"))),
+                "min": str(D(form.get("vuln_min"))),
+                "probable": str(D(form.get("vuln_probable"))),
+                "max": str(D(form.get("vuln_max"))),
             },
             "loss_magnitude": {
-                "min": str(_d(form.get("lm_min"))),
-                "probable": str(_d(form.get("lm_probable"))),
-                "max": str(_d(form.get("lm_max"))),
+                "min": str(D(form.get("lm_min"))),
+                "probable": str(D(form.get("lm_probable"))),
+                "max": str(D(form.get("lm_max"))),
             },
-            "budget": _d(str(form.get("budget", "1000000")), Decimal("1000000")),
+            "budget": D(str(form.get("budget", "1000000")), Decimal("1000000")),
             "currency": str(form.get("currency", "SEK") or "SEK"),
             "thresholds": threshold_set,
         }

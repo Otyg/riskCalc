@@ -65,10 +65,6 @@ def set_scenario_parameters(form: FormData = None) -> dict[str:str]:
     }
 
 
-def _d(s: str, default: Decimal = Decimal("0")) -> Decimal:
-    return D(s)
-
-
 def D(x: Any) -> Decimal:
     if x is None:
         return Decimal(0)
