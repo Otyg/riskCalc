@@ -1,4 +1,6 @@
 from decimal import Decimal
+
+from fastapi.datastructures import FormData
 from riskcalculator.questionaire import Questionaires
 from riskcalculator.scenario import RiskScenario
 from otyg_risk_base.hybrid import HybridRisk
@@ -43,3 +45,15 @@ def set_questionaire_answers(form=None, questionaires_repo=None, errors=None, qs
 
             question.set_answer(ans_idx)
     return qs
+
+def set_scenario_parameters(form:FormData=None) -> dict[str:str]:
+    return {
+        "name": str(form.get("name", "")).strip(),
+        "actor": str(form.get("actor", "")).strip(),
+        "asset": str(form.get("asset", "")).strip(),
+        "threat": str(form.get("threat", "")).strip(),
+        "vulnerability_desc": str(form.get("vulnerability", "")).strip(),
+        "description": str(form.get("description", "")).strip(),
+        "category": str(form.get("category", "")).strip(),
+    }
+    

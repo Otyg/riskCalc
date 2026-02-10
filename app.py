@@ -51,7 +51,7 @@ from filesystem.threats_repo import JsonThreatsRepository
 from filesystem.vulnerabilities_repo import JsonVulnerabilitiesRepository
 from riskregister.assessment import RiskAssessment
 from filesystem.paths import ensure_user_data_initialized, packaged_root
-from common import get_scenario, set_questionaire_answers
+from common import get_scenario, set_questionaire_answers, set_scenario_parameters
 
 
 app = FastAPI()
@@ -262,13 +262,6 @@ async def create_scenario_save(request: Request, draft_id: str):
     draft = RiskAssessment(draft_dict)
     form = await request.form()
 
-    name = str(form.get("name", "")).strip()
-    actor = str(form.get("actor", "")).strip()
-    asset = str(form.get("asset", "")).strip()
-    threat = str(form.get("threat", "")).strip()
-    vulnerability = str(form.get("vulnerability", "")).strip()
-    description = str(form.get("description", "")).strip()
-    category = str(form.get("category", "")).strip()
     risk_input_mode = str(form.get("risk_input_mode", "questionnaire"))
     qset = str(form.get("qset", DEFAULT_QUESTIONAIRES_SET))
     threat_suggestions = threats_repo.load()
@@ -305,16 +298,7 @@ async def create_scenario_save(request: Request, draft_id: str):
             },
             status_code=400,
         )
-    parameters = {
-                "name": name,
-                "category": category,
-                "actor": actor,
-                "asset": asset,
-                "threat": threat,
-                "vulnerability_desc": vulnerability,
-                "description": description,
-            }
-    scenario_obj = get_scenario(qs=qs, risk_dict=risk_dict, discrete_thresholds_repo=discrete_thresholds_repo, parameters=parameters)
+    scenario_obj = get_scenario(qs=qs, risk_dict=risk_dict, discrete_thresholds_repo=discrete_thresholds_repo, parameters=set_scenario_parameters(form))
     draft.add_scenario(scenario=scenario_obj)
     draft_repo.save(draft_id, draft.to_dict())
 
@@ -330,7 +314,6 @@ def new_version_from_analysis(analysis_id: str):
     draft["date"] = ""
     draft.setdefault("scenarios", [])
     draft["previous_analysis_id"] = analysis_id
-    # Skapa draft från kopian
     draft_id = draft_repo.create_from(draft)
 
     return RedirectResponse(url=f"/create/{draft_id}", status_code=HTTP_303_SEE_OTHER)
@@ -342,13 +325,6 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
     draft = RiskAssessment(draft_dict)
     form = await request.form()
 
-    name = str(form.get("name", "")).strip()
-    actor = str(form.get("actor", "")).strip()
-    asset = str(form.get("asset", "")).strip()
-    threat = str(form.get("threat", "")).strip()
-    vulnerability = str(form.get("vulnerability", "")).strip()
-    description = str(form.get("description", "")).strip()
-    category = str(form.get("category", "")).strip()
     risk_input_mode = str(form.get("risk_input_mode", "questionnaire"))
     qset = str(form.get("qset", DEFAULT_QUESTIONAIRES_SET))
     threat_suggestions = threats_repo.load()
@@ -394,16 +370,7 @@ async def edit_scenario_save(request: Request, draft_id: str, scenario_index: in
             },
             status_code=400,
         )
-    parameters = {
-                "name": name,
-                "category": category,
-                "actor": actor,
-                "asset": asset,
-                "threat": threat,
-                "vulnerability_desc": vulnerability,
-                "description": description,
-            }
-    scenario_obj = get_scenario(qs=qs, risk_dict=risk_dict, discrete_thresholds_repo=discrete_thresholds_repo, parameters=parameters)
+    scenario_obj = get_scenario(qs=qs, risk_dict=risk_dict, discrete_thresholds_repo=discrete_thresholds_repo, parameters=set_scenario_parameters(form=form))
     draft.update_scenario(index=scenario_index, scenario=scenario_obj)
     draft_repo.save(draft_id, draft.to_dict())
 
