@@ -522,5 +522,16 @@ async def risk_calc_submit(request: Request):
     )
 
 
+@app.get("/license", response_class=HTMLResponse)
+def license_page(request: Request):
+    return templates.TemplateResponse(
+        "license.html",
+        {
+            "request": request,
+        },
+        status_code=HTTP_200_OK,
+    )
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
