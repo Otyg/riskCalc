@@ -34,6 +34,9 @@ from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.status import HTTP_200_OK, HTTP_303_SEE_OTHER
+import re
+import tempfile
+from fastapi.responses import FileResponse
 
 from common import D, get_scenario, set_questionaire_answers, set_scenario_parameters
 from filesystem.actors_repo import JsonActorsRepository
@@ -140,6 +143,37 @@ def _render_create_scenario(
     }
     return templates.TemplateResponse(
         "create_scenario_v4.html", context, status_code=status_code
+    )
+
+
+def _safe_filename(s: str) -> str:
+    s = (s or "").strip()
+    s = re.sub(r"[^A-Za-z0-9._-]+", "_", s)
+    return s or "riskrapport"
+
+
+@app.get("/analysis/{analysis_id}/export/pdf")
+def export_analysis_pdf(analysis_id: str):
+    analysis = analyses_repo.get_dict(
+        analysis_id
+    )  # du använder redan get_dict för att läsa analys :contentReference[oaicite:3]{index=3}
+
+    # Din renderer (lägg report.py i projektet)
+    from filesystem.report import build_pdf_report  # <-- se till att denna finns
+
+    analysis_object = str(analysis.get("analysis_object", "") or "analysis")
+    filename = f"{_safe_filename(analysis_object)}__{analysis_id}.pdf"
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        tmp_path = tmp.name
+
+    # build_pdf_report ska skriva PDF till tmp_path
+    build_pdf_report(analysis, tmp_path, source_name=analysis_id)
+
+    return FileResponse(
+        tmp_path,
+        media_type="application/pdf",
+        filename=filename,
     )
 
 
