@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List, Tuple, Optional
 
+
 # ------------------------------------------------------------
 # Configuration
 # ------------------------------------------------------------
@@ -70,6 +71,32 @@ def fmt_number(value: Any) -> str:
     if isinstance(value, (int, float)):
         return f"{float(value):.2f}"
     return str(value)
+
+
+# ------------------------------------------------------------
+# Scenario grouping
+# ------------------------------------------------------------
+
+
+def group_scenarios_by_risk_area(
+    scenarios: List[Dict[str, Any]],
+) -> List[Tuple[str, List[Dict[str, Any]]]]:
+    """
+    Group scenarios by risk area. Uses 'category' as risk area.
+    Returns a stable list of (risk_area, scenarios_in_that_area) in encounter order.
+    """
+    groups: Dict[str, List[Dict[str, Any]]] = {}
+    order: List[str] = []
+
+    for sc in scenarios:
+        area = sc.get("category")
+        area = str(area).strip() if area not in (None, "") else "Okategoriserat"
+        if area not in groups:
+            groups[area] = []
+            order.append(area)
+        groups[area].append(sc)
+
+    return [(area, groups[area]) for area in order if groups.get(area)]
 
 
 # ------------------------------------------------------------
@@ -142,7 +169,7 @@ def generate_markdown_report(data: Dict[str, Any], source_name: str = "") -> str
         lines.append(md_heading(2, "Metadata"))
         lines.append(md_kv_table(meta_rows))
 
-    # Summary on cover (matches PDF)
+    # Summary on cover
     if "summary" in data and isinstance(data["summary"], dict) and data["summary"]:
         lines.append(md_heading(2, "Sammanfattning"))
         lines.append(md_kv_table(list(data["summary"].items())))
@@ -154,102 +181,121 @@ def generate_markdown_report(data: Dict[str, Any], source_name: str = "") -> str
     # --- Content ---
     scenarios = data.get("scenarios", [])
     if isinstance(scenarios, list) and scenarios:
-        lines.append(md_heading(2, f"Scenarier ({len(scenarios)})"))
+        grouped = group_scenarios_by_risk_area(scenarios)
 
-        for i, sc in enumerate(scenarios, start=1):
-            # Force a new page before each scenario so the title stays with the tables (Pandoc)
-            lines.append("\n\\newpage\n")
+        total = sum(len(xs) for _, xs in grouped)
+        lines.append(md_heading(2, f"Scenarier ({total})"))
 
-            name = sc.get("name", f"Scenario {i}")
+        global_index = 0  # Keep a stable numbering across all scenarios
 
-            # Scenario title (kept together by starting on a new page)
-            lines.append(md_heading(3, f"{i}. {name}"))
+        for risk_area, sc_list in grouped:
+            # Risk area subheading
+            lines.append(md_heading(3, risk_area))
 
-            # Overview
-            overview_rows = []
-            for k in [
-                "category",
-                "actor",
-                "asset",
-                "threat",
-                "vulnerability_desc",
-                "description",
-            ]:
-                v = sc.get(k, None)
-                if v not in ("", None):
-                    overview_rows.append((k, v))
-            if overview_rows:
-                lines.append(md_heading(4, "Översikt"))
-                lines.append(md_kv_table(overview_rows))
+            for sc in sc_list:
+                # Force a new page before each scenario (Pandoc) so title stays with tables
+                lines.append("\n\\newpage\n")
 
-            # Risk
-            risk = sc.get("risk", {})
-            if isinstance(risk, dict):
-                qualitative = risk.get("qualitative", {})
-                quantitative = risk.get("quantitative", {})
+                global_index += 1
+                name = sc.get("name", f"Scenario {global_index}")
 
-                if isinstance(qualitative, dict) and qualitative:
-                    q_rows = []
-                    for k in ["overall_likelihood", "impact", "overall_risk"]:
-                        if k in qualitative:
-                            q_rows.append((k, qualitative[k]))
-                    if q_rows:
-                        lines.append(md_heading(4, "Kvalitativ risk"))
-                        lines.append(md_kv_table(q_rows))
+                # Scenario title (one level deeper because we have risk area headings)
+                lines.append(md_heading(4, f"{global_index}. {name}"))
 
-                if isinstance(quantitative, dict) and quantitative:
-                    lines.append(md_heading(4, "Kvantitativ risk"))
+                # Overview
+                overview_rows = []
+                for k in [
+                    "category",
+                    "actor",
+                    "asset",
+                    "threat",
+                    "vulnerability_desc",
+                    "description",
+                ]:
+                    v = sc.get(k, None)
+                    if v not in ("", None):
+                        overview_rows.append((k, v))
+                if overview_rows:
+                    lines.append(md_heading(5, "Översikt"))
+                    lines.append(md_kv_table(overview_rows))
 
-                    qmeta = []
-                    for k in ["currency", "budget"]:
-                        if k in quantitative:
-                            qmeta.append((k, quantitative[k]))
-                    if qmeta:
-                        lines.append(md_kv_table(qmeta))
+                # Risk
+                risk = sc.get("risk", {})
+                if isinstance(risk, dict):
+                    qualitative = risk.get("qualitative", {})
+                    quantitative = risk.get("quantitative", {})
 
-                    metrics: List[Tuple[str, Dict[str, Any]]] = []
-                    for k, v in quantitative.items():
-                        if isinstance(v, dict) and any(
-                            x in v for x in ("min", "probable", "max", "p90")
-                        ):
-                            metrics.append((k, v))
-                    if metrics:
-                        lines.append(md_metric_table(metrics))
+                    if isinstance(qualitative, dict) and qualitative:
+                        q_rows = []
+                        for k in ["overall_likelihood", "impact", "overall_risk"]:
+                            if k in qualitative:
+                                q_rows.append((k, qualitative[k]))
+                        if q_rows:
+                            lines.append(md_heading(5, "Kvalitativ risk"))
+                            lines.append(md_kv_table(q_rows))
 
-            # Questionnaires: merged, no headings tef/vuln/lm
-            qn = sc.get("questionaires", {})
-            if isinstance(qn, dict) and qn:
-                lines.append(md_heading(4, "Frågebatterier"))
+                    if isinstance(quantitative, dict) and quantitative:
+                        lines.append(md_heading(5, "Kvantitativ risk"))
 
-                qa_rows: List[Tuple[str, str]] = []
-                for _battery_name, qobj in qn.items():
-                    if not isinstance(qobj, dict):
-                        continue
-                    questions = qobj.get("questions", [])
-                    if not isinstance(questions, list):
-                        continue
-                    for q in questions:
-                        q_text = q.get("text", "")
-                        ans = q.get("answer", {})
-                        ans_text = ans.get("text", "") if isinstance(ans, dict) else ""
-                        qa_rows.append((q_text, ans_text if ans_text else "(saknas)"))
+                        qmeta = []
+                        for k in ["currency", "budget"]:
+                            if k in quantitative:
+                                qmeta.append((k, quantitative[k]))
+                        if qmeta:
+                            lines.append(md_kv_table(qmeta))
 
-                if qa_rows:
-                    lines.append("| Fråga | Svar |")
-                    lines.append("|---|---|")
-                    for q_text, ans_text in qa_rows:
-                        lines.append(f"| {md_escape(q_text)} | {md_escape(ans_text)} |")
-                    lines.append("")
-                else:
-                    lines.append("- Inga frågor hittades.\n")
+                        metrics: List[Tuple[str, Dict[str, Any]]] = []
+                        for k, v in quantitative.items():
+                            if isinstance(v, dict) and any(
+                                x in v for x in ("min", "probable", "max", "p90")
+                            ):
+                                metrics.append((k, v))
+                        if metrics:
+                            lines.append(md_metric_table(metrics))
 
-            lines.append("\n---\n")
+                # Questionnaires: merged, no headings tef/vuln/lm
+                qn = sc.get("questionaires", {})
+                if isinstance(qn, dict) and qn:
+                    lines.append(md_heading(5, "Frågebatterier"))
+
+                    qa_rows: List[Tuple[str, str]] = []
+                    for _battery_name, qobj in qn.items():
+                        if not isinstance(qobj, dict):
+                            continue
+                        questions = qobj.get("questions", [])
+                        if not isinstance(questions, list):
+                            continue
+                        for q in questions:
+                            q_text = q.get("text", "")
+                            ans = q.get("answer", {})
+                            ans_text = (
+                                ans.get("text", "") if isinstance(ans, dict) else ""
+                            )
+                            qa_rows.append(
+                                (q_text, ans_text if ans_text else "(saknas)")
+                            )
+
+                    if qa_rows:
+                        lines.append("| Fråga | Svar |")
+                        lines.append("|---|---|")
+                        for q_text, ans_text in qa_rows:
+                            lines.append(
+                                f"| {md_escape(q_text)} | {md_escape(ans_text)} |"
+                            )
+                        lines.append("")
+                    else:
+                        lines.append("- Inga frågor hittades.\n")
+
+                lines.append("\n---\n")
 
     return "\n".join(lines).strip() + "\n"
 
 
 # ------------------------------------------------------------
-# PDF export (Platypus) – cover page + summary + tables + wrapping + rounding
+# PDF export (Platypus)
+# - Cover has title+metadata+summary
+# - Scenarios grouped under risk area headings (category)
+# - Scenario title is kept with overview/qual/quant tables
 # ------------------------------------------------------------
 
 
@@ -259,6 +305,7 @@ def build_pdf_report(
     """
     High-quality PDF with cover page (title+metadata+summary), tables with proper wrapping,
     headers/footers, page numbers. All numeric values rounded to 2 decimals.
+    Scenarios are grouped under risk area headings ('category').
     """
     try:
         from reportlab.lib.pagesizes import A4
@@ -274,7 +321,7 @@ def build_pdf_report(
             PageBreak,
             KeepTogether,
         )
-        from html import escape  # stdlib
+        from html import escape
     except Exception as e:
         raise RuntimeError(
             "PDF-export kräver paketet 'reportlab'. Installera med: pip install reportlab"
@@ -301,7 +348,12 @@ def build_pdf_report(
         ParagraphStyle(
             name="H3", parent=styles["Heading3"], spaceBefore=10, spaceAfter=4
         )
-    )
+    )  # risk area
+    styles.add(
+        ParagraphStyle(
+            name="H4", parent=styles["Heading4"], spaceBefore=8, spaceAfter=4
+        )
+    )  # scenario
     styles.add(
         ParagraphStyle(name="Small", parent=styles["BodyText"], fontSize=9, leading=11)
     )
@@ -310,7 +362,6 @@ def build_pdf_report(
     )
 
     def as_paragraph(value: Any, style) -> Paragraph:
-        """Paragraph for table cells to enable wrapping + number rounding."""
         text = fmt_number(value)
         text = escape(text)
         text = text.replace("\n", "<br/>")
@@ -453,133 +504,154 @@ def build_pdf_report(
     # --- Content ---
     scenarios = data.get("scenarios", [])
     if isinstance(scenarios, list) and scenarios:
-        story.append(Paragraph(f"Scenarier ({len(scenarios)})", styles["H2"]))
+        grouped = group_scenarios_by_risk_area(scenarios)
+        total = sum(len(xs) for _, xs in grouped)
 
-        for i, sc in enumerate(scenarios, start=1):
-            name = sc.get("name", f"Scenario {i}")
+        story.append(Paragraph(f"Scenarier ({total})", styles["H2"]))
 
-            # Keep scenario title + overview/qual/quant together
-            main_block: List[Any] = [
-                Paragraph(f"{i}. {escape(str(name))}", styles["H3"])
-            ]
+        global_index = 0
 
-            overview_rows = []
-            for k in [
-                "category",
-                "actor",
-                "asset",
-                "threat",
-                "vulnerability_desc",
-                "description",
-            ]:
-                v = sc.get(k, None)
-                if v not in ("", None):
-                    overview_rows.append((k, v))
-            if overview_rows:
-                main_block.append(Paragraph("Översikt", styles["Body"]))
-                main_block.append(kv_table(overview_rows))
+        for risk_area, sc_list in grouped:
+            # Risk area heading
+            story.append(Spacer(1, 6))
+            story.append(Paragraph(escape(risk_area), styles["H3"]))
 
-            risk = sc.get("risk", {})
-            if isinstance(risk, dict):
-                qualitative = risk.get("qualitative", {})
-                quantitative = risk.get("quantitative", {})
+            for sc in sc_list:
+                global_index += 1
+                name = sc.get("name", f"Scenario {global_index}")
 
-                if isinstance(qualitative, dict) and qualitative:
-                    q_rows = []
-                    for k in ["overall_likelihood", "impact", "overall_risk"]:
-                        if k in qualitative:
-                            q_rows.append((k, qualitative[k]))
-                    if q_rows:
-                        main_block.append(Spacer(1, 8))
-                        main_block.append(Paragraph("Kvalitativ risk", styles["Body"]))
-                        main_block.append(kv_table(q_rows))
-
-                if isinstance(quantitative, dict) and quantitative:
-                    main_block.append(Spacer(1, 8))
-                    main_block.append(Paragraph("Kvantitativ risk", styles["Body"]))
-
-                    qmeta = []
-                    for k in ["currency", "budget"]:
-                        if k in quantitative:
-                            qmeta.append((k, quantitative[k]))
-                    if qmeta:
-                        main_block.append(kv_table(qmeta))
-
-                    metrics: List[Tuple[str, Dict[str, Any]]] = []
-                    for k, v in quantitative.items():
-                        if isinstance(v, dict) and any(
-                            x in v for x in ("min", "probable", "max", "p90")
-                        ):
-                            metrics.append((k, v))
-                    mt = metric_table(metrics)
-                    if mt is not None:
-                        main_block.append(mt)
-
-            story.append(KeepTogether(main_block))
-
-            # Questionnaires (may spill to next pages)
-            qn = sc.get("questionaires", {})
-            if isinstance(qn, dict) and qn:
-                story.append(Spacer(1, 10))
-                story.append(Paragraph("Frågebatterier", styles["Body"]))
-
-                qa_rows = [
-                    [
-                        as_paragraph("Fråga", styles["Small"]),
-                        as_paragraph("Svar", styles["Small"]),
-                    ]
+                # Keep scenario title + overview/qual/quant together
+                main_block: List[Any] = [
+                    Paragraph(f"{global_index}. {escape(str(name))}", styles["H4"])
                 ]
-                found_any = False
 
-                for _battery_name, qobj in qn.items():
-                    if not isinstance(qobj, dict):
-                        continue
-                    questions = qobj.get("questions", [])
-                    if not (isinstance(questions, list) and questions):
-                        continue
-                    for q in questions:
-                        q_text = q.get("text", "")
-                        ans = q.get("answer", {})
-                        ans_text = ans.get("text", "") if isinstance(ans, dict) else ""
-                        qa_rows.append(
-                            [
-                                as_paragraph(q_text, styles["Small"]),
-                                as_paragraph(
-                                    ans_text if ans_text else "(saknas)",
-                                    styles["Small"],
-                                ),
-                            ]
+                # Overview
+                overview_rows = []
+                for k in [
+                    "category",
+                    "actor",
+                    "asset",
+                    "threat",
+                    "vulnerability_desc",
+                    "description",
+                ]:
+                    v = sc.get(k, None)
+                    if v not in ("", None):
+                        overview_rows.append((k, v))
+                if overview_rows:
+                    main_block.append(Paragraph("Översikt", styles["Body"]))
+                    main_block.append(kv_table(overview_rows))
+
+                # Risk
+                risk = sc.get("risk", {})
+                if isinstance(risk, dict):
+                    qualitative = risk.get("qualitative", {})
+                    quantitative = risk.get("quantitative", {})
+
+                    if isinstance(qualitative, dict) and qualitative:
+                        q_rows = []
+                        for k in ["overall_likelihood", "impact", "overall_risk"]:
+                            if k in qualitative:
+                                q_rows.append((k, qualitative[k]))
+                        if q_rows:
+                            main_block.append(Spacer(1, 8))
+                            main_block.append(
+                                Paragraph("Kvalitativ risk", styles["Body"])
+                            )
+                            main_block.append(kv_table(q_rows))
+
+                    if isinstance(quantitative, dict) and quantitative:
+                        main_block.append(Spacer(1, 8))
+                        main_block.append(Paragraph("Kvantitativ risk", styles["Body"]))
+
+                        qmeta = []
+                        for k in ["currency", "budget"]:
+                            if k in quantitative:
+                                qmeta.append((k, quantitative[k]))
+                        if qmeta:
+                            main_block.append(kv_table(qmeta))
+
+                        metrics: List[Tuple[str, Dict[str, Any]]] = []
+                        for k, v in quantitative.items():
+                            if isinstance(v, dict) and any(
+                                x in v for x in ("min", "probable", "max", "p90")
+                            ):
+                                metrics.append((k, v))
+                        mt = metric_table(metrics)
+                        if mt is not None:
+                            main_block.append(mt)
+
+                story.append(KeepTogether(main_block))
+
+                # Questionnaires (may spill to next pages)
+                qn = sc.get("questionaires", {})
+                if isinstance(qn, dict) and qn:
+                    story.append(Spacer(1, 10))
+                    story.append(Paragraph("Frågebatterier", styles["Body"]))
+
+                    qa_rows = [
+                        [
+                            as_paragraph("Fråga", styles["Small"]),
+                            as_paragraph("Svar", styles["Small"]),
+                        ]
+                    ]
+                    found_any = False
+
+                    for _battery_name, qobj in qn.items():
+                        if not isinstance(qobj, dict):
+                            continue
+                        questions = qobj.get("questions", [])
+                        if not (isinstance(questions, list) and questions):
+                            continue
+                        for q in questions:
+                            q_text = q.get("text", "")
+                            ans = q.get("answer", {})
+                            ans_text = (
+                                ans.get("text", "") if isinstance(ans, dict) else ""
+                            )
+                            qa_rows.append(
+                                [
+                                    as_paragraph(q_text, styles["Small"]),
+                                    as_paragraph(
+                                        ans_text if ans_text else "(saknas)",
+                                        styles["Small"],
+                                    ),
+                                ]
+                            )
+                            found_any = True
+
+                    if found_any:
+                        t = Table(
+                            qa_rows, colWidths=[doc.width * 0.62, doc.width * 0.38]
                         )
-                        found_any = True
-
-                if found_any:
-                    t = Table(qa_rows, colWidths=[doc.width * 0.62, doc.width * 0.38])
-                    t.setStyle(
-                        TableStyle(
-                            [
-                                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-                                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                                ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-                                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                                (
-                                    "ROWBACKGROUNDS",
-                                    (0, 1),
-                                    (-1, -1),
-                                    [colors.whitesmoke, colors.white],
-                                ),
-                                ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                                ("TOPPADDING", (0, 0), (-1, -1), 4),
-                                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-                                ("WORDWRAP", (0, 0), (-1, -1), "CJK"),
-                            ]
+                        t.setStyle(
+                            TableStyle(
+                                [
+                                    ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                                    ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+                                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                    (
+                                        "ROWBACKGROUNDS",
+                                        (0, 1),
+                                        (-1, -1),
+                                        [colors.whitesmoke, colors.white],
+                                    ),
+                                    ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                                    ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                                    ("WORDWRAP", (0, 0), (-1, -1), "CJK"),
+                                ]
+                            )
                         )
-                    )
-                    story.append(t)
-                else:
-                    story.append(Paragraph("Inga frågor hittades.", styles["Small"]))
+                        story.append(t)
+                    else:
+                        story.append(
+                            Paragraph("Inga frågor hittades.", styles["Small"])
+                        )
 
-            story.append(Spacer(1, 14))
+                story.append(Spacer(1, 14))
 
     doc.build(story, onFirstPage=header_footer, onLaterPages=header_footer)
 
