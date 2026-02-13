@@ -1,28 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# MIT License
+# NOTE:
+# Designer-based refactor (in-place update):
+# - Loads RiskCalcMainWindow.ui
+# - Uses QTabWidget (Frågeformulär / Manuell)
+# - Shows distribution plots (histograms) for LEF, Loss Magnitude and ALE on the Manual tab
 #
-# Copyright (c) 2025 Martin Vesterlund
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-#
+# Requirements:
+#   pip install matplotlib
 
 from __future__ import annotations
 
@@ -30,55 +16,49 @@ import os
 import sys
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, List
-from currencies import Currency
+from typing import Any, Dict, List, Optional, Sequence
 
-from PySide6.QtCore import Qt
+from currencies import Currency
 from PySide6.QtGui import QDoubleValidator
+from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
-    QFrame,
-    QGridLayout,
     QGroupBox,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMainWindow,
     QMessageBox,
     QPushButton,
-    QRadioButton,
-    QScrollArea,
-    QSizePolicy,
-    QSpacerItem,
-    QStackedWidget,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
+
+# Matplotlib embedding (no seaborn)
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
 from otyg_risk_base.hybrid import HybridRisk
-from filesystem.repo import DiscreteThresholdsRepository
-from filesystem.questionaires_repo import JsonQuestionairesRepository
-from riskcalculator.questionaire import Questionaires
-from filesystem.paths import ensure_user_data_initialized, packaged_root
 from otyg_risk_base.montecarlo import MonteCarloRange
 from common import D
 
+from filesystem.repo import DiscreteThresholdsRepository
+from filesystem.questionaires_repo import JsonQuestionairesRepository
+from filesystem.paths import ensure_user_data_initialized, packaged_root
+from riskcalculator.questionaire import Questionaires
+
+
 BASE_DIR = Path(__file__).parent
 
-
+# Keep original initialization behavior
 p = ensure_user_data_initialized()
 os.environ["TEMPLATES_DIR"] = str(packaged_root() / "templates")
 os.environ["DATA_DIR"] = str(p["data"])
 
-TEMPLATES_DIR = Path(os.environ.get("TEMPLATES_DIR", str(BASE_DIR / "templates")))
 DATA_DIR = Path(os.environ.get("DATA_DIR", str(BASE_DIR / "data")))
-
-DEFAULT_QUESTIONAIRES_SET = "default"
-QUESTIONAIRES_DIR = Path(str(BASE_DIR / "questionaires"))
 AVAILABLE_CURRENCIES = Currency.get_currency_formats()
 
-questionaires_repo = None
-discrete_thresholds_repo = None
 questionaires_repo = JsonQuestionairesRepository(DATA_DIR / "questionaires")
 discrete_thresholds_repo = DiscreteThresholdsRepository(
     DATA_DIR / "discrete_thresholds.json"
@@ -87,20 +67,12 @@ discrete_thresholds_repo = DiscreteThresholdsRepository(
 
 def load_questionaire_sets() -> Dict[str, Any]:
     sets: Dict[str, Any] = {}
-    try:
-        names = questionaires_repo.list_sets()
-        for name in names:
-            try:
-                sets[name] = questionaires_repo.load_objects(name)
-            except Exception:
-                continue
-    except Exception as e:
-        QMessageBox(
-            icon=QMessageBox.Icon.Critical,
-            title="Cannot load questionaires",
-            detailedText=e,
-        )
-        raise e
+    names = questionaires_repo.list_sets()
+    for name in names:
+        try:
+            sets[name] = questionaires_repo.load_objects(name)
+        except Exception:
+            continue
     return sets
 
 
@@ -109,242 +81,303 @@ def load_threshold_names() -> List[str]:
         return list(discrete_thresholds_repo.get_set_names())
     except Exception:
         return []
-    return []
 
 
 def load_threshold_set(name: str) -> dict:
     return discrete_thresholds_repo.load(name).to_dict()
 
 
+def _extract_samples(dist_obj: Any) -> Optional[Sequence[float]]:
+    """
+    Tries to retrieve the internal Monte Carlo samples array.
+
+    The user mentioned:
+      risk.quantitative.<...>.__samples
+
+    In Python, double-underscore attributes are name-mangled, so we try:
+      - "__samples"
+      - any attribute that ends with "__samples" or "samples" and looks iterable
+    """
+    if dist_obj is None:
+        return None
+
+    # 1) direct
+    if hasattr(dist_obj, "__samples"):
+        try:
+            s = getattr(dist_obj, "__samples")
+            if s is not None:
+                return s
+        except Exception:
+            pass
+
+    # 2) name-mangled search
+    for attr in dir(dist_obj):
+        if attr.endswith("__samples") or attr.endswith("samples"):
+            try:
+                s = getattr(dist_obj, attr)
+            except Exception:
+                continue
+            if s is None or isinstance(s, (str, bytes)):
+                continue
+            try:
+                iter(s)
+                return s
+            except Exception:
+                continue
+
+    return None
+
+
 class RiskCalcQt(QMainWindow):
+    """Tabs + Qt Designer (.ui) version (in-place)."""
+
+    TAB_QUESTIONNAIRE = 0
+    TAB_MANUAL = 1
+
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Risk Calculator (Qt)")
-        self.resize(1100, 780)
 
+        # Data / repos
         self.sets = load_questionaire_sets()
         self.set_ids = list(self.sets.keys()) or []
         self.thresholds = load_threshold_names() or ["default"]
 
+        # State
         self.answer_combos: Dict[str, List[QComboBox]] = {
             "tef": [],
             "vuln": [],
             "lm": [],
         }
-
         self.manual_edits: Dict[str, tuple[QLineEdit, QLineEdit, QLineEdit]] = {}
 
-        root = QWidget()
-        self.setCentralWidget(root)
-        root_layout = QVBoxLayout(root)
-        root_layout.setContentsMargins(14, 14, 14, 14)
-        root_layout.setSpacing(10)
+        # Plot canvases
+        self.canvas_lef: Optional[FigureCanvas] = None
+        self.canvas_lm: Optional[FigureCanvas] = None
+        self.canvas_ale: Optional[FigureCanvas] = None
 
-        top = QFrame()
-        top.setFrameShape(QFrame.StyledPanel)
-        top_layout = QHBoxLayout(top)
-        top_layout.setContentsMargins(10, 10, 10, 10)
-        top_layout.setSpacing(10)
+        # UI (Designer)
+        self._load_ui()
+        self._wire_signals()
+        self._init_static_values()
+        self._init_manual_plots()
 
-        top_layout.addWidget(QLabel("Formulär:"))
-        self.form_combo = QComboBox()
-        self.form_combo.addItems(self.set_ids)
-        self.form_combo.currentTextChanged.connect(self.on_form_changed)
-        self.form_combo.setMinimumWidth(260)
-        top_layout.addWidget(self.form_combo)
-
-        top_layout.addSpacing(10)
-
-        self.rb_questionnaire = QRadioButton("Frågeformulär")
-        self.rb_manual = QRadioButton("Manuell")
-        self.rb_questionnaire.setChecked(True)
-        self.rb_questionnaire.toggled.connect(self.on_mode_toggled)
-        top_layout.addWidget(self.rb_questionnaire)
-        top_layout.addWidget(self.rb_manual)
-
-        top_layout.addSpacing(10)
-
-        top_layout.addWidget(QLabel("Tröskelset:"))
-        self.threshold_combo = QComboBox()
-        self.threshold_combo.addItems(self.thresholds)
-        self.threshold_combo.setMinimumWidth(180)
-        top_layout.addWidget(self.threshold_combo)
-
-        top_layout.addSpacing(10)
-
-        top_layout.addWidget(QLabel("Budget:"))
-        self.budget_edit = QLineEdit("1000000")
-        self.budget_edit.setValidator(QDoubleValidator(0.0, 1e18, 4))
-        self.budget_edit.setMaximumWidth(140)
-        top_layout.addWidget(self.budget_edit)
-
-        top_layout.addWidget(QLabel("Valuta:"))
-        self.budget_currency = QComboBox()
-        self.budget_currency.addItems(AVAILABLE_CURRENCIES)
-        self.budget_currency.setMinimumWidth(50)
-        top_layout.addWidget(self.budget_currency)
-
-        top_layout.addItem(
-            QSpacerItem(10, 10, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        )
-        root_layout.addWidget(top)
-
-        self.stack = QStackedWidget()
-        root_layout.addWidget(self.stack, 1)
-
-        self.page_questionnaire = QWidget()
-        self.page_manual = QWidget()
-        self.stack.addWidget(self.page_questionnaire)
-        self.stack.addWidget(self.page_manual)
-
-        self._build_questionnaire_page()
-        self._build_manual_page()
-
-        self.result_panel = QGroupBox("Resultat")
-        rp = QVBoxLayout(self.result_panel)
-        rp.setContentsMargins(10, 10, 10, 10)
-        rp.setSpacing(8)
-
-        actions = QHBoxLayout()
-        self.calc_btn = QPushButton("🧮 Beräkna risk")
-        self.calc_btn.clicked.connect(self.on_calculate)
-        actions.addWidget(self.calc_btn)
-        actions.addItem(QSpacerItem(10, 10, QSizePolicy.Expanding, QSizePolicy.Minimum))
-        rp.addLayout(actions)
-
-        cols = QHBoxLayout()
-        cols.setSpacing(18)
-
-        left_box = QGroupBox("Skala")
-        left_layout = QGridLayout(left_box)
-        left_layout.setHorizontalSpacing(12)
-        left_layout.setVerticalSpacing(6)
-
-        right_box = QGroupBox("Kvantitativt")
-        right_layout = QGridLayout(right_box)
-        right_layout.setHorizontalSpacing(12)
-        right_layout.setVerticalSpacing(6)
-
-        self.result_labels: Dict[str, QLabel] = {}
-
-        left_rows = [
-            ("Sannolikhet:", "sannolikhet"),
-            ("Konsekvens:", "konsekvens"),
-            ("Risk:", "risk"),
-        ]
-        for r, (title, key) in enumerate(left_rows):
-            lbl_title = QLabel(title)
-            lbl_title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-            lbl_val = QLabel("—")
-            lbl_val.setWordWrap(True)
-            left_layout.addWidget(lbl_title, r, 0, Qt.AlignLeft)
-            left_layout.addWidget(lbl_val, r, 1)
-            self.result_labels[key] = lbl_val
-
-        right_rows = [
-            ("LEF:", "lef"),
-            ("Loss Magnitude:", "loss_magnitude"),
-            ("ALE:", "ale"),
-        ]
-        for r, (title, key) in enumerate(right_rows):
-            lbl_title = QLabel(title)
-            lbl_title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-            lbl_val = QLabel("—")
-            lbl_val.setWordWrap(True)
-            right_layout.addWidget(lbl_title, r, 0, Qt.AlignLeft)
-            right_layout.addWidget(lbl_val, r, 1)
-            self.result_labels[key] = lbl_val
-
-        left_layout.setColumnStretch(1, 1)
-        right_layout.setColumnStretch(1, 1)
-
-        cols.addWidget(left_box, 1)
-        cols.addWidget(right_box, 1)
-        rp.addLayout(cols)
-
-        root_layout.addWidget(self.result_panel, 0)
+        # Initial render
         self.on_form_changed(self.form_combo.currentText())
 
-    def _build_questionnaire_page(self):
-        layout = QVBoxLayout(self.page_questionnaire)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+    def _load_ui(self):
+        ui_path = (BASE_DIR / "templates" / "RiskCalcMainWindow.ui").resolve()
+        if not ui_path.exists():
+            alt = Path.cwd() / "templates" / "RiskCalcMainWindow.ui"
+            if alt.exists():
+                ui_path = alt
 
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.NoFrame)
+        if not ui_path.exists():
+            raise FileNotFoundError(
+                f"Cannot find UI file: {ui_path}. Place RiskCalcMainWindow.ui next to this file."
+            )
 
-        self.questions_host = QWidget()
-        self.questions_layout = QVBoxLayout(self.questions_host)
-        self.questions_layout.setContentsMargins(0, 0, 0, 0)
-        self.questions_layout.setSpacing(10)
+        loader = QUiLoader()
+        ui_root = loader.load(str(ui_path), None)
+        if ui_root is None:
+            raise RuntimeError(f"Failed to load UI: {ui_path}")
 
-        self.scroll.setWidget(self.questions_host)
-        layout.addWidget(self.scroll, 1)
+        if isinstance(ui_root, QMainWindow):
+            cw = ui_root.centralWidget()
+            if cw is None:
+                raise RuntimeError("UI root is QMainWindow but has no centralWidget()")
+            self.setCentralWidget(cw)
+            if ui_root.menuBar():
+                self.setMenuBar(ui_root.menuBar())
+            if ui_root.statusBar():
+                self.setStatusBar(ui_root.statusBar())
+        else:
+            self.setCentralWidget(ui_root)
 
-    def _build_manual_page(self):
-        layout = QVBoxLayout(self.page_manual)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        root = self.centralWidget()
 
-        box = QGroupBox("Manuell inmatning (MonteCarloRange: min / probable / max)")
-        b = QGridLayout(box)
-        b.setHorizontalSpacing(10)
-        b.setVerticalSpacing(6)
+        # Top bar widgets
+        self.threshold_combo: QComboBox = root.findChild(QComboBox, "threshold_combo")
+        self.budget_edit: QLineEdit = root.findChild(QLineEdit, "budget_edit")
+        self.budget_currency: QComboBox = root.findChild(QComboBox, "budget_currency")
 
-        def add_range_row(
-            row: int,
-            label: str,
-            key: str,
-            defaults: tuple[str, str, str] = ("", "", ""),
-        ):
-            b.addWidget(QLabel(label), row, 0)
+        # Tabs
+        self.tabs: QTabWidget = root.findChild(QTabWidget, "tabs")
+        self.tab_questionnaire: QWidget = root.findChild(QWidget, "tab_questionnaire")
+        self.tab_manual: QWidget = root.findChild(QWidget, "tab_manual")
 
-            v = QDoubleValidator(0.0, 1e18, 8)
+        # Form chooser (inside questionnaire tab)
+        self.form_combo: QComboBox = root.findChild(QComboBox, "form_combo")
 
-            e_min = QLineEdit(defaults[0])
-            e_min.setValidator(v)
-            e_prob = QLineEdit(defaults[1])
-            e_prob.setValidator(v)
-            e_max = QLineEdit(defaults[2])
-            e_max.setValidator(v)
+        # Dynamic questionnaire container
+        self.questions_host: QWidget = root.findChild(QWidget, "questions_host")
+        self.questions_layout = self.questions_host.layout()
 
-            e_min.setPlaceholderText("min")
-            e_prob.setPlaceholderText("probable")
-            e_max.setPlaceholderText("max")
+        # Action button
+        self.calc_btn: QPushButton = root.findChild(QPushButton, "calc_btn")
 
-            b.addWidget(e_min, row, 1)
-            b.addWidget(e_prob, row, 2)
-            b.addWidget(e_max, row, 3)
+        # Result labels
+        self.result_labels: Dict[str, QLabel] = {
+            "sannolikhet": root.findChild(QLabel, "lbl_sannolikhet"),
+            "konsekvens": root.findChild(QLabel, "lbl_konsekvens"),
+            "risk": root.findChild(QLabel, "lbl_risk"),
+            "lef": root.findChild(QLabel, "lbl_lef_val"),
+            "loss_magnitude": root.findChild(QLabel, "lbl_loss_magnitude"),
+            "ale": root.findChild(QLabel, "lbl_ale"),
+        }
 
-            self.manual_edits[key] = (e_min, e_prob, e_max)
+        # Manual edits
+        self.manual_edits = {
+            "lef": (
+                root.findChild(QLineEdit, "lef_min"),
+                root.findChild(QLineEdit, "lef_prob"),
+                root.findChild(QLineEdit, "lef_max"),
+            ),
+            "vuln": (
+                root.findChild(QLineEdit, "vuln_min"),
+                root.findChild(QLineEdit, "vuln_prob"),
+                root.findChild(QLineEdit, "vuln_max"),
+            ),
+            "lm": (
+                root.findChild(QLineEdit, "lm_min"),
+                root.findChild(QLineEdit, "lm_prob"),
+                root.findChild(QLineEdit, "lm_max"),
+            ),
+        }
 
-        add_range_row(0, "LEF (loss_event_frequency)", "lef")
-        add_range_row(1, "VULN (vulnerability)", "vuln")
-        add_range_row(2, "LM (loss_magnitude)", "lm")
+        self.setWindowTitle("Risk Calculator (Qt)")
+        self.resize(1100, 780)
 
-        b.addWidget(QLabel("min"), 3, 1)
-        b.addWidget(QLabel("probable"), 3, 2)
-        b.addWidget(QLabel("max"), 3, 3)
+    def _wire_signals(self):
+        self.form_combo.currentTextChanged.connect(self.on_form_changed)
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+        self.calc_btn.clicked.connect(self.on_calculate)
 
-        b.setColumnStretch(0, 0)
-        b.setColumnStretch(1, 1)
-        b.setColumnStretch(2, 1)
-        b.setColumnStretch(3, 1)
+    def _init_static_values(self):
+        self.form_combo.clear()
+        self.form_combo.addItems(self.set_ids)
 
-        layout.addWidget(box)
-        layout.addStretch(1)
+        self.threshold_combo.clear()
+        self.threshold_combo.addItems(self.thresholds)
+
+        self.budget_currency.clear()
+        self.budget_currency.addItems(AVAILABLE_CURRENCIES)
+
+        self.budget_edit.setValidator(QDoubleValidator(0.0, 1e18, 4))
+
+        v = QDoubleValidator(0.0, 1e18, 8)
+        for _, (e_min, e_prob, e_max) in self.manual_edits.items():
+            for e in (e_min, e_prob, e_max):
+                e.setValidator(v)
+
+        self._clear_results()
 
     def _clear_results(self):
         for k in ["sannolikhet", "konsekvens", "risk", "lef", "loss_magnitude", "ale"]:
-            self.result_labels[k].setText("—")
+            lbl = self.result_labels.get(k)
+            if lbl is not None:
+                lbl.setText("—")
 
     def _set_result(self, key: str, text: str):
-        self.result_labels[key].setText(text if text else "—")
+        lbl = self.result_labels.get(key)
+        if lbl is not None:
+            lbl.setText(text if text else "—")
 
+    def on_tab_changed(self, _idx: int):
+        self._clear_results()
+
+    # -------------------------
+    # Manual plots
+    # -------------------------
+    def _make_canvas(self, title: str) -> FigureCanvas:
+        fig = Figure(figsize=(5.5, 2.2), dpi=100)
+        ax = fig.add_subplot(111)
+        ax.set_title(title)
+        ax.set_xlabel("Värde")
+        ax.set_ylabel("Frekvens")
+        fig.tight_layout()
+        return FigureCanvas(fig)
+
+    def _init_manual_plots(self):
+        layout = self.tab_manual.layout()
+        if layout is None:
+            layout = QVBoxLayout(self.tab_manual)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(10)
+
+        plots_box = QGroupBox("Fördelningar (Monte Carlo-sampling)")
+        plots_layout = QVBoxLayout(plots_box)
+        plots_layout.setContentsMargins(10, 10, 10, 10)
+        plots_layout.setSpacing(10)
+
+        self.canvas_lef = self._make_canvas("LEF – fördelning")
+        self.canvas_lm = self._make_canvas("Loss Magnitude – fördelning")
+        self.canvas_ale = self._make_canvas("ALE – fördelning")
+
+        plots_layout.addWidget(self.canvas_lef)
+        plots_layout.addWidget(self.canvas_lm)
+        plots_layout.addWidget(self.canvas_ale)
+
+        # Insert before the expanding spacer (if present)
+        if layout.count() > 0:
+            layout.insertWidget(max(0, layout.count() - 1), plots_box)
+        else:
+            layout.addWidget(plots_box)
+
+    def _plot_hist(
+        self, canvas: FigureCanvas, samples: Optional[Sequence[float]], title: str
+    ):
+        fig: Figure = canvas.figure
+        ax = fig.axes[0] if fig.axes else fig.add_subplot(111)
+        ax.cla()
+
+        ax.set_title(title)
+
+        if samples is None or (hasattr(samples, "__len__") and len(samples) == 0):
+            ax.text(0.5, 0.5, "Inga samples att plotta", ha="center", va="center")
+            ax.set_axis_off()
+            canvas.draw_idle()
+            return
+
+        vals: List[float] = []
+        for x in samples:
+            try:
+                vals.append(float(x))
+            except Exception:
+                continue
+
+        if not vals:
+            ax.text(0.5, 0.5, "Inga numeriska samples", ha="center", va="center")
+            ax.set_axis_off()
+            canvas.draw_idle()
+            return
+
+        ax.hist(vals, bins=40)
+        ax.set_xlabel("Värde")
+        ax.set_ylabel("Frekvens")
+        fig.tight_layout()
+        canvas.draw_idle()
+
+    def _update_manual_plots(self, risk: HybridRisk):
+        lef_s = _extract_samples(risk.quantitative.loss_event_frequency)
+        lm_s = _extract_samples(risk.quantitative.loss_magnitude)
+        ale_s = _extract_samples(risk.quantitative.annual_loss_expectancy)
+
+        if self.canvas_lef:
+            self._plot_hist(self.canvas_lef, lef_s, "LEF – fördelning")
+        if self.canvas_lm:
+            self._plot_hist(self.canvas_lm, lm_s, "Loss Magnitude – fördelning")
+        if self.canvas_ale:
+            self._plot_hist(self.canvas_ale, ale_s, "ALE – fördelning")
+
+    # -------------------------
+    # Questionnaire (dynamic UI)
+    # -------------------------
     def on_form_changed(self, form_id: str):
         self._clear_results()
         self.answer_combos = {"tef": [], "vuln": [], "lm": []}
+
+        if self.questions_layout is None:
+            return
 
         while self.questions_layout.count():
             item = self.questions_layout.takeAt(0)
@@ -360,14 +393,16 @@ class RiskCalcQt(QMainWindow):
             ("lm", "Loss magnitude"),
         ]:
             box = QGroupBox(title)
-            v = QVBoxLayout(box)
-            v.setContentsMargins(10, 10, 10, 10)
-            v.setSpacing(8)
+            vlay = box.layout()
+            if vlay is None:
+                vlay = QVBoxLayout(box)
+            vlay.setContentsMargins(10, 10, 10, 10)
+            vlay.setSpacing(8)
 
             qobj = qset.get(dim_key)
             questions = list(getattr(qobj, "questions", []))
             for q in questions:
-                v.addWidget(QLabel(getattr(q, "text", str(q))))
+                vlay.addWidget(QLabel(getattr(q, "text", str(q))))
 
                 combo = QComboBox()
                 combo.addItem("N/A")
@@ -376,18 +411,20 @@ class RiskCalcQt(QMainWindow):
                         alt.get("text") if isinstance(alt, dict) else str(alt)
                     )
                     combo.addItem(alt_text)
-                v.addWidget(combo)
+                vlay.addWidget(combo)
                 self.answer_combos[dim_key].append(combo)
+
             self.questions_layout.addWidget(box)
-        self.questions_layout.addStretch(1)
 
-    def on_mode_toggled(self):
-        if self.rb_manual.isChecked():
-            self.stack.setCurrentWidget(self.page_manual)
-        else:
-            self.stack.setCurrentWidget(self.page_questionnaire)
-        self._clear_results()
+        from PySide6.QtWidgets import QSpacerItem, QSizePolicy
 
+        self.questions_layout.addItem(
+            QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        )
+
+    # -------------------------
+    # Calculation
+    # -------------------------
     def _build_range(self, min_s: str, prob_s: str, max_s: str):
         return MonteCarloRange(min=D(min_s), probable=D(prob_s), max=D(max_s))
 
@@ -409,7 +446,8 @@ class RiskCalcQt(QMainWindow):
             QMessageBox.critical(self, "Fel", "Budget måste vara ett tal.")
             return
 
-        if self.rb_manual.isChecked():
+        is_manual = self.tabs.currentIndex() == self.TAB_MANUAL
+        if is_manual:
             self._calculate_manual(budget, threshold_set)
         else:
             self._calculate_questionnaire(budget, threshold_set)
@@ -435,6 +473,7 @@ class RiskCalcQt(QMainWindow):
             }
             risk = HybridRisk(values=values)
             self._render_risk(risk)
+            self._update_manual_plots(risk)
         except Exception as e:
             QMessageBox.critical(
                 self, "Fel", f"Beräkning misslyckades (manual/domain): {e}"
@@ -462,38 +501,30 @@ class RiskCalcQt(QMainWindow):
                             break
                     if found_idx is not None:
                         qobj.questions[qi].set_answer(found_idx)
+
             questionaires = Questionaires(
                 tef=qset["tef"], vuln=qset["vuln"], lm=qset["lm"]
             )
             values = questionaires.calculate_questionairy_values()
             values.update(
-                {
-                    "budget": budget,
-                    "mappings": threshold_set,
-                    "currency": currency_str,
-                }
+                {"budget": budget, "mappings": threshold_set, "currency": currency_str}
             )
 
             risk = HybridRisk(values=values)
             self._render_risk(risk)
+            self._update_manual_plots(risk)
         except Exception as e:
             QMessageBox.critical(
                 self, "Fel", f"Beräkning misslyckades (form/domain): {e}"
             )
-            raise e
+            raise
 
     def _render_risk(self, risk: HybridRisk):
-        risk.qualitative.overall_likelihood
-        risk_dict = getattr(risk, "risk", None) or {}
         currency_formatted = Currency(self.budget_currency.currentText().strip())
-        if isinstance(risk_dict, dict):
-            self._set_result("sannolikhet", f"{risk.qualitative.overall_likelihood}")
-            self._set_result("konsekvens", f"{risk.qualitative.impact}")
-            self._set_result("risk", f"{risk.qualitative.overall_risk}")
-        else:
-            self._set_result("sannolikhet", "")
-            self._set_result("konsekvens", "")
-            self._set_result("risk", "")
+
+        self._set_result("sannolikhet", f"{risk.qualitative.overall_likelihood}")
+        self._set_result("konsekvens", f"{risk.qualitative.impact}")
+        self._set_result("risk", f"{risk.qualitative.overall_risk}")
 
         lef = risk.quantitative.loss_event_frequency
         lm = risk.quantitative.loss_magnitude
@@ -512,7 +543,6 @@ class RiskCalcQt(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-
     w = RiskCalcQt()
     w.show()
     sys.exit(app.exec())
