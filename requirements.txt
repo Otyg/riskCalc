@@ -8,3 +8,4 @@ pyinstaller>=6.3
 PySide6>=6.10.1
 currencies==2020.12.12
 otyg-risk-base>=1.2.1
+reportlab>=4.0
