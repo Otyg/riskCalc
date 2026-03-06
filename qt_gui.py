@@ -530,13 +530,13 @@ class RiskCalcQt(QMainWindow):
         lm = risk.quantitative.loss_magnitude
         ale = risk.quantitative.annual_loss_expectancy
 
-        self._set_result("lef", f"{round(lef.probable, 3)} (P90: {round(lef.p90, 3)})")
+        self._set_result("lef", f"{round(lef.probable, 3)} (P75: {round(lef.p75, 3)})")
         self._set_result(
-            "loss_magnitude", f"{round(lm.probable, 3)} (P90: {round(lm.p90, 3)})"
+            "loss_magnitude", f"{round(lm.probable, 3)} (P75: {round(lm.p75, 3)})"
         )
         self._set_result(
             "ale",
-            f"{currency_formatted.get_money_format(round(ale.probable, 2))} (P90: {currency_formatted.get_money_format(round(ale.p90, 2))})",
+            f"{currency_formatted.get_money_format(round(ale.probable, 2))} (P75: {currency_formatted.get_money_format(round(ale.p75, 2))})",
         )
 
 
