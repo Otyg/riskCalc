@@ -220,6 +220,26 @@ class TestAppScenarioEndpoints(unittest.TestCase):
         self.assertEqual(q["vuln"]["questions"][0]["answer"]["text"], "V1")
         self.assertEqual(q["lm"]["questions"][0]["answer"]["text"], "LM1")
 
+    def test_can_create_new_questionaire_set_from_editor(self):
+        source = self.app_module.questionaires_repo.load_dict("default")
+        payload = json.dumps(source, ensure_ascii=False)
+
+        r = self.client.post(
+            "/questionaires/new",
+            data={
+                "new_set_id": "custom-set-1",
+                "from_set": "default",
+                "payload_json": payload,
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(r.status_code, 303)
+
+        saved = self.app_module.questionaires_repo.load_dict("custom-set-1")
+        self.assertIn("tef", saved)
+        self.assertIn("vuln", saved)
+        self.assertIn("lm", saved)
+
 
 if __name__ == "__main__":
     unittest.main()

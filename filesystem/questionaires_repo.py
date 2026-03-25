@@ -71,3 +71,8 @@ class JsonQuestionairesRepository:
         vuln = Questionaire.from_dict(raw.get("vuln", {}))
         lm = Questionaire.from_dict(raw.get("lm", {}))
         return {"qset": set_id, "tef": tef, "vuln": vuln, "lm": lm}
+
+    def save_dict(self, set_id: str, payload: dict[str, Any]) -> None:
+        path = self._path(set_id)
+        with path.open("w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)

@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .q-row { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; padding:10px; border:1px solid #e5e7eb; border-radius:10px; margin:8px 0; }
+  .q-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn { padding:8px 10px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; cursor:pointer; }
+  .modal-backdrop { position:fixed; inset:0; background:rgba(17,24,39,0.55); display:none; align-items:center; justify-content:center; z-index:50; }
+  .modal { width:min(900px, 94vw); max-height:90vh; overflow:auto; background:#fff; border-radius:14px; border:1px solid #e5e7eb; padding:16px; }
+  .alt-row { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; padding:8px 10px; border:1px solid #e5e7eb; border-radius:10px; margin:8px 0; }
+  .grid-4 { display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap:10px; }
+</style>
+<div class="layout">
+  <aside class="sidebar">
+    <h2>Nytt frågeformulär</h2>
+    <p class="muted">Skapa ett nytt <code class="badge">questionaires-set</code> genom att utgå från ett befintligt och justera innehållet.</p>
+    <a class="item" href="/">← Till listan</a>
+  </aside>
+
+  <main class="main">
+    <h1 style="margin-top:0;">Skapa nytt frågeformulärset</h1>
+
+    {% if saved %}
+      <div class="card" style="border-color:#86efac;">
+        <strong>Klart:</strong> Frågeformulärsetet sparades.
+      </div>
+    {% endif %}
+
+    {% if errors and errors|length > 0 %}
+      <div class="card" style="border-color:#fecaca;">
+        <h3 style="margin-top:0;">Fel</h3>
+        <ul style="margin:0; padding-left:18px;">
+          {% for e in errors %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="get" action="/questionaires/new" class="card">
+      <h2 style="margin-top:0;">Utgå från befintligt set</h2>
+      <label><strong>Källa</strong></label><br/>
+      <select name="from_set" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+        <option value="" {% if not from_set %}selected{% endif %}>-- Välj set --</option>
+        {% for s in available_qsets %}
+          <option value="{{ s }}" {% if s == from_set %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <div style="margin-top:10px;">
+        <button type="submit" style="padding:10px 14px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+          Ladda i editorn
+        </button>
+      </div>
+    </form>
+
+    <form method="post" action="/questionaires/new" class="card">
+      <h2 style="margin-top:0;">Nytt set</h2>
+      <input type="hidden" name="from_set" value="{{ from_set }}" />
+      <input type="hidden" name="payload_json" id="payload_json_input" />
+
+      <div>
+        <label><strong>Namn på nytt set (filnamn)</strong></label><br/>
+        <input name="new_set_id" value="{{ new_set_id }}" placeholder="exempel: sjukhus-2026"
+              style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+
+      <div id="dimension_cards" style="margin-top:12px;"></div>
+
+      <div class="card">
+        <strong>Så fungerar det</strong>
+        <p class="muted" style="margin:8px 0 0 0;">Lägg till frågor per dimension. I frågemodalen kan du lägga till alternativ och ange min/probable/max.</p>
+      </div>
+
+      <div style="margin-top:10px;">
+        <button type="submit" style="padding:12px 16px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+          💾 Spara nytt frågeformulärset
+        </button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<div id="question_modal_backdrop" class="modal-backdrop">
+  <div class="modal">
+    <h3 id="question_modal_title" style="margin-top:0;">Ny fråga</h3>
+    <div>
+      <label><strong>Frågetext</strong></label><br/>
+      <textarea id="question_text" rows="3" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;"></textarea>
+    </div>
+
+    <h4 style="margin:14px 0 8px 0;">Alternativ</h4>
+    <div id="question_alternatives"></div>
+    <button type="button" class="btn" id="add_alternative_btn">+ Lägg till alternativ</button>
+
+    <div style="margin-top:14px; display:flex; gap:8px;">
+      <button type="button" class="btn" id="save_question_btn">Spara fråga</button>
+      <button type="button" class="btn" id="cancel_question_btn">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<div id="alternative_modal_backdrop" class="modal-backdrop">
+  <div class="modal" style="width:min(760px, 94vw);">
+    <h3 id="alternative_modal_title" style="margin-top:0;">Nytt alternativ</h3>
+    <div class="grid-4">
+      <div>
+        <label><strong>Alternativtext</strong></label><br/>
+        <input id="alt_text" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+      <div>
+        <label><strong>Min</strong></label><br/>
+        <input id="alt_min" type="number" step="any" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+      <div>
+        <label><strong>Probable</strong></label><br/>
+        <input id="alt_probable" type="number" step="any" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+      <div>
+        <label><strong>Max</strong></label><br/>
+        <input id="alt_max" type="number" step="any" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+    </div>
+    <div style="margin-top:14px; display:flex; gap:8px;">
+      <button type="button" class="btn" id="save_alternative_btn">Spara alternativ</button>
+      <button type="button" class="btn" id="cancel_alternative_btn">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<script id="initial_payload" type="application/json">{{ payload_json | safe }}</script>
+<script>
+  const DIMENSIONS = {
+    tef: { title: "TEF - Potentiellt antal hothändelser per år", fixedFactor: "tef", defaultCalculation: "mean" },
+    vuln: { title: "VULN - Sårbarhet", fixedFactor: "vuln", defaultCalculation: "sum" },
+    lm: { title: "LM - Konsekvens av en händelse", fixedFactor: "lm", defaultCalculation: "mean_75" },
+  };
+  const CALC_OPTIONS = ["sum", "multiply", "mean", "mean_75", "max_range"];
+
+  function defaultAnswer() {
+    return { text: "", weight: { min: 0.0, probable: 0.0, max: 0.0 } };
+  }
+
+  function normalizeNumber(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0.0;
+  }
+
+  function deepClone(v) {
+    return JSON.parse(JSON.stringify(v));
+  }
+
+  const initialPayloadEl = document.getElementById("initial_payload");
+  let model = {};
+  try {
+    model = JSON.parse(initialPayloadEl.textContent || "{}");
+  } catch (_) {
+    model = {};
+  }
+
+  for (const [dimKey, meta] of Object.entries(DIMENSIONS)) {
+    if (!model[dimKey] || typeof model[dimKey] !== "object") {
+      model[dimKey] = {};
+    }
+    model[dimKey].factor = meta.fixedFactor;
+    model[dimKey].calculation = model[dimKey].calculation || meta.defaultCalculation;
+    model[dimKey].questions = Array.isArray(model[dimKey].questions) ? model[dimKey].questions : [];
+  }
+
+  const cardsEl = document.getElementById("dimension_cards");
+  const payloadInput = document.getElementById("payload_json_input");
+  const postForm = payloadInput.closest("form");
+
+  const questionModalBackdrop = document.getElementById("question_modal_backdrop");
+  const questionModalTitle = document.getElementById("question_modal_title");
+  const questionTextInput = document.getElementById("question_text");
+  const questionAlternativesEl = document.getElementById("question_alternatives");
+  const addAlternativeBtn = document.getElementById("add_alternative_btn");
+  const saveQuestionBtn = document.getElementById("save_question_btn");
+  const cancelQuestionBtn = document.getElementById("cancel_question_btn");
+
+  const alternativeModalBackdrop = document.getElementById("alternative_modal_backdrop");
+  const alternativeModalTitle = document.getElementById("alternative_modal_title");
+  const altTextInput = document.getElementById("alt_text");
+  const altMinInput = document.getElementById("alt_min");
+  const altProbableInput = document.getElementById("alt_probable");
+  const altMaxInput = document.getElementById("alt_max");
+  const saveAlternativeBtn = document.getElementById("save_alternative_btn");
+  const cancelAlternativeBtn = document.getElementById("cancel_alternative_btn");
+
+  let editingDimension = null;
+  let editingQuestionIndex = null;
+  let draftQuestion = null;
+  let editingAlternativeIndex = null;
+
+  function renderDimensions() {
+    cardsEl.innerHTML = "";
+    for (const [dimKey, meta] of Object.entries(DIMENSIONS)) {
+      const section = model[dimKey];
+      const questions = section.questions || [];
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap;">
+          <h3 style="margin:0;">${meta.title}</h3>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+          <div>
+            <label><strong>Calculation</strong></label><br/>
+            <select data-action="edit-calculation" data-dim="${dimKey}" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+              ${CALC_OPTIONS.map(opt => `<option value="${opt}" ${opt === (section.calculation || "") ? "selected" : ""}>${opt}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px;" data-questions="${dimKey}"></div>
+        <div style="margin-top:10px;">
+          <button type="button" class="btn" data-action="add-question" data-dim="${dimKey}">+ Lägg till fråga</button>
+        </div>
+      `;
+
+      const questionsContainer = card.querySelector(`[data-questions="${dimKey}"]`);
+      if (!questions.length) {
+        questionsContainer.innerHTML = `<p class="muted" style="margin:0;">Inga frågor ännu.</p>`;
+      } else {
+        questions.forEach((q, index) => {
+          const row = document.createElement("div");
+          row.className = "q-row";
+          const altCount = Array.isArray(q.alternatives) ? q.alternatives.length : 0;
+          row.innerHTML = `
+            <div>
+              <strong>Fråga ${index + 1}</strong>
+              <div style="margin-top:4px;">${q.text || "(tom frågetext)"}</div>
+              <div class="muted" style="margin-top:4px;">${altCount} alternativ</div>
+            </div>
+            <div class="q-actions">
+              <button type="button" class="btn" data-action="edit-question" data-dim="${dimKey}" data-question-index="${index}">Redigera</button>
+              <button type="button" class="btn" data-action="delete-question" data-dim="${dimKey}" data-question-index="${index}">Ta bort</button>
+            </div>
+          `;
+          questionsContainer.appendChild(row);
+        });
+      }
+
+      cardsEl.appendChild(card);
+    }
+  }
+
+  function openQuestionModal(dimKey, questionIndex) {
+    editingDimension = dimKey;
+    editingQuestionIndex = questionIndex;
+
+    if (questionIndex === null || questionIndex === undefined) {
+      draftQuestion = { text: "", alternatives: [], answer: defaultAnswer() };
+      questionModalTitle.textContent = `Ny fråga (${dimKey})`;
+    } else {
+      draftQuestion = deepClone(model[dimKey].questions[questionIndex]);
+      if (!Array.isArray(draftQuestion.alternatives)) {
+        draftQuestion.alternatives = [];
+      }
+      if (!draftQuestion.answer || typeof draftQuestion.answer !== "object") {
+        draftQuestion.answer = defaultAnswer();
+      }
+      questionModalTitle.textContent = `Redigera fråga (${dimKey})`;
+    }
+    questionTextInput.value = draftQuestion.text || "";
+    renderQuestionAlternatives();
+    questionModalBackdrop.style.display = "flex";
+  }
+
+  function closeQuestionModal() {
+    questionModalBackdrop.style.display = "none";
+    editingDimension = null;
+    editingQuestionIndex = null;
+    draftQuestion = null;
+  }
+
+  function renderQuestionAlternatives() {
+    questionAlternativesEl.innerHTML = "";
+    if (!draftQuestion || !Array.isArray(draftQuestion.alternatives) || !draftQuestion.alternatives.length) {
+      questionAlternativesEl.innerHTML = `<p class="muted" style="margin:0 0 8px 0;">Inga alternativ ännu.</p>`;
+      return;
+    }
+
+    draftQuestion.alternatives.forEach((alt, index) => {
+      const row = document.createElement("div");
+      row.className = "alt-row";
+      row.innerHTML = `
+        <div>
+          <div><strong>${alt.text || "(tom alternativtext)"}</strong></div>
+          <div class="muted">min: ${alt.weight?.min ?? 0}, probable: ${alt.weight?.probable ?? 0}, max: ${alt.weight?.max ?? 0}</div>
+        </div>
+        <div class="q-actions">
+          <button type="button" class="btn" data-action="edit-alt" data-alt-index="${index}">Redigera</button>
+          <button type="button" class="btn" data-action="delete-alt" data-alt-index="${index}">Ta bort</button>
+        </div>
+      `;
+      questionAlternativesEl.appendChild(row);
+    });
+  }
+
+  function openAlternativeModal(altIndex) {
+    editingAlternativeIndex = altIndex;
+    const isNew = altIndex === null || altIndex === undefined;
+
+    let alt = { text: "", weight: { min: 0.0, probable: 0.0, max: 0.0 } };
+    if (!isNew) {
+      alt = deepClone(draftQuestion.alternatives[altIndex] || alt);
+      alt.weight = alt.weight || { min: 0.0, probable: 0.0, max: 0.0 };
+    }
+
+    alternativeModalTitle.textContent = isNew ? "Nytt alternativ" : "Redigera alternativ";
+    altTextInput.value = alt.text || "";
+    altMinInput.value = alt.weight.min ?? 0.0;
+    altProbableInput.value = alt.weight.probable ?? 0.0;
+    altMaxInput.value = alt.weight.max ?? 0.0;
+
+    alternativeModalBackdrop.style.display = "flex";
+  }
+
+  function closeAlternativeModal() {
+    alternativeModalBackdrop.style.display = "none";
+    editingAlternativeIndex = null;
+  }
+
+  cardsEl.addEventListener("click", (event) => {
+    const target = event.target.closest("button");
+    if (!target) {
+      return;
+    }
+    const action = target.dataset.action;
+    const dimKey = target.dataset.dim;
+    const questionIndexRaw = target.dataset.questionIndex;
+    const questionIndex = questionIndexRaw !== undefined ? Number(questionIndexRaw) : null;
+
+    if (action === "add-question") {
+      openQuestionModal(dimKey, null);
+    } else if (action === "edit-question") {
+      openQuestionModal(dimKey, questionIndex);
+    } else if (action === "delete-question") {
+      model[dimKey].questions.splice(questionIndex, 1);
+      renderDimensions();
+    }
+  });
+
+  cardsEl.addEventListener("input", (event) => {
+    const target = event.target;
+    const action = target.dataset.action;
+    const dimKey = target.dataset.dim;
+    if (!dimKey || !model[dimKey]) {
+      return;
+    }
+    if (action === "edit-calculation") {
+      model[dimKey].calculation = target.value;
+    }
+  });
+
+  questionAlternativesEl.addEventListener("click", (event) => {
+    const target = event.target.closest("button");
+    if (!target) {
+      return;
+    }
+    const action = target.dataset.action;
+    const index = Number(target.dataset.altIndex);
+    if (action === "edit-alt") {
+      openAlternativeModal(index);
+    } else if (action === "delete-alt") {
+      draftQuestion.alternatives.splice(index, 1);
+      renderQuestionAlternatives();
+    }
+  });
+
+  addAlternativeBtn.addEventListener("click", () => openAlternativeModal(null));
+  cancelAlternativeBtn.addEventListener("click", closeAlternativeModal);
+
+  saveAlternativeBtn.addEventListener("click", () => {
+    const alt = {
+      text: altTextInput.value.trim(),
+      weight: {
+        min: normalizeNumber(altMinInput.value),
+        probable: normalizeNumber(altProbableInput.value),
+        max: normalizeNumber(altMaxInput.value),
+      },
+    };
+
+    if (editingAlternativeIndex === null || editingAlternativeIndex === undefined) {
+      draftQuestion.alternatives.push(alt);
+    } else {
+      draftQuestion.alternatives[editingAlternativeIndex] = alt;
+    }
+    closeAlternativeModal();
+    renderQuestionAlternatives();
+  });
+
+  cancelQuestionBtn.addEventListener("click", closeQuestionModal);
+
+  saveQuestionBtn.addEventListener("click", () => {
+    draftQuestion.text = questionTextInput.value.trim();
+    if (!draftQuestion.text) {
+      alert("Frågetext kan inte vara tom.");
+      return;
+    }
+    if (!Array.isArray(draftQuestion.alternatives) || !draftQuestion.alternatives.length) {
+      alert("Lägg till minst ett alternativ.");
+      return;
+    }
+    draftQuestion.answer = defaultAnswer();
+
+    const targetQuestions = model[editingDimension].questions;
+    if (editingQuestionIndex === null || editingQuestionIndex === undefined) {
+      targetQuestions.push(draftQuestion);
+    } else {
+      targetQuestions[editingQuestionIndex] = draftQuestion;
+    }
+    closeQuestionModal();
+    renderDimensions();
+  });
+
+  postForm.addEventListener("submit", () => {
+    for (const [dimKey, meta] of Object.entries(DIMENSIONS)) {
+      if (!model[dimKey] || typeof model[dimKey] !== "object") {
+        model[dimKey] = {};
+      }
+      model[dimKey].factor = meta.fixedFactor;
+    }
+    payloadInput.value = JSON.stringify(model, null, 2);
+  });
+
+  renderDimensions();
+</script>
+{% endblock %}

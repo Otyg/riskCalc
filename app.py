@@ -24,6 +24,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from decimal import Decimal
 from pathlib import Path
@@ -51,7 +52,7 @@ from filesystem.repo import (
 from filesystem.threats_repo import JsonThreatsRepository
 from filesystem.vulnerabilities_repo import JsonVulnerabilitiesRepository
 from otyg_risk_base.hybrid import HybridRisk
-from riskcalculator.questionaire import Questionaires
+from riskcalculator.questionaire import Questionaire, Questionaires
 from riskregister.assessment import RiskAssessment
 
 
@@ -152,6 +153,36 @@ def _safe_filename(s: str) -> str:
     return s or "riskrapport"
 
 
+def _normalize_qset_id(qset_id: str) -> str:
+    normalized = re.sub(r"[^A-Za-z0-9._-]+", "-", (qset_id or "").strip().lower())
+    normalized = normalized.strip("-._")
+    return normalized
+
+
+def _validate_questionaire_payload(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    required_dimensions = ("tef", "vuln", "lm")
+
+    for dim in required_dimensions:
+        if dim not in payload:
+            errors.append(f"Saknar dimension '{dim}'.")
+            continue
+        section = payload.get(dim)
+        if not isinstance(section, dict):
+            errors.append(f"'{dim}' måste vara ett objekt.")
+            continue
+        if "questions" not in section or not isinstance(section.get("questions"), list):
+            errors.append(f"'{dim}.questions' måste vara en lista.")
+            continue
+        try:
+            # Verifiera att formatet kan tolkas av domänmodellen.
+            _ = Questionaire.from_dict(section)
+        except Exception as exc:
+            errors.append(f"Kunde inte läsa '{dim}': {exc}")
+
+    return errors
+
+
 @app.get("/analysis/{analysis_id}/export/pdf")
 def export_analysis_pdf(analysis_id: str):
     analysis = analyses_repo.get_dict(
@@ -196,6 +227,95 @@ def index(request: Request, selected: str | None = None):
             "selected": selected,
             "analysis": analysis,
         },
+    )
+
+
+@app.get("/questionaires/new", response_class=HTMLResponse)
+def questionaires_new_page(
+    request: Request,
+    from_set: str | None = None,
+    new_set_id: str | None = None,
+    errors: str | None = None,
+    saved: str | None = None,
+):
+    available_qsets = questionaires_repo.list_sets()
+    effective_source = (from_set or "").strip()
+
+    source_payload = {
+        "tef": {"questions": []},
+        "vuln": {"questions": []},
+        "lm": {"questions": []},
+    }
+    if effective_source:
+        try:
+            source_payload = questionaires_repo.load_dict(effective_source)
+        except FileNotFoundError:
+            source_payload = {
+                "tef": {"questions": []},
+                "vuln": {"questions": []},
+                "lm": {"questions": []},
+            }
+
+    return templates.TemplateResponse(
+        "create_questionaire_set.html",
+        {
+            "request": request,
+            "available_qsets": available_qsets,
+            "from_set": effective_source,
+            "new_set_id": new_set_id or "",
+            "payload_json": json.dumps(source_payload, ensure_ascii=False, indent=2),
+            "errors": [errors] if errors else [],
+            "saved": saved == "1",
+        },
+    )
+
+
+@app.post("/questionaires/new")
+async def questionaires_new_save(
+    request: Request,
+    new_set_id: str = Form(""),
+    from_set: str = Form(""),
+    payload_json: str = Form(""),
+):
+    raw_id = (new_set_id or "").strip()
+    normalized_id = _normalize_qset_id(raw_id)
+    errors: list[str] = []
+
+    if not normalized_id:
+        errors.append("Namn på nytt set saknas eller innehåller ogiltiga tecken.")
+
+    try:
+        payload = json.loads(payload_json or "{}")
+        if not isinstance(payload, dict):
+            errors.append("JSON måste vara ett objekt med tef/vuln/lm.")
+            payload = {}
+    except json.JSONDecodeError as exc:
+        payload = {}
+        errors.append(f"Ogiltig JSON: {exc}")
+
+    if not errors:
+        errors.extend(_validate_questionaire_payload(payload))
+
+    if errors:
+        return templates.TemplateResponse(
+            "create_questionaire_set.html",
+            {
+                "request": request,
+                "available_qsets": questionaires_repo.list_sets(),
+                "from_set": from_set,
+                "new_set_id": raw_id,
+                "payload_json": payload_json,
+                "errors": errors,
+                "saved": False,
+            },
+            status_code=400,
+        )
+
+    questionaires_repo.save_dict(normalized_id, payload)
+
+    return RedirectResponse(
+        url=f"/questionaires/new?from_set={normalized_id}&new_set_id={normalized_id}&saved=1",
+        status_code=HTTP_303_SEE_OTHER,
     )
 
 
