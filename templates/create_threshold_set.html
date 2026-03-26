@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .row { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; padding:10px; border:1px solid #e5e7eb; border-radius:10px; margin:8px 0; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn { padding:8px 10px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; cursor:pointer; }
+  .modal-backdrop { position:fixed; inset:0; background:rgba(17,24,39,0.55); display:none; align-items:center; justify-content:center; z-index:50; }
+  .modal { width:min(820px, 94vw); max-height:90vh; overflow:auto; background:#fff; border-radius:14px; border:1px solid #e5e7eb; padding:16px; }
+  .grid-3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+  .grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+</style>
+
+<div class="layout">
+  <aside class="sidebar">
+    <h2>Nya thresholds</h2>
+    <p class="muted">Skapa ett nytt set för <code class="badge">discrete thresholds</code> utan att skriva JSON manuellt.</p>
+    <a class="item" href="/">← Till listan</a>
+  </aside>
+
+  <main class="main">
+    <h1 style="margin-top:0;">Skapa nytt threshold-set</h1>
+
+    {% if saved %}
+      <div class="card" style="border-color:#86efac;">
+        <strong>Klart:</strong> Threshold-setet sparades.
+      </div>
+    {% endif %}
+
+    {% if errors and errors|length > 0 %}
+      <div class="card" style="border-color:#fecaca;">
+        <h3 style="margin-top:0;">Fel</h3>
+        <ul style="margin:0; padding-left:18px;">
+          {% for e in errors %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="get" action="/thresholds/new" class="card">
+      <h2 style="margin-top:0;">Utgå från befintligt set</h2>
+      <label><strong>Källa</strong></label><br/>
+      <select name="from_set" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+        <option value="" {% if not from_set %}selected{% endif %}>-- Välj set --</option>
+        {% for s in available_sets %}
+          <option value="{{ s }}" {% if s == from_set %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <div style="margin-top:10px;">
+        <button type="submit" class="btn">Ladda i editorn</button>
+      </div>
+    </form>
+
+    <form method="post" action="/thresholds/new" class="card" id="threshold_form">
+      <input type="hidden" name="from_set" value="{{ from_set }}" />
+      <input type="hidden" name="payload_json" id="payload_json_input" />
+
+      <h2 style="margin-top:0;">Nytt set</h2>
+      <div>
+        <label><strong>Namn på nytt set (id)</strong></label><br/>
+        <input name="new_set_id" value="{{ new_set_id }}" placeholder="exempel: region-2026"
+               style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+
+      <div id="scales_container" style="margin-top:12px;"></div>
+      <button type="button" class="btn" id="add_scale_btn">+ Lägg till skala</button>
+
+      <div class="card" style="margin-top:12px;">
+        <h3 style="margin-top:0;">num_to_text</h3>
+        <div id="num_to_text_container"></div>
+        <button type="button" class="btn" id="add_num_to_text_btn">+ Lägg till textmappning</button>
+      </div>
+
+      <div style="margin-top:10px;">
+        <button type="submit" style="padding:12px 16px; border-radius:14px; border:1px solid #e5e7eb; background:#fff; cursor:pointer;">
+          💾 Spara nytt threshold-set
+        </button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<div id="range_modal_backdrop" class="modal-backdrop">
+  <div class="modal">
+    <h3 id="range_modal_title" style="margin-top:0;">Nytt intervall</h3>
+    <div class="grid-3">
+      <div>
+        <label><strong>Value</strong></label><br/>
+        <input id="range_value" type="number" step="any" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+      <div>
+        <label><strong>Low</strong></label><br/>
+        <input id="range_low" type="number" step="any" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+      <div>
+        <label><strong>High</strong></label><br/>
+        <input id="range_high" type="number" step="any" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+    </div>
+    <div style="margin-top:14px; display:flex; gap:8px;">
+      <button type="button" class="btn" id="save_range_btn">Spara intervall</button>
+      <button type="button" class="btn" id="cancel_range_btn">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<div id="mapping_modal_backdrop" class="modal-backdrop">
+  <div class="modal" style="width:min(680px, 94vw);">
+    <h3 id="mapping_modal_title" style="margin-top:0;">Ny textmappning</h3>
+    <div class="grid-2">
+      <div>
+        <label><strong>Nyckel</strong></label><br/>
+        <input id="mapping_key" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+      <div>
+        <label><strong>Text</strong></label><br/>
+        <input id="mapping_text" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      </div>
+    </div>
+    <div style="margin-top:14px; display:flex; gap:8px;">
+      <button type="button" class="btn" id="save_mapping_btn">Spara mappning</button>
+      <button type="button" class="btn" id="cancel_mapping_btn">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<script id="initial_payload" type="application/json">{{ payload_json | safe }}</script>
+<script>
+  const DEFAULT_SCALES = [
+    "likelihood_initiation_or_occurence",
+    "likelihood_adverse_impact",
+    "impact",
+    "risk"
+  ];
+
+  function deepClone(v) {
+    return JSON.parse(JSON.stringify(v));
+  }
+
+  function n(v) {
+    const num = Number(v);
+    return Number.isFinite(num) ? num : 0;
+  }
+
+  let model = {};
+  try {
+    model = JSON.parse(document.getElementById("initial_payload").textContent || "{}");
+  } catch (_) {
+    model = {};
+  }
+  if (!model || typeof model !== "object") {
+    model = {};
+  }
+  if (!model.num_to_text || typeof model.num_to_text !== "object") {
+    model.num_to_text = {};
+  }
+  for (const key of DEFAULT_SCALES) {
+    if (!Array.isArray(model[key])) {
+      model[key] = [];
+    }
+  }
+
+  const scalesContainer = document.getElementById("scales_container");
+  const numToTextContainer = document.getElementById("num_to_text_container");
+  const payloadInput = document.getElementById("payload_json_input");
+  const thresholdForm = document.getElementById("threshold_form");
+
+  const rangeModalBackdrop = document.getElementById("range_modal_backdrop");
+  const rangeModalTitle = document.getElementById("range_modal_title");
+  const rangeValueInput = document.getElementById("range_value");
+  const rangeLowInput = document.getElementById("range_low");
+  const rangeHighInput = document.getElementById("range_high");
+  const saveRangeBtn = document.getElementById("save_range_btn");
+  const cancelRangeBtn = document.getElementById("cancel_range_btn");
+
+  const mappingModalBackdrop = document.getElementById("mapping_modal_backdrop");
+  const mappingModalTitle = document.getElementById("mapping_modal_title");
+  const mappingKeyInput = document.getElementById("mapping_key");
+  const mappingTextInput = document.getElementById("mapping_text");
+  const saveMappingBtn = document.getElementById("save_mapping_btn");
+  const cancelMappingBtn = document.getElementById("cancel_mapping_btn");
+
+  let editingScale = null;
+  let editingRangeIndex = null;
+  let editingMappingKey = null;
+
+  function getScaleKeys() {
+    return Object.keys(model).filter((k) => k !== "num_to_text" && Array.isArray(model[k]));
+  }
+
+  function renderScales() {
+    scalesContainer.innerHTML = "";
+    for (const scaleKey of getScaleKeys()) {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const entries = model[scaleKey] || [];
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
+          <h3 style="margin:0;">${scaleKey}</h3>
+          <div class="actions">
+            <button type="button" class="btn" data-action="add-range" data-scale="${scaleKey}">+ Lägg till intervall</button>
+            <button type="button" class="btn" data-action="delete-scale" data-scale="${scaleKey}">Ta bort skala</button>
+          </div>
+        </div>
+        <div data-rows="${scaleKey}" style="margin-top:10px;"></div>
+      `;
+
+      const rows = card.querySelector(`[data-rows="${scaleKey}"]`);
+      if (!entries.length) {
+        rows.innerHTML = `<p class="muted" style="margin:0;">Inga intervall ännu.</p>`;
+      } else {
+        entries.forEach((entry, index) => {
+          const row = document.createElement("div");
+          row.className = "row";
+          row.innerHTML = `
+            <div>
+              <div><strong>value: ${entry.value}</strong></div>
+              <div class="muted">low: ${entry.low}, high: ${entry.high}</div>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn" data-action="edit-range" data-scale="${scaleKey}" data-index="${index}">Redigera</button>
+              <button type="button" class="btn" data-action="delete-range" data-scale="${scaleKey}" data-index="${index}">Ta bort</button>
+            </div>
+          `;
+          rows.appendChild(row);
+        });
+      }
+      scalesContainer.appendChild(card);
+    }
+  }
+
+  function renderNumToText() {
+    numToTextContainer.innerHTML = "";
+    const keys = Object.keys(model.num_to_text || {});
+    if (!keys.length) {
+      numToTextContainer.innerHTML = `<p class="muted" style="margin:0 0 8px 0;">Inga mappningar ännu.</p>`;
+      return;
+    }
+
+    keys.forEach((k) => {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div>
+          <div><strong>${k}</strong></div>
+          <div class="muted">${model.num_to_text[k]}</div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" data-action="edit-mapping" data-key="${k}">Redigera</button>
+          <button type="button" class="btn" data-action="delete-mapping" data-key="${k}">Ta bort</button>
+        </div>
+      `;
+      numToTextContainer.appendChild(row);
+    });
+  }
+
+  function openRangeModal(scaleKey, index) {
+    editingScale = scaleKey;
+    editingRangeIndex = index;
+
+    const isNew = index === null || index === undefined;
+    const source = isNew
+      ? { value: 0, low: 0, high: 0 }
+      : deepClone((model[scaleKey] || [])[index] || { value: 0, low: 0, high: 0 });
+
+    rangeModalTitle.textContent = isNew ? `Nytt intervall (${scaleKey})` : `Redigera intervall (${scaleKey})`;
+    rangeValueInput.value = source.value;
+    rangeLowInput.value = source.low;
+    rangeHighInput.value = source.high;
+    rangeModalBackdrop.style.display = "flex";
+  }
+
+  function closeRangeModal() {
+    rangeModalBackdrop.style.display = "none";
+    editingScale = null;
+    editingRangeIndex = null;
+  }
+
+  function openMappingModal(key) {
+    editingMappingKey = key;
+    const isNew = !key;
+    mappingModalTitle.textContent = isNew ? "Ny textmappning" : "Redigera textmappning";
+    mappingKeyInput.value = key || "";
+    mappingTextInput.value = (key && model.num_to_text[key]) ? model.num_to_text[key] : "";
+    mappingModalBackdrop.style.display = "flex";
+  }
+
+  function closeMappingModal() {
+    mappingModalBackdrop.style.display = "none";
+    editingMappingKey = null;
+  }
+
+  scalesContainer.addEventListener("click", (event) => {
+    const btn = event.target.closest("button");
+    if (!btn) {
+      return;
+    }
+    const action = btn.dataset.action;
+    const scale = btn.dataset.scale;
+    const index = btn.dataset.index !== undefined ? Number(btn.dataset.index) : null;
+
+    if (action === "add-range") {
+      openRangeModal(scale, null);
+    } else if (action === "edit-range") {
+      openRangeModal(scale, index);
+    } else if (action === "delete-range") {
+      model[scale].splice(index, 1);
+      renderScales();
+    } else if (action === "delete-scale") {
+      delete model[scale];
+      renderScales();
+    }
+  });
+
+  numToTextContainer.addEventListener("click", (event) => {
+    const btn = event.target.closest("button");
+    if (!btn) {
+      return;
+    }
+    const action = btn.dataset.action;
+    const key = btn.dataset.key;
+    if (action === "edit-mapping") {
+      openMappingModal(key);
+    } else if (action === "delete-mapping") {
+      delete model.num_to_text[key];
+      renderNumToText();
+    }
+  });
+
+  document.getElementById("add_scale_btn").addEventListener("click", () => {
+    const name = prompt("Namn på ny skala:");
+    if (!name) {
+      return;
+    }
+    const normalized = name.trim();
+    if (!normalized) {
+      return;
+    }
+    if (!Array.isArray(model[normalized])) {
+      model[normalized] = [];
+    }
+    renderScales();
+  });
+
+  document.getElementById("add_num_to_text_btn").addEventListener("click", () => {
+    openMappingModal(null);
+  });
+
+  saveRangeBtn.addEventListener("click", () => {
+    const item = {
+      value: n(rangeValueInput.value),
+      low: n(rangeLowInput.value),
+      high: n(rangeHighInput.value),
+    };
+    if (!Array.isArray(model[editingScale])) {
+      model[editingScale] = [];
+    }
+    if (editingRangeIndex === null || editingRangeIndex === undefined) {
+      model[editingScale].push(item);
+    } else {
+      model[editingScale][editingRangeIndex] = item;
+    }
+    closeRangeModal();
+    renderScales();
+  });
+
+  cancelRangeBtn.addEventListener("click", closeRangeModal);
+
+  saveMappingBtn.addEventListener("click", () => {
+    const key = mappingKeyInput.value.trim();
+    const text = mappingTextInput.value.trim();
+    if (!key || !text) {
+      alert("Nyckel och text måste fyllas i.");
+      return;
+    }
+    if (editingMappingKey && editingMappingKey !== key) {
+      delete model.num_to_text[editingMappingKey];
+    }
+    model.num_to_text[key] = text;
+    closeMappingModal();
+    renderNumToText();
+  });
+
+  cancelMappingBtn.addEventListener("click", closeMappingModal);
+
+  thresholdForm.addEventListener("submit", () => {
+    payloadInput.value = JSON.stringify(model, null, 2);
+  });
+
+  renderScales();
+  renderNumToText();
+</script>
+{% endblock %}

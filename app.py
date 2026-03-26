@@ -183,6 +183,36 @@ def _validate_questionaire_payload(payload: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _validate_threshold_payload(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(payload, dict):
+        return ["Threshold-set måste vara ett objekt."]
+
+    for key, value in payload.items():
+        if key == "num_to_text":
+            if not isinstance(value, dict):
+                errors.append("'num_to_text' måste vara ett objekt.")
+            continue
+
+        if not isinstance(value, list):
+            errors.append(f"'{key}' måste vara en lista med intervall.")
+            continue
+
+        for i, item in enumerate(value):
+            if not isinstance(item, dict):
+                errors.append(f"'{key}[{i}]' måste vara ett objekt.")
+                continue
+            for field in ("value", "low", "high"):
+                if field not in item:
+                    errors.append(f"'{key}[{i}]' saknar '{field}'.")
+                    continue
+                try:
+                    float(item[field])
+                except (TypeError, ValueError):
+                    errors.append(f"'{key}[{i}].{field}' måste vara numeriskt.")
+    return errors
+
+
 @app.get("/analysis/{analysis_id}/export/pdf")
 def export_analysis_pdf(analysis_id: str):
     analysis = analyses_repo.get_dict(
@@ -315,6 +345,89 @@ async def questionaires_new_save(
 
     return RedirectResponse(
         url=f"/questionaires/new?from_set={normalized_id}&new_set_id={normalized_id}&saved=1",
+        status_code=HTTP_303_SEE_OTHER,
+    )
+
+
+@app.get("/thresholds/new", response_class=HTMLResponse)
+def thresholds_new_page(
+    request: Request,
+    from_set: str | None = None,
+    new_set_id: str | None = None,
+    errors: str | None = None,
+    saved: str | None = None,
+):
+    available_sets = discrete_thresholds_repo.get_set_names()
+    effective_source = (from_set or "").strip()
+
+    source_payload: dict[str, Any] = {
+        "likelihood_initiation_or_occurence": [],
+        "likelihood_adverse_impact": [],
+        "impact": [],
+        "risk": [],
+        "num_to_text": {},
+    }
+    if effective_source:
+        source_payload = discrete_thresholds_repo.load_dict(effective_source)
+
+    return templates.TemplateResponse(
+        "create_threshold_set.html",
+        {
+            "request": request,
+            "available_sets": available_sets,
+            "from_set": effective_source,
+            "new_set_id": new_set_id or "",
+            "payload_json": json.dumps(source_payload, ensure_ascii=False, indent=2),
+            "errors": [errors] if errors else [],
+            "saved": saved == "1",
+        },
+    )
+
+
+@app.post("/thresholds/new")
+async def thresholds_new_save(
+    request: Request,
+    new_set_id: str = Form(""),
+    from_set: str = Form(""),
+    payload_json: str = Form(""),
+):
+    raw_id = (new_set_id or "").strip()
+    normalized_id = _normalize_qset_id(raw_id)
+    errors: list[str] = []
+
+    if not normalized_id:
+        errors.append(
+            "Namn på nytt threshold-set saknas eller innehåller ogiltiga tecken."
+        )
+
+    try:
+        payload = json.loads(payload_json or "{}")
+    except json.JSONDecodeError as exc:
+        payload = {}
+        errors.append(f"Ogiltig JSON från editorn: {exc}")
+
+    if not errors:
+        errors.extend(_validate_threshold_payload(payload))
+
+    if errors:
+        return templates.TemplateResponse(
+            "create_threshold_set.html",
+            {
+                "request": request,
+                "available_sets": discrete_thresholds_repo.get_set_names(),
+                "from_set": from_set,
+                "new_set_id": raw_id,
+                "payload_json": payload_json,
+                "errors": errors,
+                "saved": False,
+            },
+            status_code=400,
+        )
+
+    discrete_thresholds_repo.save_set(normalized_id, payload)
+
+    return RedirectResponse(
+        url=f"/thresholds/new?from_set={normalized_id}&new_set_id={normalized_id}&saved=1",
         status_code=HTTP_303_SEE_OTHER,
     )
 

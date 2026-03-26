@@ -179,7 +179,17 @@ class DiscreteThresholdsRepository:
 
     def get_set_names(self):
         data = self.__read_file()
-        return data.keys()
+        return sorted(data.keys())
+
+    def load_dict(self, threshold_set: str) -> dict[str, Any]:
+        data = self.__read_file()
+        return data.get(threshold_set, {})
+
+    def save_set(self, threshold_set: str, payload: dict[str, Any]) -> None:
+        data = self.__read_file()
+        data[threshold_set] = payload
+        with self.path.open("w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
     def load(self, threshold_set: str = "default_thresholds") -> QualitativeScale:
         data = self.__read_file()

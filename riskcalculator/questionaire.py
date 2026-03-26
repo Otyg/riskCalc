@@ -216,9 +216,10 @@ class Questionaire:
             mode += q.answer.weight.probable
         self.factor_sum = MonteCarloRange(min=min, max=max, probable=mode)
         return self.factor_sum
+
     def multiply(self):
         return self.multiply_factor()
-    
+
     def multiply_factor(self):
         max = min = mode = 1
         for q in self.questions:
@@ -238,7 +239,6 @@ class Questionaire:
         if len(self.questions) == 0:
             return MonteCarloRange()
         factor_max = self.questions[0].answer.weight
-        max = factor_max.max
         for q in self.questions:
             if factor_max.max < q.answer.weight.max:
                 factor_max = q
